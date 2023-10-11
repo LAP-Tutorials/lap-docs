@@ -26,6 +26,21 @@ font-family: 'Share Tech Mono', monospace;
   }
 }
 
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--#141413);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--#2196f3);
+  border-radius: 10px;
+  transition: 1s;
+}
+
 .text-shadow {
   text-shadow: 0px 2px 0px rgb(0 0 0 / 30%);
 }
