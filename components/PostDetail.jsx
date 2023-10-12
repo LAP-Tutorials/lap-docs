@@ -81,7 +81,7 @@ const PostDetail = ({ post }) => {
                             </a>
                         ),
                         code: ({ children }) => (
-                            <code className="bg-[#d4d4d4] text-black rounded-md p-2 ml-6">
+                            <code className="bg-[#d4d4d4] text-black p-1 rounded-md">
                                 {children}
                             </code>
                         ),
