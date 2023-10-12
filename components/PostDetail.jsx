@@ -1,46 +1,8 @@
 import React from 'react'
 import moment from 'moment'
+import { RichText } from "@graphcms/rich-text-react-renderer";
 
 const PostDetail = ({ post }) => {
-    const getContentFragment = (index, text, obj, type) => {
-        let modifiedText = text;
-    
-        if (obj) {
-          if (obj.bold) {
-            modifiedText = (<b key={index}>{text}</b>);
-          }
-    
-          if (obj.italic) {
-            modifiedText = (<em key={index}>{text}</em>);
-          }
-    
-          if (obj.underline) {
-            modifiedText = (<u key={index}>{text}</u>);
-          }
-        }
-    
-        switch (type) {
-          case 'heading-three':
-            return <h3 key={index} className="text-xl font-semibold mb-4">{modifiedText.map((item, i) => <React.Fragment key={i}>{item}</React.Fragment>)}</h3>;
-          case 'paragraph':
-            return <p key={index} className="mb-8">{modifiedText.map((item, i) => <React.Fragment key={i}>{item}</React.Fragment>)}</p>;
-          case 'heading-four':
-            return <h4 key={index} className="text-md font-semibold mb-4">{modifiedText.map((item, i) => <React.Fragment key={i}>{item}</React.Fragment>)}</h4>;
-          case 'image':
-            return (
-              <img
-                key={index}
-                alt={obj.title}
-                height={obj.height}
-                width={obj.width}
-                src={obj.src}
-              />
-            );
-          default:
-            return modifiedText;
-        }
-      };
-
     return (
         <div className='bg-[#141413] shadow-[#2196f360]
         border-2 border-[#2196f3] shadow-lg rounded-lg lg:p-8 pb-12 mb-8'>
@@ -61,21 +23,106 @@ const PostDetail = ({ post }) => {
                         />
                         <p className="inline align-middle text-[#d4d4d4] ml-2 text-lg">{post.author.name}</p>
                     </div>
-                    <div className='font-medium text-[#d4d4d4]'>
+                    <div className='font-medium text-[#d4d4d4] mb-2'>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 inline mr-2 text-[#2196f3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        <span>
+                        <span className='align-middle'>
                             {moment(post.createdAt).format('MMM DD, YYYY')}
                         </span>
                     </div>
                 </div>
                 <h1 className='mb-8 text-3xl font-semibold'>{post.title}</h1>
-                {post.content.raw.children.map((typeObj, index) => {
-                    const children = typeObj.children.map((item, itemIndex) => getContentFragment(itemIndex, item.text, item))
+                <RichText
+                    content={post.content.raw.children}
+                    renderers={{
+                        // Headings
+                        h1: ({ children }) => (
+                            <h1 className="text-4xl leading-normal mt-0 mb-2 font-semibold">
+                                {children}
+                            </h1>
+                        ),
+                        h2: ({ children }) => (
+                            <h2 className="text-3xl leading-normal mt-0 mb-2 font-semibold">
+                                {children}
+                            </h2>
+                        ),
+                        h3: ({ children }) => (
+                            <h3 className="text-2xl leading-normal mt-0 mb-2 font-semibold">
+                                {children}
+                            </h3>
+                        ),
+                        h4: ({ children }) => (
+                            <h4 className="text-xl leading-normal mt-0 mb-2 font-semibold">
+                                {children}
+                            </h4>
+                        ),
+                        h5: ({ children }) => (
+                            <h5 className="text-lg leading-normal mt-0 mb-2 font-semibold">
+                                {children}
+                            </h5>
+                        ),
+                        h6: ({ children }) => (
+                            <h6 className="text-md leading-normal mt-0 mb-2 font-semibold">
+                                {children}
+                            </h6>
+                        ),
 
-                    return getContentFragment(index, children, typeObj, typeObj.type)
-                })}
+                        // Styles
+                        bold: ({ children }) => <b>{children}</b>,
+                        italic: ({ children }) => <em>{children}</em>,
+                        underline: ({ children }) => <u>{children}</u>,
+
+                        // Other Elements
+                        p: ({ children }) => <p className="mb-8">{children}</p>,
+                        a: ({ children, href }) => (
+                            <a className="text-md text-[#2196f3] mb-8" href={href} target='_blank'>
+                                {children}
+                            </a>
+                        ),
+                        code: ({ children }) => (
+                            <code className="bg-[#d4d4d4] text-black rounded-md p-2 ml-6">
+                                {children}
+                            </code>
+                        ),
+                        code_block: ({ children }) => (
+                            <pre className="bg-[#d4d4d4] text-black rounded-md p-2 mb-5 ml-6">
+                                <code>{children}</code>
+                            </pre>
+                        ),
+                        img: ({ src, alt }) => (
+                            <img
+                                className="rounded-lg shadow-lg mb-8 mt-4"
+                                src={src}
+                                alt={alt}
+                            />
+                        ),
+                        ul: ({ children }) => (
+                            <div className='mb-3'>
+                                <l1>{children}</l1>
+                            </div>
+                        ),
+                        ol: ({ children }) => (
+                            <div className='mb-3'>
+                                <l1>{children}</l1>
+                            </div>
+                        ),
+                        table: ({ children }) => (
+                            <table className="table-auto mb-8">
+                                <tbody>{children}</tbody>
+                            </table>
+                        ),
+                        table_row: ({ children }) => <tr>{children}</tr>,
+                        table_cell: ({ children }) => <td className="border px-4 py-2">{children}</td>,
+
+
+                        blockquote: ({ children }) => (
+                            <blockquote className="border-l-4 border-gray-300 pl-4 italic mb-8">
+                                {children}
+                            </blockquote>
+                        ),
+                    }}
+                />
             </div>
         </div>
     )
