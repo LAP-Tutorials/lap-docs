@@ -2,13 +2,27 @@ import Head from 'next/head'
 import { PostCard, Categories, PostWidget } from '../components'
 import { getPosts } from '../services'
 import { FeaturedPosts } from '../sections'
+import Script from 'next/script'
 
 export default function Home({ posts }) {
   return (
     <main
       className="container mx-auto px-10 mb-8 "
     >
+      
+      <Script src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID" />
+      <Script id="google-analytics">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+ 
+          gtag('config', 'GA_MEASUREMENT_ID');
+        `}
+      </Script>
+      
       <Head>
+
         <title>LAP Docs</title>
         <meta charSet="utf-8" />
         <meta name="language" content="ES" />
