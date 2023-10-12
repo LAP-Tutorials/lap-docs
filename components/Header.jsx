@@ -1,8 +1,11 @@
 import React, {useState, useEffect } from 'react'
+import Image from 'next/image'
 
 import Link from 'next/link'
 
 import { getCategories } from '../services'
+
+import logo from '../public/logo.png'
 
 const Header = () => {
     const [categories, setCategories] = useState([]);
@@ -16,6 +19,7 @@ const Header = () => {
         <div className="border-b w-full inline-block border-[#2196f3] py-8">
             <div className="md:float-left block">
                 <Link href="/">
+                {/* <Image alt="" height="50" width="50" className='rounded-md mb-4' src={logo} /> */}
                     <span className="cursor-pointer font-bold text-4xl text-white">
                         LAP Docs
                     </span>

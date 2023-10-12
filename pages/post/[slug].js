@@ -29,10 +29,11 @@ const PostDetails = ({ post }) => {
                 {/* Facebook */}
                 <meta property="og:title" content={post.title} />
                 <meta property="og:image" content={post.featuredImage.url} />
+                <meta property='og:description' content={post.excerpt} />
                 {/* Twitter */}
                 <meta name="twitter:title" content={post.title} />
                 <meta name="twitter:image" content={post.featuredImage.url} />
-                <meta name="twitter:card" content={post.featuredImage.url} />
+                <meta name="twitter:card"  content={post.featuredImage.url} />
             </Head>
 
             <div className='grid grid-cols-1 lg:grid-cols-12 gap-12'>
