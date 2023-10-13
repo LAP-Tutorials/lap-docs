@@ -11,8 +11,8 @@ export default function Home({ posts }) {
     >
       <Head>
         {/* <!-- Google tag (gtag.js) --> */}
-        <Script async src={`https://www.googletagmanager.com/gtag/js?id=${process.env.GA_MEASUREMENT_ID}`} />
-        <Script dangerouslySetInnerHTML={{
+        <script async src={`https://www.googletagmanager.com/gtag/js?id=${process.env.GA_MEASUREMENT_ID}`} />
+        <script dangerouslySetInnerHTML={{
           __html: `
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
