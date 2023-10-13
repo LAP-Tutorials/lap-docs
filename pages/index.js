@@ -9,21 +9,20 @@ export default function Home({ posts }) {
     <main
       className="container mx-auto px-10 mb-8 "
     >
-      <Script
-          src={`https://www.google-analytics.com/analytics.js`}
-        />
-        <Script>
-          {`
-                    window.ga = window.ga || function() {
-                      (ga.q = ga.q || []).push(arguments);
-                    };
-                    ga.l = 1 * new Date();
-                    ga('create', 'GA_MEASUREMENT_ID', 'auto');
-                    ga('send', 'pageview');
-                `}
-        </Script>
-      
       <Head>
+        {/* <!-- Google tag (gtag.js) --> */}
+        <Script async src={`https://www.googletagmanager.com/gtag/js?id=${process.env.GA_MEASUREMENT_ID}`} />
+        <Script dangerouslySetInnerHTML={{
+          __html: `
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '${process.env.GA_MEASUREMENT_ID}',{
+    page_path: window.location.pathname,
+  });
+  `,
+        }}
+        />
 
         <title>LAP Docs</title>
         <meta charSet="utf-8" />
