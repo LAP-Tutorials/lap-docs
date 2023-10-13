@@ -10,17 +10,16 @@ export default function Home({ posts }) {
       className="container mx-auto px-10 mb-8 "
     >
       <Script
-          strategy="lazyOnload"
-          src={`https://www.googletagmanager.com/gtag/js?id=G-K80QDVRL35`}
+          src={`https://www.google-analytics.com/analytics.js`}
         />
-        <Script strategy="lazyOnload">
+        <Script>
           {`
-                    window.dataLayer = window.dataLayer || [];
-                    function gtag(){dataLayer.push(arguments);}
-                    gtag('js', new Date());
-                    gtag('config', 'G-K80QDVRL35', {
-                    page_path: window.location.pathname,
-                    });
+                    window.ga = window.ga || function() {
+                      (ga.q = ga.q || []).push(arguments);
+                    };
+                    ga.l = 1 * new Date();
+                    ga('create', 'GA_MEASUREMENT_ID', 'auto');
+                    ga('send', 'pageview');
                 `}
         </Script>
       
