@@ -9,17 +9,20 @@ export default function Home({ posts }) {
     <main
       className="container mx-auto px-10 mb-8 "
     >
-      
-      <Script src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID" />
-      <Script id="google-analytics">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
- 
-          gtag('config', 'GA_MEASUREMENT_ID');
-        `}
-      </Script>
+      <Script
+          strategy="lazyOnload"
+          src={`https://www.googletagmanager.com/gtag/js?id=G-K80QDVRL35`}
+        />
+        <Script strategy="lazyOnload">
+          {`
+                    window.dataLayer = window.dataLayer || [];
+                    function gtag(){dataLayer.push(arguments);}
+                    gtag('js', new Date());
+                    gtag('config', 'G-K80QDVRL35', {
+                    page_path: window.location.pathname,
+                    });
+                `}
+        </Script>
       
       <Head>
 
