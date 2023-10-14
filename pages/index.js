@@ -2,7 +2,6 @@ import Head from 'next/head'
 import { PostCard, Categories, PostWidget } from '../components'
 import { getPosts } from '../services'
 import { FeaturedPosts } from '../sections'
-import Script from 'next/script'
 
 export default function Home({ posts }) {
   return (
@@ -10,20 +9,6 @@ export default function Home({ posts }) {
       className="container mx-auto px-10 mb-8 "
     >
       <Head>
-        {/* <!-- Google tag (gtag.js) --> */}
-        <script async src={`https://www.googletagmanager.com/gtag/js?id=${process.env.GA_MEASUREMENT_ID}`} />
-        <script dangerouslySetInnerHTML={{
-          __html: `
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', '${process.env.GA_MEASUREMENT_ID}',{
-    page_path: window.location.pathname,
-  });
-  `,
-        }}
-        />
-
         <title>LAP Docs</title>
         <meta charSet="utf-8" />
         <meta name="language" content="ES" />
