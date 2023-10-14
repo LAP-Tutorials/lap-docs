@@ -10,18 +10,20 @@ export default function App({ Component, pageProps }) {
   return (
     <>
     {/* <!-- Google tag (gtag.js) --> */}
-    <Script async src={`https://www.googletagmanager.com/gtag/js?id=${process.env.GA_MEASUREMENT_ID}`} />
-        <Script dangerouslySetInnerHTML={{
-          __html: `
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', '${process.env.GA_MEASUREMENT_ID}',{
-    page_path: window.location.pathname,
-  });
-  `,
-        }}
+<Script
+          strategy="lazyOnload"
+          src={`https://www.googletagmanager.com/gtag/js?id=G-K80QDVRL35`}
         />
+        <Script strategy="lazyOnload">
+          {`
+                    window.dataLayer = window.dataLayer || [];
+                    function gtag(){dataLayer.push(arguments);}
+                    gtag('js', new Date());
+                    gtag('config', 'G-K80QDVRL35', {
+                    page_path: window.location.pathname,
+                    });
+                `}
+        </Script>
     <Layout>
       <Component {...pageProps} />
     </Layout>
