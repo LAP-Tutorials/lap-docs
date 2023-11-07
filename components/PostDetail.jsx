@@ -95,6 +95,7 @@ const PostDetail = ({ post }) => {
                                 className="rounded-lg shadow-lg mb-8 mt-4"
                                 src={src}
                                 alt={alt}
+                                loading='lazy'
                             />
                         ),
                         ul: ({ children }) => (
