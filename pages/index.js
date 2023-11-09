@@ -11,7 +11,7 @@ export default function Home({ posts }) {
       <Head>
         <title>LAP Docs</title>
         <meta charSet="utf-8" />
-        <meta name="language" content="ES" />
+        <meta name="language" content="en" />
         <meta name="robots" content="index,follow" />
         <meta name="author" content="Llewellyn Paintsil" />
         <meta name="keywords" content="LAP, youtube, LAP - Tutorials, lap, LAP Tutorials, technology, software, tutorials, lessons, educational, free tech tutorials,news, cool, simple, easy, easy tutorials, technology, information technology, technology definition, technology articles, technology blogs, YouTube" />
