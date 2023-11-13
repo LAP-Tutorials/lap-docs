@@ -68,8 +68,7 @@ const PostDetail = ({ post }) => {
                             </h6>
                         ),
 
-                        // Styles
-                        bold: ({ children }) => <b>{children}</b>,
+                        // Style
                         italic: ({ children }) => <em>{children}</em>,
                         underline: ({ children }) => <u>{children}</u>,
 
