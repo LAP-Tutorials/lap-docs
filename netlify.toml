@@ -1,11 +1,13 @@
 [build]
   command = "npm run build"
-  publish = ".next/server/pages"
+  publish = ".next/static"
+  functions = ".next/server"
 
 [[plugins]]
-  package = "@netlify/plugin-nextjs"
+  package = "@netlify/plugin-nextjs@4.0.0"  # Specify latest version
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  force = true

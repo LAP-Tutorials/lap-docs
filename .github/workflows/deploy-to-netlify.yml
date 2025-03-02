@@ -1,4 +1,4 @@
-name: Deploy to Netlify
+name: Deploy Next.js App Router to Netlify
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: 'npm'
 
       - name: Install dependencies
@@ -23,17 +23,18 @@ jobs:
 
       - name: Build project
         run: npm run build
-
+       
       - name: Deploy to Netlify
         uses: netlify/actions/cli@master
         with:
-          args: deploy --prod --dir=.next/static --functions=.next/server --prod
+          args: deploy --prod --dir=.next/static --functions=.next/server
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
+      # Optional: If you need build artifacts for debugging
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # Updated to v4
         with:
           name: next-build
           path: |
