@@ -1,15 +1,14 @@
 [
   {
     "id": 1,
-    "author": "Jakob Gr\u00F8nberg",
-    "job": "Artist",
-    "city": "Berlin",
+    "author": "Llewellyn Paintsil",
+    "job": "Developer",
+    "city": "Kumasi",
     "avatar": "/images/authors/jakob-gr\u00F8nberg.jpg",
     "imgAlt": "A black and white headshot of a man in his late thirties smiling at the camera with combed over hair and stubble",
     "slug": "jakob-gr\u00F8nberg",
     "biography": {
-      "summary": "Jakob Grønberg is a distinguished writer and co-founder of the fictional magazine, Fyrre, based in Berlin. Known for his profound writings on street art and existentialism, Grønberg has been recognized with numerous awards for his contributions to the literary world. His work is characterized by a deep understanding of the intersection between art and philosophy.",
-      "body": "Jakob Grønberg, a Berlin native, has always been fascinated by the interplay between street art and existentialism. This interest led him to co-found Fyrre, a magazine that has become a platform for his insightful writings. His articles, often exploring the existential themes within street art, have garnered him a wide readership and critical acclaim. Grønberg's work extends beyond Fyrre. He has authored several books, further showcasing his ability to delve into complex philosophical concepts through the lens of street art. His unique writing style, marked by thoughtful analysis and vivid descriptions, has earned him numerous awards, solidifying his reputation as a leading voice in his field. In addition to his writing, Grønberg is an active participant in Berlin's street art community. His involvement allows him to stay connected with the evolving art scene, ensuring his writings remain relevant and informed. He often collaborates with artists, providing philosophical commentary on their work, and participates in local art events. Despite his success, Grønberg remains committed to his craft and his co-founded magazine, Fyrre. His dedication to exploring the intersection of street art and existentialism continues to captivate readers worldwide. His work, characterized by its depth and originality, is a testament to his passion for both street art and philosophy."
+      "summary": "I'm me and that's all I can be."
     },
     "articles": [
       {

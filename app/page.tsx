@@ -31,17 +31,17 @@ export default function Home() {
 
       <LatestArticles />
 
-      <Subheading
+      {/* <Subheading
         className="text-subheading"
         url="/podcasts"
         linkText="All episodes"
       >
         Podcast
-      </Subheading>
-
+      </Subheading> */}
+{/* 
       <Suspense fallback={<LatestPodcastsLoading />}>
         <LatestPodcasts />
-      </Suspense>
+      </Suspense> */}
 
       <Subheading
         className="text-subheading"
