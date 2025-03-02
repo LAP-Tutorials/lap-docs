@@ -1,31 +1,49 @@
-import { ArticleType, getArticles } from "@/app/functions/getArticles";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import PostNavigation from "@/components/PostNavigation";
 import SocialSharing from "@/components/SocialSharing";
 import Subheading from "@/components/Subheading";
 import Link from "next/link";
+
+interface Article {
+  id: string;
+  title: string;
+  slug: string;
+  content: any[];
+  date: Date;
+  read: string;
+  label: string;
+  img: string;
+  imgAlt: string;
+  description: string;
+  authorUID: string;
+  authorName?: string;
+  authorAvatar?: string;
+}
 
 export async function generateMetadata({
   params,
 }: {
   params: { title: string };
 }) {
-  const articles: ArticleType[] = await getArticles();
+  try {
+    const articlesRef = collection(db, "articles");
+    const q = query(articlesRef, where("slug", "==", params.title));
+    const snapshot = await getDocs(q);
 
-  const articleData = articles.find((article) =>
-    article.articles.find((articleItem) => articleItem.slug === params.title)
-  );
+    if (snapshot.empty) {
+      return { title: "Article Not Found | Fyrre Magazine" };
+    }
 
-  if (!articleData) {
-    return <p>Article not found</p>;
+    const articleData = snapshot.docs[0].data();
+    return {
+      title: `${articleData.title} | Fyrre Magazine`,
+    };
+  } catch (error) {
+    return {
+      title: "Error Loading Article | Fyrre Magazine",
+    };
   }
-
-  const matchingArticle = articleData.articles.find(
-    (articleItem) => articleItem.slug === params.title
-  );
-
-  return {
-    title: `${matchingArticle?.title} | Fyrre Magazine`,
-  };
 }
 
 export default async function ArticleDetails({
@@ -34,95 +52,138 @@ export default async function ArticleDetails({
   params: { title: string };
 }) {
   try {
-    const articles: ArticleType[] = await getArticles();
-
-    const articleData = articles.find((article) =>
-      article.articles.find((articleItem) => articleItem.slug === params.title)
+    // Get main article
+    const articlesRef = collection(db, "articles");
+    const articleQuery = query(
+      articlesRef,
+      where("slug", "==", params.title)
     );
+    const articleSnapshot = await getDocs(articleQuery);
 
-    if (!articleData) {
-      return <p>Article not found</p>;
-    }
-
-    const matchingArticle = articleData.articles.find(
-      (articleItem) => articleItem.slug === params.title
-    );
-
-    const latestArticles = articles
-      .flatMap((articleData) => articleData.articles)
-      .sort((a, b) => {
-        const dateA = new Date(a.date).getTime();
-        const dateB = new Date(b.date).getTime();
-        return dateB - dateA;
-      })
-      .slice(0, 3);
-
-    if (!matchingArticle) {
+    if (articleSnapshot.empty) {
       return (
         <main className="max-w-[95rem] w-full mx-auto px-4 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
-          <p>Article not found</p>;
+          <p>Article not found</p>
         </main>
       );
     }
 
+    const articleDoc = articleSnapshot.docs[0];
+    const articleData = articleDoc.data();
+
+    // Get author data
+    const authorSnapshot = await getDocs(
+      query(
+        collection(db, "authors"),
+        where("uid", "==", articleData.authorUID)
+      )
+    );
+    
+    const authorData = authorSnapshot.docs[0]?.data() || {};
+
+    // Process article content
+    const processedArticle: Article = {
+      id: articleDoc.id,
+      ...articleData,
+      date: articleData.date?.toDate(),
+      authorName: authorData.name || "Unknown Author",
+      authorAvatar: authorData.avatar || "/default-avatar.png",
+      content: articleData.content.map(contentItem => ({
+        ...contentItem,
+        ...(contentItem.date && { date: contentItem.date.toDate() })
+      }))
+    };
+
+    // Get latest articles (excluding current)
+    const latestSnapshot = await getDocs(
+      query(
+        collection(db, "articles"),
+        orderBy("date", "desc"),
+        limit(4)
+      )
+    );
+
+    const latestArticles = latestSnapshot.docs
+      .map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          date: data.date?.toDate(),
+          authorName: data.authorName || "Unknown Author",
+        };
+      })
+      .filter(article => article.id !== processedArticle.id)
+      .slice(0, 3);
+
     return (
       <main className="max-w-[95rem] w-full mx-auto px-4 md:pt-8 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
-        <PostNavigation href="/magazine">Magazine</PostNavigation>
+        <PostNavigation href="/magazine">POSTS</PostNavigation>
+
         <article className="grid md:grid-cols-2 gap-6 md:gap-6 pb-6 md:pb-24">
-          <h2 className="text-subtitle">{matchingArticle.title}</h2>
-          <p>{matchingArticle.description}</p>
+          <h2 className="text-subtitle">{processedArticle.title}</h2>
+          <p>{processedArticle.description}</p>
         </article>
+
         <div className="flex flex-col md:flex-row justify-between gap-6 md:gap-0 mb-8">
           <div className="flex flex-col sm:flex-row md:items-center gap-2 sm:gap-6">
             <span className="flex flex-wrap">
-              <p className="font-semibold pr-2">Text</p>
-              <p>{articleData.author}</p>
+              <p className="font-semibold pr-2">Author:</p>
+              <p>{processedArticle.authorName}</p>
             </span>
             <span className="flex flex-wrap">
-              <p className="font-semibold pr-2">Date</p>
-              <time dateTime={matchingArticle.date}>
-                {matchingArticle.date}
+              <p className="font-semibold pr-2">Date:</p>
+              <time dateTime={processedArticle.date.toISOString()}>
+                {processedArticle.date.toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
               </time>
             </span>
             <span className="flex flex-wrap">
-              <p className="font-semibold pr-2">Read</p>
-              <p>{matchingArticle.read}</p>
+              <p className="font-semibold pr-2">Read:</p>
+              <p>{processedArticle.read}</p>
             </span>
           </div>
-          <span className="px-3 py-2 border border-black rounded-full w-fit">
-            <p className="uppercase">{matchingArticle.label}</p>
+          <span className="px-3 py-2 border border-black rounded-full w-fit h-fit">
+            <p className="uppercase">{processedArticle.label}</p>
           </span>
         </div>
 
         <div>
           <img
-            src={matchingArticle.content[0].img}
-            alt={matchingArticle.imgAlt}
+            src={processedArticle.content[0].img}
+            alt={processedArticle.imgAlt}
+            className="w-full h-auto"
           />
         </div>
 
         <article className="flex flex-col md:flex-row gap-6 md:gap-16 max-w-[62.5rem] w-full mx-auto mt-6 md:mt-24">
-          {/*  <h2 className="sr-only">{matchingArticle.title}</h2> */}
           <div className="flex flex-col w-fit">
             <div className="flex gap-4 items-center">
               <img
-                className="w-[5rem] h-[5rem]"
-                src={articleData.avatar}
-                alt={articleData.imgAlt}
+                className="w-[5rem] h-[5rem] rounded-full object-cover"
+                src={processedArticle.authorAvatar}
+                alt={authorData.imgAlt || "Author avatar"}
               />
-              <p className="text-[2rem] font-semibold">{articleData.author}</p>
+              <p className="text-[2rem] font-semibold">{processedArticle.authorName}</p>
             </div>
 
             <div className="flex flex-col gap-4 pt-8">
               <div className="flex flex-wrap justify-between">
                 <p className="font-semibold">Date</p>
-                <time dateTime={matchingArticle.date}>
-                  {matchingArticle.date}
+                <time dateTime={processedArticle.date.toISOString()}>
+                  {processedArticle.date.toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
                 </time>
               </div>
               <div className="flex flex-wrap justify-between">
                 <p className="font-semibold">Read</p>
-                <p>{matchingArticle.read}</p>
+                <p>{processedArticle.read}</p>
               </div>
               <div className="flex flex-wrap justify-between">
                 <p className="flex font-semibold">Share</p>
@@ -130,42 +191,56 @@ export default async function ArticleDetails({
                   links={[
                     {
                       href: "#",
-                      ariaLabel: "Visit our Instagram page",
+                      ariaLabel: "Share on Instagram",
                       src: "/icons/ri_instagram-line.svg",
-                      alt: "Instagram logo",
+                      alt: "Instagram",
                     },
                     {
                       href: "#",
-                      ariaLabel: "Visit our Twitter page",
+                      ariaLabel: "Share on Twitter",
                       src: "/icons/ri_twitter-fill.svg",
-                      alt: "Twitter logo",
+                      alt: "Twitter",
                     },
                     {
                       href: "#",
-                      ariaLabel: "Visit our YouTube page",
+                      ariaLabel: "Share on YouTube",
                       src: "/icons/ri_youtube-fill.svg",
-                      alt: "YouTube logo",
+                      alt: "YouTube",
                     },
                   ]}
                 />
               </div>
             </div>
           </div>
+
           <div className="lg:w-3/4">
             <p className="text-xl font-medium">
-              {matchingArticle.content[0].summary}
+              {processedArticle.content[0].summary}
             </p>
-            <p className="my-6">{matchingArticle.content[1].section1}</p>
-            <div className="border-t-2 border-b-2 border-black my-6 py-12">
-              <p className="text-blog-quote mb-6">
-                &ldquo;{matchingArticle.content[2].quote[0]}
+            <p className="my-6 whitespace-pre-line">
+              {processedArticle.content[1]?.section1}
+            </p>
+            
+            {processedArticle.content[2]?.quote && (
+              <div className="border-t-2 border-b-2 border-black my-6 py-12">
+                <p className="text-blog-quote mb-6">
+                  &ldquo;{processedArticle.content[2].quote[0]}
+                </p>
+                <p>{processedArticle.content[2].quote[1]}</p>
+              </div>
+            )}
+
+            {processedArticle.content[3]?.summary2 && (
+              <p className="text-xl font-medium mb-6">
+                {processedArticle.content[3].summary2}
               </p>
-              <p>{matchingArticle.content[2].quote[1]}</p>
-            </div>
-            <p className="text-xl font-medium mb-6">
-              {matchingArticle.content[3].summary2}
-            </p>
-            <p>{matchingArticle.content[4].section2}</p>
+            )}
+
+            {processedArticle.content[4]?.section2 && (
+              <p className="whitespace-pre-line">
+                {processedArticle.content[4].section2}
+              </p>
+            )}
           </div>
         </article>
 
@@ -177,47 +252,46 @@ export default async function ArticleDetails({
           >
             Latest Posts
           </Subheading>
-          {latestArticles.map((latestArticles) => (
-            <div key={latestArticles.slug}>
-              <p></p>
-            </div>
-          ))}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border border-black border-collapse mb-12 md:mb-48">
-            {latestArticles.map((latestArticle) => (
+            {latestArticles.map((article) => (
               <article
                 className="border border-black p-8"
-                key={latestArticle.slug}
+                key={article.id}
               >
                 <div className="flex items-center justify-between">
-                  <time dateTime={latestArticle.date}>
-                    {latestArticle.date}
+                  <time dateTime={article.date.toISOString()}>
+                    {article.date.toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
                   </time>
                   <span className="px-3 py-2 border border-black rounded-full">
-                    <p className="uppercase">{latestArticle.label}</p>
+                    <p className="uppercase">{article.label}</p>
                   </span>
                 </div>
-                <Link href={`/magazine/${latestArticle.slug}`}>
+                <Link href={`/magazine/${article.slug}`}>
                   <img
-                    className="w-full my-8"
-                    src={latestArticle.img}
-                    alt={latestArticle.imgAlt}
+                    className="w-full my-8 hover:scale-105 transition-transform"
+                    src={article.img}
+                    alt={article.imgAlt}
                   />
                 </Link>
                 <h2 className="heading3-title mb-3">
-                  <Link href={`/magazine/${latestArticle.slug}`}>
-                    {latestArticle.title}
+                  <Link href={`/magazine/${article.slug}`}>
+                    {article.title}
                   </Link>
                 </h2>
-                <p className="mt-3 mb-12">{latestArticle.description}</p>
+                <p className="mt-3 mb-12">{article.description}</p>
                 <div className="flex flex-wrap gap-4">
                   <span className="flex">
-                    <p className="font-semibold pr-2">Text</p>
-                    <p>{articleData.author}</p>
+                    <p className="font-semibold pr-2">Author</p>
+                    <p>{article.authorName}</p>
                   </span>
                   <span className="flex">
                     <p className="font-semibold pr-2">Duration</p>
-                    <p>{latestArticle.read}</p>
+                    <p>{article.read}</p>
                   </span>
                 </div>
               </article>
@@ -228,6 +302,10 @@ export default async function ArticleDetails({
     );
   } catch (error) {
     console.error("Error fetching article details:", error);
-    return <p>Error fetching article details</p>;
+    return (
+      <main className="max-w-[95rem] w-full mx-auto px-4 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
+        <p>Error loading article details. Please try again later.</p>
+      </main>
+    );
   }
 }

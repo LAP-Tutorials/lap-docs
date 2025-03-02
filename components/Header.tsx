@@ -10,8 +10,8 @@ export default function Header() {
         <div className="flex flex-1">
           <Link href="/" aria-label="Return to homepage">
             <img
-              className="h-full w-fit"
-              src="/logos/FyrreMagazineLogo-Black.svg"
+              className="w-[8%]"
+              src="/logos/LAP-Logo-Transparent.png"
               alt="logo"
             />
           </Link>

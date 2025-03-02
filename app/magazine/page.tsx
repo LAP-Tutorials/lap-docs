@@ -16,7 +16,7 @@ export default function MagazinePage() {
         imgSrc="/images/titles/Magazine.svg"
         imgAlt="The word 'Magazine' in bold, uppercase lettering"
       >
-        Magazine
+        Posts
       </PageTitle>
       <Suspense fallback={<Loading />}>
         <Articles />
