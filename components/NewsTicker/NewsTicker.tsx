@@ -37,9 +37,9 @@ export default function NewsTicker() {
     <div className="flex bg-black text-white py-5 max-w-[95rem] w-full mx-auto relative overflow-hidden">
       <div className="bg-black z-10 px-6">
         <span className="flex gap-2 bg-black font-semibold uppercase whitespace-nowrap">
-          <p>News</p>
+          <p>UPDATES:</p>
           <p className="block sm:hidden">+++</p>
-          <p className="hidden sm:block">Ticker +++</p>
+          {/* <p className="hidden sm:block">Ticker +++</p> */}
         </span>
       </div>
       <div ref={newsText} className="flex gap-4 sliding-ticker relative">
@@ -51,7 +51,7 @@ export default function NewsTicker() {
             }`}
             style={{ right: index === news.length - 1 ? "0" : "" }}
           >
-            <p>{newsItem}+++</p>
+            <p>{newsItem} +++</p>
           </div>
         ))}
       </div>

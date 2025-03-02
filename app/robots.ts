@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://fyrre-magazine.vercel.app/sitemap.xml",
+    sitemap: "https://lap-docs.netlify.app/sitemap.xml",
   };
 }
