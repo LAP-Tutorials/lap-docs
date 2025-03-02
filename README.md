@@ -1,8 +1,10 @@
 <div align="center">
 
-<h1>Fyrre - Art & Life Magazine Website</h1>
+<h1>L.A.P Docs</h1>
 
 </div>
+
+[![Netlify Status](https://api.netlify.com/api/v1/badges/a5179b51-7789-4686-a2bc-6be496d01db4/deploy-status)](https://app.netlify.com/sites/lap-docs/deploys)
 
 A bold, striking arts and life magazine website build as an SPA from Figma templates (designed by Webflow designer <a target="_blank" rel="noopener noreferrer" href="https://www.figma.com/@pawelgola">Pawel Gola</a>), using Next.js, React Server Components, React Suspense, TypeScript, Tailwind, Shadcn and ES Lint and incorporates E2E testing using Playwright.
 

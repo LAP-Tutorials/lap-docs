@@ -7,7 +7,7 @@ import PodcastContextProvider from "@/context/PodcastContext";
 import ArticleContextProvider from "@/context/ArticleContext";
 
 export const metadata: Metadata = {
-  title: "Fyrre Magazine",
+  title: "L.A.P Docs",
   description: "Art & Life",
 };
 
