@@ -10,9 +10,9 @@ import NewsletterSignUp from "./NewsletterSignUp";
 export default function Footer() {
   return (
     <footer className="bg-black overflow-hidden">
-      <NewsletterTicker />
-      <div className="max-w-[95rem] mx-auto px-6">
-        <div className="py-8 xl:py-[128px] grid grid-cols-1 2xl:grid-cols-2 gap-2 md:gap-12 xl:gap-32 items-center">
+      {/* <NewsletterTicker /> */}
+      <div className="max-w-[95rem] mx-auto px-6 mt-10">
+        {/* <div className="py-8 xl:py-[128px] grid grid-cols-1 2xl:grid-cols-2 gap-2 md:gap-12 xl:gap-32 items-center">
           <h2 className="uppercase text-footer-title">
             Design news to your inbox
           </h2>
@@ -24,7 +24,7 @@ export default function Footer() {
               buttonClassName="bg-white text-black hover:text-white"
             />
           </div>
-        </div>
+        </div> */}
         <div className="flex flex-col md:flex-row flex-wrap lg:justify-between gap-6 max-w-[95rem] w-full">
           <svg
             width="209"
