@@ -41,7 +41,7 @@ const formatDate = (date: string | Timestamp) => {
   });
 };
 
-export default function LatestArticles() {
+export default function LatestPosts() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
 
