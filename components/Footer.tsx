@@ -1,16 +1,12 @@
 "use client";
 
-import NewsletterTicker from "./NewsletterTicker";
-import { Input } from "@/components/ui/input";
-import { Button } from "./ui/button";
 import Link from "next/link";
 import FooterSocialLinks from "./FooterSocialsLinks";
-import NewsletterSignUp from "./NewsletterSignUp";
 import Image from "next/image";
 
 export default function Footer() {
   return (
-    <footer className="bg-[#8a2be2] overflow-hidden">
+    <footer className="overflow-hidden border-t-4 border-[#8a2be2]">
       <div className="max-w-[95rem] mx-auto px-6 mt-11">
         <div className="flex flex-col md:flex-row flex-wrap lg:justify-between gap-6 max-w-[95rem] w-full">
           <Image

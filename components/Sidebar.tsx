@@ -2,25 +2,27 @@ import Image from "next/image";
 import NewsletterSignUp from "./NewsletterSignUp";
 import PopularArticles from "./PopularArticles";
 import { Button } from "./ui/button";
-import magazineCover from "@/public/images/homepage/magazine-cover.jpg";
+import magazineCover from "@/public/logos/LAP-Logo-Color.png";
 
 export default function Sidebar() {
+  const youtubeChannelUrl =
+    "https://www.youtube.com/@lap-tutorials?sub_confirmation=1";
+
   return (
     <aside>
-      <h3 className="uppercase font-semibold mb-2">Printmagazine</h3>
-      <p className="text-5xl font-semibold">03/2022</p>
+      <h3 className="uppercase font-semibold mb-2">Subscribe To</h3>
+      <p className="text-4xl font-semibold">L.A.P - Tutorials</p>
       <Image
         className="w-[20rem] pt-8 pb-4"
         src={magazineCover}
-        alt="A rust-colored magazine cover, showing a sculpture of a man, the words 'FYRRE MAGAZINE' on the top left and '03/2022' on the bottom right, a gold badge just above with 'EXCLUSIVE JAKOB GRONBERG INTERVIEW' printed on it, and an arrow pointing in the bottom right corner"
+        alt="A cool and simple logo of L.A.P - Tutorials"
       />
-      <Button>Order</Button>
+      <Button asChild className="hover:bg-[#8a2be2] transition ease-in-out duration-300">
+        <a href={youtubeChannelUrl} target="_blank" rel="noopener noreferrer">
+          Subscribe on YouTube
+        </a>
+      </Button>
       <PopularArticles />
-      <div className="bg-[#f8f8f8] p-[1.88rem] mt-16">
-        <h3 className="uppercase font-semibold mb-2">Newsletter</h3>
-        <p className="heading3-title mb-4">Design News to your Inbox</p>
-        <NewsletterSignUp />
-      </div>
     </aside>
   );
 }

@@ -1,4 +1,4 @@
-import SocialSharingFooter from "./SocialSharingFooter";
+import SocialSharing from "./SocialSharing";
 import {
   RiInstagramLine,
   RiTwitterFill,
@@ -11,7 +11,7 @@ import {
 export default function FooterSocialLinks() {
   return (
     <div className="flex gap-3">
-      <SocialSharingFooter
+      <SocialSharing
         links={[
           {
             href: "https://www.youtube.com/@lap-tutorials",
