@@ -6,7 +6,7 @@ type MenuItem = {
 const menu: MenuItem[] = [
   {
     href: "/magazine",
-    label: "Magazine",
+    label: "Posts",
   },
   // {
   //   href: "/podcasts",
@@ -14,7 +14,7 @@ const menu: MenuItem[] = [
   // },
   {
     href: "/authors",
-    label: "Authors",
+    label: "Team",
   },
 ];
 
