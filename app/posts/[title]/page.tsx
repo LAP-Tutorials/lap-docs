@@ -35,16 +35,16 @@ export async function generateMetadata({
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
-      return { title: "Article Not Found | Fyrre Magazine" };
+      return { title: "Article Not Found | L.A.P" };
     }
 
     const articleData = snapshot.docs[0].data();
     return {
-      title: `${articleData.title} | Fyrre Magazine`,
+      title: `${articleData.title} | L.A.P`,
     };
   } catch (error) {
     return {
-      title: "Error Loading Article | Fyrre Magazine",
+      title: "Error Loading Article | L.A.P",
     };
   }
 }
@@ -95,14 +95,7 @@ export default async function ArticleDetails({
         ...contentItem,
         ...(contentItem.date && { date: contentItem.date.toDate() })
       })),
-      title: "",
-      slug: "",
-      read: "",
-      label: "",
-      img: "",
-      imgAlt: "",
-      description: "",
-      authorUID: ""
+      authorUID: articleData.authorUID
     };
 
     // Get latest articles (excluding current)
@@ -136,7 +129,7 @@ export default async function ArticleDetails({
 
     return (
       <main className="max-w-[95rem] w-full mx-auto px-4 md:pt-8 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
-        <PostNavigation href="/magazine">POSTS</PostNavigation>
+        <PostNavigation href="/posts">POSTS</PostNavigation>
 
         <article className="grid md:grid-cols-2 gap-6 md:gap-6 pb-6 md:pb-24">
           <h2 className="text-subtitle">{processedArticle.title}</h2>
@@ -164,7 +157,7 @@ export default async function ArticleDetails({
               <p>{processedArticle.read}</p>
             </span>
           </div>
-          <span className="px-3 py-2 border border-black rounded-full w-fit h-fit">
+          <span className="px-3 py-2 border border-white rounded-full w-fit h-fit">
             <p className="uppercase">{processedArticle.label}</p>
           </span>
         </div>
@@ -177,7 +170,7 @@ export default async function ArticleDetails({
           />
         </div>
 
-        <article className="flex flex-col md:flex-row gap-6 md:gap-16 max-w-[62.5rem] w-full mx-auto mt-6 md:mt-24">
+        <article className="flex flex-col md:flex-row gap-6 md:gap-16 max-w-[62.5rem] w-full mx-auto mt-6 md:mt-24 mb-10">
           <div className="flex flex-col w-fit">
             <div className="flex gap-4 items-center">
               <img
@@ -203,7 +196,7 @@ export default async function ArticleDetails({
                 <p className="font-semibold">Read</p>
                 <p>{processedArticle.read}</p>
               </div>
-              <div className="flex flex-wrap justify-between">
+              {/* <div className="flex flex-wrap justify-between">
                 <p className="flex font-semibold">Share</p>
                 <SocialSharing
                                 links={[
@@ -239,7 +232,7 @@ export default async function ArticleDetails({
                                   },
                                 ]}
                               />
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -277,16 +270,16 @@ export default async function ArticleDetails({
         <div>
           <Subheading
             className="text-subheading"
-            url="/magazine"
+            url="/posts"
             linkText="See all"
           >
             Latest Posts
           </Subheading>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border border-black border-collapse mb-12 md:mb-48">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border border-white border-collapse mb-12 md:mb-48">
             {latestArticles.map((article) => (
               <article
-                className="border border-black p-8"
+                className="border border-white p-8"
                 key={article.id}
               >
                 <div className="flex items-center justify-between">
@@ -297,11 +290,11 @@ export default async function ArticleDetails({
                       day: "numeric",
                     })}
                   </time>
-                  <span className="px-3 py-2 border border-black rounded-full">
+                  <span className="px-3 py-2 border border-white rounded-full">
                     <p className="uppercase">{article.label}</p>
                   </span>
                 </div>
-                <Link href={`/magazine/${article.slug}`}>
+                <Link href={`/posts/${article.slug}`}>
                   <img
                     className="w-full my-8 hover:scale-105 transition-transform"
                     src={article.img}
@@ -309,7 +302,7 @@ export default async function ArticleDetails({
                   />
                 </Link>
                 <h2 className="heading3-title mb-3">
-                  <Link href={`/magazine/${article.slug}`}>
+                  <Link href={`/posts/${article.slug}`}>
                     {article.title}
                   </Link>
                 </h2>

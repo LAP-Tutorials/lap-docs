@@ -2,7 +2,7 @@ import PageTitle from "@/components/PageTitle";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Page not found | Fyrre Magazine",
+  title: "Page not found | L.A.P",
   description: "Page does not exist",
 };
 

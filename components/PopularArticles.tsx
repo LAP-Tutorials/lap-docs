@@ -47,7 +47,7 @@ export default function PopularArticles() {
             <p className="text-2xl font-semibold">{`0${index + 1}`}</p>
             <article className="flex flex-col gap-4">
               <h3 className="text-2xl font-semibold">
-                <Link href={`/magazine/${article.slug}`}>{article.title}</Link>
+                <Link href={`/posts/${article.slug}`}>{article.title}</Link>
               </h3>
               <span className="flex gap-2">
                 <p className="font-semibold">Author:</p>
