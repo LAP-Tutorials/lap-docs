@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RiArrowRightLine } from "react-icons/ri"; // Import React Icon
 
 type SubheadingProps = {
   children: React.ReactNode;
@@ -27,11 +28,8 @@ export default function Subheading({
         <p className="uppercase font-semibold text-lg hidden sm:block md:text-[2rem]">
           {linkText}
         </p>
-        <img
-          className="w-fit h-fit"
-          src="/icons/ri_arrow-right-line.svg"
-          alt="A right black arrow"
-        />
+        {/* Replace <img> with React Icon */}
+        <RiArrowRightLine className="text-3xl sm:text-4xl" />
       </Link>
     </div>
   );

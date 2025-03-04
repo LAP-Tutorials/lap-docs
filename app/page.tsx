@@ -1,5 +1,5 @@
 import Authors from "@/components/Authors/Authors";
-import LatestArticles from "@/components/LatestPosts/LatestPosts";
+import LatestPosts from "@/components/LatestPosts/LatestPosts";
 import NewsLoading from "@/components/NewsTicker/loading";
 import AuthorsLoading from "@/components/Authors/loading";
 import NewsTicker from "@/components/NewsTicker/NewsTicker";
@@ -27,26 +27,14 @@ export default function Home() {
         <NewsTicker />
       </Suspense>
 
-      <LatestArticles />
-
-      {/* <Subheading
-        className="text-subheading"
-        url="/podcasts"
-        linkText="All episodes"
-      >
-        Podcast
-      </Subheading> */}
-{/* 
-      <Suspense fallback={<LatestPodcastsLoading />}>
-        <LatestPodcasts />
-      </Suspense> */}
+      <LatestPosts />
 
       <Subheading
         className="text-subheading"
         url="/authors"
-        linkText="All authors"
+        linkText="Full Team"
       >
-        Authors
+        Team
       </Subheading>
 
       <Suspense fallback={<AuthorsLoading />}>
