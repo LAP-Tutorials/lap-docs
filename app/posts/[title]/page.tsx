@@ -165,6 +165,7 @@ export default async function ArticleDetails({
         <div>
           <img
             src={processedArticle.content[0].img}
+            // src={processedArticle.img} - replace it once you are done with the CMS
             alt={processedArticle.imgAlt}
             className="w-full h-auto"
           />

@@ -90,7 +90,7 @@ export default function LatestPosts() {
         <article className="flex flex-col-reverse sm:flex-col gap-6 md:gap-12">
           <article className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
             <h2 className="text-subtitle">
-              <Link href={`/magazine/${latestArticle.slug}`}>
+              <Link href={`/posts/${latestArticle.slug}`}>
                 {latestArticle.title}
               </Link>
             </h2>
@@ -137,7 +137,7 @@ export default function LatestPosts() {
           {remainingArticles.map((article, index) => (
             <article key={article.id}>
               <article className="grid md:grid-cols-[0fr_1fr] gap-6 sm:gap-12">
-                <Link href={`/magazine/${article.slug}`} className="h-60 w-60">
+                <Link href={`/posts/${article.slug}`} className="h-60 w-60">
                   <Image
                     className="w-full h-full object-cover hover:scale-105 transition"
                     src={article.img}
@@ -149,7 +149,7 @@ export default function LatestPosts() {
                 <article className="flex flex-col justify-between">
                   <div className="mb-4 :md:mb-0">
                     <h3 className="heading3-title mb-3">
-                      <Link href={`/magazine/${article.slug}`}>
+                      <Link href={`/posts/${article.slug}`}>
                         {article.title}
                       </Link>
                     </h3>
