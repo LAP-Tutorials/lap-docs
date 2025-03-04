@@ -95,8 +95,8 @@ export default function Articles() {
         <div className="flex flex-wrap gap-2">
           {labels.map((label, index) => (
             <Button
-              className={`px-3 py-2 bg-white text-black hover:bg-black hover:text-white border border-black rounded-full ${
-                label === selectedLabel ? "bg-black text-white" : "border-black"
+              className={`px-3 py-2 bg-[#121212] text-white hover:bg-white hover:text-black border border-white rounded-full transition ease-in-out duration-300 ${
+                label === selectedLabel ? "bg-white text-black" : "border-white"
               }`}
               key={index}
               onClick={() => setSelectedLabel(label)}
@@ -107,12 +107,12 @@ export default function Articles() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border border-black border-collapse mb-48">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border-collapse mb-48">
         {filteredArticles.map((article) => (
-          <article className="border border-black p-8" key={article.id}>
+          <article className="border border-white p-8" key={article.id}>
             <div className="flex items-center justify-between">
               <time dateTime={article.date}>{article.date}</time>
-              <span className="px-3 py-2 border border-black rounded-full">
+              <span className="px-3 py-2 border border-white rounded-full">
                 <p className="uppercase">{article.label}</p>
               </span>
             </div>
