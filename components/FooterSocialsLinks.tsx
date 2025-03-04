@@ -1,47 +1,50 @@
-import Link from "next/link";
-
-type SocialMediaLink = {
-  href: string;
-  ariaLabel: string;
-  src: string;
-  alt: string;
-};
-
-const FooterSocialMediaLinks: SocialMediaLink[] = [
-  {
-    href: "#",
-    ariaLabel: "Visit our Instagram page",
-    src: "/icons/ri_instagram-line-white.svg",
-    alt: "Instagram logo",
-  },
-  {
-    href: "#",
-    ariaLabel: "Visit our Twitter page",
-    src: "/icons/ri_twitter-fill-white.svg",
-    alt: "Twitter logo",
-  },
-  {
-    href: "#",
-    ariaLabel: "Visit our YouTube page",
-    src: "/icons/ri_youtube-fill-white.svg",
-    alt: "YouTube logo",
-  },
-  {
-    href: "#",
-    ariaLabel: "Visit our RSS Feed",
-    src: "/icons/ri_rss-fill-white.svg",
-    alt: "RSS Feed logo",
-  },
-];
+import SocialSharingFooter from "./SocialSharingFooter";
+import {
+  RiInstagramLine,
+  RiTwitterFill,
+  RiYoutubeFill,
+  RiGithubFill,
+  RiTiktokFill,
+  RiPatreonFill,
+} from "react-icons/ri";
 
 export default function FooterSocialLinks() {
   return (
     <div className="flex gap-3">
-      {FooterSocialMediaLinks.map((link, index) => (
-        <Link key={index} href={link.href} rel="noreferrer noopener">
-          <img className="h-full w-fit" src={link.src} alt={link.alt} />
-        </Link>
-      ))}
+      <SocialSharingFooter
+        links={[
+          {
+            href: "https://www.youtube.com/@lap-tutorials",
+            ariaLabel: "Visit our YouTube channel",
+            Icon: RiYoutubeFill,
+          },
+          {
+            href: "https://github.com/LAP-Tutorials",
+            ariaLabel: "Visit our GitHub page",
+            Icon: RiGithubFill,
+          },
+          {
+            href: "https://www.instagram.com/lap.mgmt.team/",
+            ariaLabel: "Visit our Instagram page",
+            Icon: RiInstagramLine,
+          },
+          {
+            href: "https://x.com/lap_mgmt",
+            ariaLabel: "Visit our X page",
+            Icon: RiTwitterFill,
+          },
+          {
+            href: "https://www.tiktok.com/@lap_mgmt",
+            ariaLabel: "Visit our TikTok page",
+            Icon: RiTiktokFill,
+          },
+          {
+            href: "http://patreon.com/lap_mgmt",
+            ariaLabel: "Visit our GitHub page",
+            Icon: RiPatreonFill,
+          },
+        ]}
+      />
     </div>
   );
 }
