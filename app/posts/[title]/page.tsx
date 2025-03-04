@@ -5,6 +5,9 @@ import SocialSharing from "@/components/SocialSharing";
 import Subheading from "@/components/Subheading";
 import Link from "next/link";
 
+import { RiInstagramLine, RiTwitterFill, RiYoutubeFill, RiGithubFill, RiTiktokFill, RiPatreonFill } from "react-icons/ri";
+
+
 interface Article {
   id: string;
   title: string;
@@ -91,7 +94,15 @@ export default async function ArticleDetails({
       content: articleData.content.map(contentItem => ({
         ...contentItem,
         ...(contentItem.date && { date: contentItem.date.toDate() })
-      }))
+      })),
+      title: "",
+      slug: "",
+      read: "",
+      label: "",
+      img: "",
+      imgAlt: "",
+      description: "",
+      authorUID: ""
     };
 
     // Get latest articles (excluding current)
@@ -111,6 +122,13 @@ export default async function ArticleDetails({
           ...data,
           date: data.date?.toDate(),
           authorName: data.authorName || "Unknown Author",
+          label: data.label || "No Label",
+          slug: data.slug,
+          img: data.img || "/default-image.png",
+          imgAlt: data.imgAlt || "Article image",
+          title: data.title || "Untitled",
+          description: data.description || "No description available",
+          read: data.read || "Unknown",
         };
       })
       .filter(article => article.id !== processedArticle.id)
@@ -188,27 +206,39 @@ export default async function ArticleDetails({
               <div className="flex flex-wrap justify-between">
                 <p className="flex font-semibold">Share</p>
                 <SocialSharing
-                  links={[
-                    {
-                      href: "#",
-                      ariaLabel: "Share on Instagram",
-                      src: "/icons/ri_instagram-line.svg",
-                      alt: "Instagram",
-                    },
-                    {
-                      href: "#",
-                      ariaLabel: "Share on Twitter",
-                      src: "/icons/ri_twitter-fill.svg",
-                      alt: "Twitter",
-                    },
-                    {
-                      href: "#",
-                      ariaLabel: "Share on YouTube",
-                      src: "/icons/ri_youtube-fill.svg",
-                      alt: "YouTube",
-                    },
-                  ]}
-                />
+                                links={[
+                                  {
+                                    href: "https://www.youtube.com/@lap-tutorials",
+                                    ariaLabel: "Visit our YouTube channel",
+                                    Icon: RiYoutubeFill,
+                                  },
+                                  {
+                                    href: "https://github.com/LAP-Tutorials",
+                                    ariaLabel: "Visit our GitHub page",
+                                    Icon: RiGithubFill,
+                                  },
+                                  {
+                                    href: "https://www.instagram.com/lap.mgmt.team/",
+                                    ariaLabel: "Visit our Instagram page",
+                                    Icon: RiInstagramLine,
+                                  },
+                                  {
+                                    href: "https://x.com/lap_mgmt",
+                                    ariaLabel: "Visit our X page",
+                                    Icon: RiTwitterFill,
+                                  },
+                                  {
+                                    href: "https://www.tiktok.com/@lap_mgmt",
+                                    ariaLabel: "Visit our TikTok page",
+                                    Icon: RiTiktokFill,
+                                  },
+                                  {
+                                    href: "http://patreon.com/lap_mgmt",
+                                    ariaLabel: "Visit our GitHub page",
+                                    Icon: RiPatreonFill,
+                                  },
+                                ]}
+                              />
               </div>
             </div>
           </div>

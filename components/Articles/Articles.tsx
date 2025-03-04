@@ -5,6 +5,7 @@ import { Button } from "../ui/button";
 import { useState, useEffect } from "react";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import Link from "next/link";
+import Loading from "./loading"
 
 interface Article {
   id: string;
@@ -53,6 +54,7 @@ export default function Articles() {
         const authorsSnapshot = await getDocs(collection(db, "authors"));
         const authors = authorsSnapshot.docs.map(doc => ({
           uid: doc.id,
+          name: doc.data().name,
           ...doc.data(),
         }));
 
@@ -83,7 +85,7 @@ export default function Articles() {
     : articles.filter(article => article.label === selectedLabel);
 
   if (loading) {
-    return <div className="text-center p-8">Loading articles...</div>;
+    return <Loading />;
   }
 
   return (
@@ -114,7 +116,7 @@ export default function Articles() {
                 <p className="uppercase">{article.label}</p>
               </span>
             </div>
-            <Link href={`magazine/${article.slug}`}>
+            <Link href={`posts/${article.slug}`}>
               <img
                 className="w-full my-8 hover:scale-105 transition"
                 src={article.img}
@@ -122,7 +124,7 @@ export default function Articles() {
               />
             </Link>
             <h2 className="heading3-title mb-3">
-              <Link href={`/magazine/${article.slug}`}>
+              <Link href={`/posts/${article.slug}`}>
                 {article.title}
               </Link>
             </h2>

@@ -3,9 +3,10 @@ import Loading from "@/components/Articles/loading";
 import PageTitle from "@/components/PageTitle";
 import { Suspense } from "react";
 
+
 export const metadata = {
-  title: "Articles  | Fyrre Magazine",
-  description: "Articles from our team of writers, editors and artists",
+  title: "Posts  | L.A.P",
+  description: "Posts from our dedicated team.",
 };
 
 export default function MagazinePage() {
