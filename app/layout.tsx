@@ -7,7 +7,7 @@ import ArticleContextProvider from "@/context/ArticleContext";
 
 export const metadata: Metadata = {
   title: "L.A.P Docs",
-  description: "Art & Life",
+  description: "Simplicity in Tech. L.A.P aims to make tech simple as possible for everyone.",
 };
 
 export default function RootLayout({
@@ -20,7 +20,7 @@ export default function RootLayout({
       <head>
         <link
           rel="icon"
-          href="/logos/FyrreMagazineFavicon.svg"
+          href="/logos/LAP-Logo-Color.png"
           type="image/x-icon"
         />
       </head>
