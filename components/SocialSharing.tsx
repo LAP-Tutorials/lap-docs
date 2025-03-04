@@ -1,10 +1,10 @@
+import { RiInstagramLine, RiTwitterFill, RiYoutubeFill, RiGithubFill } from "react-icons/ri";
 import Link from "next/link";
 
 export type SocialMediaLink = {
   href: string;
   ariaLabel: string;
-  src: string;
-  alt: string;
+  Icon: React.ElementType;
 };
 
 type SocialSharingProps = {
@@ -20,8 +20,9 @@ export default function SocialSharing({ links }: SocialSharingProps) {
           href={link.href}
           aria-label={link.ariaLabel}
           target="_blank"
+          className="text-white text-2xl hover:text-gray-400 transition"
         >
-          <img className="h-full w-fit" src={link.src} alt={link.alt} />
+          <link.Icon />
         </Link>
       ))}
     </div>

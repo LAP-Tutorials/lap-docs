@@ -2,6 +2,7 @@ import Link from "next/link";
 import menuLinks from "@/data/menu";
 import SocialSharing from "./SocialSharing";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import { RiInstagramLine, RiTwitterFill, RiYoutubeFill, RiGithubFill, RiTiktokFill, RiPatreonFill } from "react-icons/ri";
 
 export default function Header() {
   return (
@@ -30,9 +31,9 @@ export default function Header() {
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <rect width="25" height="4" fill="black" />
-              <rect y="6" width="25" height="4" fill="black" />
-              <rect y="12" width="25" height="4" fill="black" />
+              <rect width="25" height="4" fill="white" />
+              <rect y="6" width="25" height="4" fill="white" />
+              <rect y="12" width="25" height="4" fill="white" />
             </svg>
           </SheetTrigger>
           <SheetContent
@@ -56,21 +57,39 @@ export default function Header() {
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <rect width="15" height="1" fill="black" />
+                <rect width="15" height="1" fill="white" />
               </svg>
               <SocialSharing
                 links={[
                   {
-                    href: "#",
-                    ariaLabel: "Visit our Instagram page",
-                    src: "/icons/ri_instagram-line.svg",
-                    alt: "Instagram logo",
+                    href: "https://www.youtube.com/@lap-tutorials",
+                    ariaLabel: "Visit our YouTube channel",
+                    Icon: RiYoutubeFill,
                   },
                   {
-                    href: "#",
-                    ariaLabel: "Visit our Twitter page",
-                    src: "/icons/ri_twitter-fill.svg",
-                    alt: "Twitter logo",
+                    href: "https://github.com/LAP-Tutorials",
+                    ariaLabel: "Visit our GitHub page",
+                    Icon: RiGithubFill,
+                  },
+                  {
+                    href: "https://www.instagram.com/lap.mgmt.team/",
+                    ariaLabel: "Visit our Instagram page",
+                    Icon: RiInstagramLine,
+                  },
+                  {
+                    href: "https://x.com/lap_mgmt",
+                    ariaLabel: "Visit our X page",
+                    Icon: RiTwitterFill,
+                  },
+                  {
+                    href: "https://www.tiktok.com/@lap_mgmt",
+                    ariaLabel: "Visit our TikTok page",
+                    Icon: RiTiktokFill,
+                  },
+                  {
+                    href: "http://patreon.com/lap_mgmt",
+                    ariaLabel: "Visit our GitHub page",
+                    Icon: RiPatreonFill,
                   },
                 ]}
               />
@@ -93,39 +112,45 @@ export default function Header() {
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <rect width="15" height="1" fill="black" />
+            <rect width="15" height="1" fill="white" />
           </svg>
           <SocialSharing
             links={[
               {
-                href: "#",
+                href: "https://www.youtube.com/@lap-tutorials",
+                ariaLabel: "Visit our YouTube channel",
+                Icon: RiYoutubeFill,
+              },
+              {
+                href: "https://github.com/LAP-Tutorials",
+                ariaLabel: "Visit our GitHub page",
+                Icon: RiGithubFill,
+              },
+              {
+                href: "https://www.instagram.com/lap.mgmt.team/",
                 ariaLabel: "Visit our Instagram page",
-                src: "/icons/ri_instagram-line.svg",
-                alt: "Instagram logo",
+                Icon: RiInstagramLine,
               },
               {
-                href: "#",
-                ariaLabel: "Visit our Twitter page",
-                src: "/icons/ri_twitter-fill.svg",
-                alt: "Twitter logo",
+                href: "https://x.com/lap_mgmt",
+                ariaLabel: "Visit our X page",
+                Icon: RiTwitterFill,
               },
               {
-                href: "#",
-                ariaLabel: "Visit our YouTube page",
-                src: "/icons/ri_youtube-fill.svg",
-                alt: "YouTube logo",
+                href: "https://www.tiktok.com/@lap_mgmt",
+                ariaLabel: "Visit our TikTok page",
+                Icon: RiTiktokFill,
               },
               {
-                href: "#",
-                ariaLabel: "Visit our RSS feed",
-                src: "/icons/ri_rss-fill.svg",
-                alt: "RSS feed logo",
+                href: "http://patreon.com/lap_mgmt",
+                ariaLabel: "Visit our GitHub page",
+                Icon: RiPatreonFill,
               },
             ]}
           />
         </nav>
       </div>
-      <hr className="border-black border-t-0 border mt-4" />
+      <hr className="border-white border-t-0 border mt-4" />
     </header>
   );
 }
