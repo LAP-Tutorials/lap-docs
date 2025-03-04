@@ -101,7 +101,7 @@ export default function Header() {
           aria-labelledby="desktop-nav"
         >
           {menuLinks.map((menuItem, index) => (
-            <Link key={index} href={menuItem.href}>
+            <Link key={index} href={menuItem.href} className="hover:text-[#8a2be2] transition ease-in-out duration-300">
               {menuItem.label}
             </Link>
           ))}
