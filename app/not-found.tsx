@@ -15,11 +15,11 @@ export default function NotFound() {
           imgSrc="/images/titles/NotFound.svg"
           imgAlt="The words 'Not Found' in bold uppercase lettering"
         >
-          Not Found
+         404 - Page Not Found
         </PageTitle>
-        <h2>
+        <h2 className="text-center">
           The page you&apos;re looking for does not exist. Click{" "}
-          <Link className="font-semibold" href="/">
+          <Link className="font-semibold text-[#8a2be2]" href="/">
             here to return home
           </Link>
         </h2>

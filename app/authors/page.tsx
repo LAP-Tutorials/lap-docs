@@ -4,8 +4,8 @@ import { Suspense } from "react";
 import Loading from "./loading";
 
 export const metadata = {
-  title: "Authors  | Fyrre Magazine",
-  description: "Our authors",
+  title: "Team  | L.A.P",
+  description: "Our team",
 };
 
 export default function AuthorsPage() {
