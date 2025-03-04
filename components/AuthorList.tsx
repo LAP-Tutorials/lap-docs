@@ -54,6 +54,7 @@ export default function AuthorsList() {
             <article className="flex flex-col md:flex-row justify-between md:items-center gap-4 ml-5">
               <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-16">
                 {/* Ensure image has a transparent background */}
+                <Link href={`authors/${author.slug}`}>
                 <Image
                   className="h-[9.375rem] w-[9.375rem] object-cover rounded-full bg-transparent"
                   src={author.avatar}
@@ -61,6 +62,7 @@ export default function AuthorsList() {
                   width={150}
                   height={150}
                 />
+                </Link>
                 <Link href={`authors/${author.slug}`}>
                   <h2 className="text-2xl font-semibold">{author.name}</h2>
                 </Link>
