@@ -149,3 +149,19 @@
   src: url("/fonts/general-sans/GeneralSans-Semibold.woff2"), format("woff2");
   font-display: swap;
 }
+
+/* Text selection */
+::selection {
+  background: #892be280; 
+  color: white; 
+}
+
+::-moz-selection {
+  background: #8a2be280;
+  color: white;
+}
+
+*{
+  scrollbar-width: 4px;
+  scrollbar-color: #8a2be2 #121212;
+}
