@@ -4,9 +4,9 @@
 
 </div>
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/a5179b51-7789-4686-a2bc-6be496d01db4/deploy-status)](https://app.netlify.com/sites/lap-docs/deploys)
+<h3>Simplicity in tech.</h3>
 
-A bold, striking arts and life magazine website build as an SPA from Figma templates (designed by Webflow designer <a target="_blank" rel="noopener noreferrer" href="https://www.figma.com/@pawelgola">Pawel Gola</a>), using Next.js, React Server Components, React Suspense, TypeScript, Tailwind, Shadcn and ES Lint and incorporates E2E testing using Playwright.
+<!-- A bold, striking arts and life magazine website build as an SPA from Figma templates (designed by Webflow designer <a target="_blank" rel="noopener noreferrer" href="https://www.figma.com/@pawelgola">Pawel Gola</a>), using Next.js, React Server Components, React Suspense, TypeScript, Tailwind, Shadcn and ES Lint and incorporates E2E testing using Playwright.
 
 <strong>Features</strong>
 - Faithful adaptation to Figma designs
@@ -43,8 +43,8 @@ A bold, striking arts and life magazine website build as an SPA from Figma templ
 
 <strong>Links</strong>
 - <a target="_blank" rel="noopener noreferrer" href="https://fyrre-magazine.vercel.app/">Fyrre Magazine Site</a>
-- <a target="_blank" rel="noopener noreferrer" href="https://www.figma.com/community/file/1136023191939170511/fyrre-magazine-website-webflow-template">Fyrre Magazine Templates</a>
+- <a target="_blank" rel="noopener noreferrer" href="https://www.figma.com/community/file/1136023191939170511/fyrre-magazine-website-webflow-template">Fyrre Magazine Templates</a> -->
 
-<strong>Disclaimer</strong>
+<!-- <strong>Disclaimer</strong>
 
-As far as the developer is aware all the individuals mentioned in this website are purely fictionalized. Any resemblance to individuals or entities, living or dead, is entirely coincidental and the developer bears no responsibility for any such resemblance. 
+As far as the developer is aware all the individuals mentioned in this website are purely fictionalized. Any resemblance to individuals or entities, living or dead, is entirely coincidental and the developer bears no responsibility for any such resemblance.  -->
