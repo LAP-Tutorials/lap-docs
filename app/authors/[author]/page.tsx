@@ -13,6 +13,7 @@ import {
   RiFacebookFill,
   RiLinkedinFill,
   RiDiscordFill,
+  RiLink,
 } from "react-icons/ri";
 
 type AuthorData = {
@@ -115,6 +116,7 @@ const SOCIAL_ICONS: { [key: string]: any } = {
   facebook: RiFacebookFill,
   linkedin: RiLinkedinFill,
   discord: RiDiscordFill,
+  link: RiLink,
 };
 
 // **Async page component**
@@ -191,23 +193,23 @@ function AuthorArticles({ articles }: { articles: ArticleData[] }) {
   return (
     <div className="grid md:grid-cols-2">
       {articles.map((article) => (
-        <article className="flex items-center gap-2 md:gap-12 p-8 border border-white" key={article.uid}>
+        <article className="flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-12 p-8 border border-white" key={article.uid}>
           <Link href={`/posts/${article.slug}`} className="flex-shrink-0">
             <img
-              className="h-[150px] w-[150px] object-cover hover:scale-105 transition-transform"
+              className="h-[100px] w-[100px] sm:h-[150px] sm:w-[150px] object-cover hover:scale-105 transition-transform "
               src={article.img}
               alt={article.title}
             />
           </Link>
 
           <div>
-            <p className="heading3-title pb-4">
+            <p className="heading3-title pb-2 sm:pb-4">
               <Link href={`/posts/${article.slug}`} className="hover:text-white transition-colors">
                 {article.title}
               </Link>
             </p>
 
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-2 sm:gap-4">
               <div className="flex items-center">
                 <p className="font-semibold pr-2">Date:</p>
                 <time dateTime={article.date.toISOString()} className="text-white">
