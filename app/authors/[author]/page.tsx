@@ -36,6 +36,7 @@ type ArticleData = {
   label: string;
   slug: string;
   authorUID: string;
+  publish: boolean; // Added publish field
 };
 
 // Function to fetch author data
@@ -50,20 +51,53 @@ async function getAuthorData(slug: string) {
 
     const authorData = authorSnapshot.docs[0].data() as AuthorData;
 
-    const articlesQuery = query(
-      collection(db, "articles"),
-      where("authorUID", "==", authorData.uid),
-      orderBy("date", "desc")
-    );
-    const articlesSnapshot = await getDocs(articlesQuery);
+    // Approach 1: Try with composite index (if you've created it in Firebase console)
+    try {
+      const articlesQuery = query(
+        collection(db, "articles"),
+        where("authorUID", "==", authorData.uid),
+        where("publish", "==", true),
+        orderBy("date", "desc")
+      );
+      const articlesSnapshot = await getDocs(articlesQuery);
 
-    const articles = articlesSnapshot.docs.map((doc) => ({
-      uid: doc.id,
-      ...doc.data(),
-      date: doc.data().date?.toDate() || new Date(),
-    })) as ArticleData[];
+      const articles = articlesSnapshot.docs.map((doc) => ({
+        uid: doc.id,
+        ...doc.data(),
+        date: doc.data().date?.toDate() || new Date(),
+      })) as ArticleData[];
 
-    return { author: authorData, articles };
+      return { author: authorData, articles };
+    }
+    // Fallback approach if composite index isn't available
+    catch (error) {
+      console.log("Using fallback approach for querying articles:", error);
+
+      // First get all articles by this author
+      const articlesQuery = query(
+        collection(db, "articles"),
+        where("authorUID", "==", authorData.uid),
+        orderBy("date", "desc")
+      );
+      const articlesSnapshot = await getDocs(articlesQuery);
+
+      // Then filter for published articles client-side
+      const articles = articlesSnapshot.docs
+        .map((doc) => {
+          const data = doc.data();
+          return {
+            uid: doc.id,
+            ...data,
+            date: data.date && typeof data.date.toDate === 'function'
+              ? data.date.toDate()
+              : (data.date instanceof Date ? data.date : new Date()),
+            publish: data.publish ?? false
+          } as ArticleData;
+        })
+        .filter(article => article.publish === true);
+
+      return { author: authorData, articles };
+    }
   } catch (error) {
     console.error("Error fetching author details:", error);
     return null;
@@ -83,14 +117,10 @@ const SOCIAL_ICONS: { [key: string]: any } = {
   discord: RiDiscordFill,
 };
 
-// **Non-async page component**
-export default function Page({ params }: { params: { author: string } }) {
-  return <AuthorPage authorSlug={params.author} />;
-}
-
-// **Async server component**
-async function AuthorPage({ authorSlug }: { authorSlug: string }) {
-  const data = await getAuthorData(authorSlug);
+// **Async page component**
+export default async function Page({ params }: { params: Promise<{ author: string }> }) {
+  const { author } = await params; // Await the params object
+  const data = await getAuthorData(author);
 
   if (!data) {
     return <div className="p-8">Author not found</div>;
@@ -117,7 +147,7 @@ async function AuthorPage({ authorSlug }: { authorSlug: string }) {
         {/* **Author Profile Section** */}
         <div className="w-fit">
           <img
-            src={authorData.avatar}
+            src={authorData.avatar || "/default-avatar.png"}
             alt={authorData.imgAlt}
             className="w-full max-w-[300px] h-auto rounded-full"
           />
@@ -140,7 +170,7 @@ async function AuthorPage({ authorSlug }: { authorSlug: string }) {
       {/* **Author Articles** */}
       <div className="pb-12 md:pb-48">
         <h2 className="text-blog-subheading mt-[9.5rem] pt-12 pb-12 md:pb-24">
-          Articles by {authorData.name}
+          Posts by {authorData.name}
         </h2>
         <AuthorArticles articles={articles} />
       </div>
@@ -148,12 +178,12 @@ async function AuthorPage({ authorSlug }: { authorSlug: string }) {
   );
 }
 
-// **Component to Render Author’s Articles**
+// **Component to Render Author's Articles**
 function AuthorArticles({ articles }: { articles: ArticleData[] }) {
   if (articles.length === 0) {
     return (
       <div className="p-8 text-center">
-        <p>No articles found for this author</p>
+        <p className="font-medium">No Posts found for this author</p>
       </div>
     );
   }

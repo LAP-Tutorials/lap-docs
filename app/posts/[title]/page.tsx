@@ -1,18 +1,35 @@
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  limit,
+} from "firebase/firestore";
 import PostNavigation from "@/components/PostNavigation";
 import SocialSharing from "@/components/SocialSharing";
 import Subheading from "@/components/Subheading";
 import Link from "next/link";
+import ArticleContent from "@/components/ArticleContent";
+import AuthorCard from "@/components/AuthorCard";
 
-import { RiInstagramLine, RiTwitterFill, RiYoutubeFill, RiGithubFill, RiTiktokFill, RiPatreonFill } from "react-icons/ri";
+import {
+  RiInstagramLine,
+  RiTwitterFill,
+  RiYoutubeFill,
+  RiGithubFill,
+  RiTiktokFill,
+  RiPatreonFill,
+} from "react-icons/ri";
 
+import { marked } from "marked";
 
 interface Article {
   id: string;
   title: string;
   slug: string;
-  content: any[];
+  content: string;
   date: Date;
   read: string;
   label: string;
@@ -27,11 +44,12 @@ interface Article {
 export async function generateMetadata({
   params,
 }: {
-  params: { title: string };
+  params: Promise<{ title: string }>;
 }) {
+  const { title } = await params; // Await the params object
   try {
     const articlesRef = collection(db, "articles");
-    const q = query(articlesRef, where("slug", "==", params.title));
+    const q = query(articlesRef, where("slug", "==", title));
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
@@ -52,15 +70,13 @@ export async function generateMetadata({
 export default async function ArticleDetails({
   params,
 }: {
-  params: { title: string };
+  params: Promise<{ title: string }>;
 }) {
+  const { title } = await params; // Await the params object
   try {
     // Get main article
     const articlesRef = collection(db, "articles");
-    const articleQuery = query(
-      articlesRef,
-      where("slug", "==", params.title)
-    );
+    const articleQuery = query(articlesRef, where("slug", "==", title));
     const articleSnapshot = await getDocs(articleQuery);
 
     if (articleSnapshot.empty) {
@@ -81,34 +97,33 @@ export default async function ArticleDetails({
         where("uid", "==", articleData.authorUID)
       )
     );
-    
+
     const authorData = authorSnapshot.docs[0]?.data() || {};
 
     // Process article content
     const processedArticle: Article = {
       id: articleDoc.id,
-      ...articleData,
+      title: articleData.title,
+      slug: articleData.slug,
+      content: articleData.content,
       date: articleData.date?.toDate(),
+      read: articleData.read,
+      label: articleData.label,
+      img: articleData.img,
+      imgAlt: articleData.imgAlt,
+      description: articleData.description,
+      authorUID: articleData.authorUID,
       authorName: authorData.name || "Unknown Author",
       authorAvatar: authorData.avatar || "/default-avatar.png",
-      content: articleData.content.map(contentItem => ({
-        ...contentItem,
-        ...(contentItem.date && { date: contentItem.date.toDate() })
-      })),
-      authorUID: articleData.authorUID
     };
 
     // Get latest articles (excluding current)
     const latestSnapshot = await getDocs(
-      query(
-        collection(db, "articles"),
-        orderBy("date", "desc"),
-        limit(4)
-      )
+      query(collection(db, "articles"), orderBy("date", "desc"), limit(4))
     );
 
     const latestArticles = latestSnapshot.docs
-      .map(doc => {
+      .map((doc) => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -124,7 +139,7 @@ export default async function ArticleDetails({
           read: data.read || "Unknown",
         };
       })
-      .filter(article => article.id !== processedArticle.id)
+      .filter((article) => article.id !== processedArticle.id)
       .slice(0, 3);
 
     return (
@@ -164,109 +179,26 @@ export default async function ArticleDetails({
 
         <div>
           <img
-            src={processedArticle.content[0].img}
-            // src={processedArticle.img} - replace it once you are done with the CMS
+            src={processedArticle.img}
             alt={processedArticle.imgAlt}
             className="w-full h-auto"
           />
         </div>
 
-        <article className="flex flex-col md:flex-row gap-6 md:gap-16 max-w-[62.5rem] w-full mx-auto mt-6 md:mt-24 mb-10">
-          <div className="flex flex-col w-fit">
-            <div className="flex gap-4 items-center">
-              <img
-                className="w-[5rem] h-[5rem] rounded-full object-cover"
-                src={processedArticle.authorAvatar}
-                alt={authorData.imgAlt || "Author avatar"}
-              />
-              <p className="text-[2rem] font-semibold">{processedArticle.authorName}</p>
-            </div>
-
-            <div className="flex flex-col gap-4 pt-8">
-              <div className="flex flex-wrap justify-between">
-                <p className="font-semibold">Date</p>
-                <time dateTime={processedArticle.date.toISOString()}>
-                  {processedArticle.date.toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </time>
-              </div>
-              <div className="flex flex-wrap justify-between">
-                <p className="font-semibold">Read</p>
-                <p>{processedArticle.read}</p>
-              </div>
-              {/* <div className="flex flex-wrap justify-between">
-                <p className="flex font-semibold">Share</p>
-                <SocialSharing
-                                links={[
-                                  {
-                                    href: "https://www.youtube.com/@lap-tutorials",
-                                    ariaLabel: "Visit our YouTube channel",
-                                    Icon: RiYoutubeFill,
-                                  },
-                                  {
-                                    href: "https://github.com/LAP-Tutorials",
-                                    ariaLabel: "Visit our GitHub page",
-                                    Icon: RiGithubFill,
-                                  },
-                                  {
-                                    href: "https://www.instagram.com/lap.mgmt.team/",
-                                    ariaLabel: "Visit our Instagram page",
-                                    Icon: RiInstagramLine,
-                                  },
-                                  {
-                                    href: "https://x.com/lap_mgmt",
-                                    ariaLabel: "Visit our X page",
-                                    Icon: RiTwitterFill,
-                                  },
-                                  {
-                                    href: "https://www.tiktok.com/@lap_mgmt",
-                                    ariaLabel: "Visit our TikTok page",
-                                    Icon: RiTiktokFill,
-                                  },
-                                  {
-                                    href: "http://patreon.com/lap_mgmt",
-                                    ariaLabel: "Visit our GitHub page",
-                                    Icon: RiPatreonFill,
-                                  },
-                                ]}
-                              />
-              </div> */}
-            </div>
-          </div>
-
-          <div className="lg:w-3/4">
-            <p className="text-xl font-medium">
-              {processedArticle.content[0].summary}
-            </p>
-            <p className="my-6 whitespace-pre-line">
-              {processedArticle.content[1]?.section1}
-            </p>
-            
-            {processedArticle.content[2]?.quote && (
-              <div className="border-t-2 border-b-2 border-black my-6 py-12">
-                <p className="text-blog-quote mb-6">
-                  &ldquo;{processedArticle.content[2].quote[0]}
-                </p>
-                <p>{processedArticle.content[2].quote[1]}</p>
-              </div>
-            )}
-
-            {processedArticle.content[3]?.summary2 && (
-              <p className="text-xl font-medium mb-6">
-                {processedArticle.content[3].summary2}
-              </p>
-            )}
-
-            {processedArticle.content[4]?.section2 && (
-              <p className="whitespace-pre-line">
-                {processedArticle.content[4].section2}
-              </p>
-            )}
-          </div>
-        </article>
+        <div className="w">
+          <ArticleContent content={processedArticle.content} />
+        </div>
+        
+        <div className="pt-10 pb-20">
+          <Subheading
+            className="text-subheading"
+            url={`/authors/${authorData.slug}`}
+            linkText="Check out"
+          >
+            Author
+          </Subheading>
+          <AuthorCard authorData={authorData} />
+        </div>
 
         <div>
           <Subheading
@@ -279,10 +211,7 @@ export default async function ArticleDetails({
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border border-white border-collapse mb-12 md:mb-48">
             {latestArticles.map((article) => (
-              <article
-                className="border border-white p-8"
-                key={article.id}
-              >
+              <article className="border border-white p-8" key={article.id}>
                 <div className="flex items-center justify-between">
                   <time dateTime={article.date.toISOString()}>
                     {article.date.toLocaleDateString("en-US", {
@@ -303,9 +232,7 @@ export default async function ArticleDetails({
                   />
                 </Link>
                 <h2 className="heading3-title mb-3">
-                  <Link href={`/posts/${article.slug}`}>
-                    {article.title}
-                  </Link>
+                  <Link href={`/posts/${article.slug}`}>{article.title}</Link>
                 </h2>
                 <p className="mt-3 mb-12">{article.description}</p>
                 <div className="flex flex-wrap gap-4">

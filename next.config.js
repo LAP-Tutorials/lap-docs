@@ -1,11 +1,25 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    output: 'standalone', 
-    typescript: {
-        // Dangerously allow production builds to successfully complete even if
-        // your project has type errors.
-        ignoreBuildErrors: true,
+  output: "standalone",
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lap-docs.netlify.app",
+        port: "",
+        pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "raw.githubusercontent.com",
+        port: "",
+        pathname: "/**",
+      },
+    ],
+  },
 };
 
-module.exports = nextConfig
+module.exports = nextConfig;

@@ -57,7 +57,7 @@ export default function AuthorsList() {
                 <Link href={`authors/${author.slug}`}>
                 <Image
                   className="h-[9.375rem] w-[9.375rem] object-cover rounded-full bg-transparent"
-                  src={author.avatar}
+                  src={author.avatar || "/default-avatar.png"}
                   alt={author.imgAlt}
                   width={150}
                   height={150}
@@ -73,7 +73,7 @@ export default function AuthorsList() {
                   <p>{author.job}</p>
                 </div>
                 <div className="flex gap-2">
-                  <p className="font-semibold">City:</p>
+                  <p className="font-semibold">Country:</p>
                   <p>{author.city}</p>
                 </div>
                 <Link

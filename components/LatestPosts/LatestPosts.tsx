@@ -21,7 +21,7 @@ type Article = {
   label: string;
   img: string;
   imgAlt: string;
-  content: { img: string }[];
+  publish: boolean;
 };
 
 // Function to convert Firestore Timestamp or ISO string to a readable date
@@ -48,17 +48,20 @@ export default function LatestPosts() {
   // Fetch articles from Firestore in real-time
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "articles"), (snapshot) => {
-      const fetchedArticles: Article[] = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          date:
-            data.date instanceof Timestamp
-              ? data.date.toDate().toISOString()
-              : data.date,
-        } as Article;
-      });
+      const fetchedArticles: Article[] = snapshot.docs
+        .map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            date:
+              data.date instanceof Timestamp
+                ? data.date.toDate().toISOString()
+                : data.date,
+          } as Article;
+        })
+        // Only include published articles
+        .filter((article) => article.publish === true);
 
       // Sort articles by date (newest first)
       fetchedArticles.sort((a, b) => {
@@ -122,7 +125,8 @@ export default function LatestPosts() {
           <div>
             <Image
               className="w-full object-cover aspect-[9/6]"
-              src={latestArticle.content[0]?.img || "/fallback.jpg"}
+              // Use fallback image if latestArticle.img is empty
+              src={latestArticle.img || "/default-avatar.png"}
               alt={latestArticle.imgAlt || "Article image"}
               width={1488}
               height={992}
@@ -135,19 +139,19 @@ export default function LatestPosts() {
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-12 xl:gap-24">
         <div className="lg:w-3/4">
           {remainingArticles.map((article, index) => (
-            <article key={article.id}>
+            <article className="mb-6" key={article.id}>
               <article className="grid md:grid-cols-[0fr_1fr] gap-6 sm:gap-12">
                 <Link href={`/posts/${article.slug}`} className="h-60 w-60">
                   <Image
                     className="w-full h-full object-cover hover:scale-105 transition"
-                    src={article.img}
+                    src={article.img || "/default-avatar.png"}
                     alt={article.imgAlt}
                     width={240}
                     height={240}
                   />
                 </Link>
                 <article className="flex flex-col justify-between">
-                  <div className="mb-4 :md:mb-0">
+                  <div className="mb-4">
                     <h3 className="heading3-title mb-3">
                       <Link href={`/posts/${article.slug}`}>
                         {article.title}

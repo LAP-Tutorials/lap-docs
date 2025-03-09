@@ -5,7 +5,7 @@ import { Button } from "../ui/button";
 import { useState, useEffect } from "react";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import Link from "next/link";
-import Loading from "./loading"
+import Loading from "./loading";
 
 interface Article {
   id: string;
@@ -19,6 +19,7 @@ interface Article {
   read: string;
   authorUID: string;
   authorName?: string;
+  publish: boolean;
 }
 
 export default function Articles() {
@@ -30,25 +31,28 @@ export default function Articles() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch articles
+        // Fetch articles, ordered by date descending
         const articlesQuery = query(
           collection(db, "articles"),
           orderBy("date", "desc")
         );
         const articlesSnapshot = await getDocs(articlesQuery);
         
-        const articlesData = articlesSnapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            date: data.date?.toDate().toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            }) || 'No date'
-          } as Article;
-        });
+        const articlesData = articlesSnapshot.docs
+          .map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              ...data,
+              date: data.date?.toDate().toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              }) || "No date"
+            } as Article;
+          })
+          // Filter out articles that are not published
+          .filter(article => article.publish === true);
 
         // Fetch authors and map to articles
         const authorsSnapshot = await getDocs(collection(db, "authors"));
@@ -60,10 +64,12 @@ export default function Articles() {
 
         const articlesWithAuthors = articlesData.map(article => ({
           ...article,
-          authorName: authors.find(a => a.uid === article.authorUID)?.name || "Unknown Author"
+          authorName:
+            authors.find(a => a.uid === article.authorUID)?.name ||
+            "Unknown Author"
         }));
 
-        // Get unique labels
+        // Get unique labels from the published articles
         const uniqueLabels = Array.from(
           new Set(articlesData.map(article => article.label))
         );
@@ -80,9 +86,10 @@ export default function Articles() {
     fetchData();
   }, []);
 
-  const filteredArticles = selectedLabel === "All" 
-    ? articles 
-    : articles.filter(article => article.label === selectedLabel);
+  const filteredArticles =
+    selectedLabel === "All"
+      ? articles
+      : articles.filter(article => article.label === selectedLabel);
 
   if (loading) {
     return <Loading />;

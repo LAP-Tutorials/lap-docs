@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+  orderBy,
+  Timestamp,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Separator } from "@radix-ui/react-separator";
 import Link from "next/link";
@@ -13,24 +20,52 @@ type Article = {
   slug: string;
   authorName: string;
   popularity: boolean;
+  publish: boolean;
+  date: string | Timestamp;
+};
+
+// Helper function to convert Firestore Timestamp or ISO string to a readable date
+const formatDate = (date: string | Timestamp) => {
+  let parsedDate: Date;
+
+  if (date instanceof Timestamp) {
+    parsedDate = date.toDate(); // Convert Firestore Timestamp to JavaScript Date
+  } else {
+    parsedDate = new Date(date); // Convert ISO string to JavaScript Date
+  }
+
+  return parsedDate.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 };
 
 export default function PopularArticles() {
   const [popularArticles, setPopularArticles] = useState<Article[]>([]);
-  
+
   useEffect(() => {
-    // Firestore Query: Get popular articles sorted by popularity
+    // Query Firestore for articles that have popularity == true AND publish == true
+    // Then order by date descending (assuming 'date' is a valid field in the documents)
     const articlesQuery = query(
       collection(db, "articles"),
-      where("popularity", "==", true),  
-      orderBy("popularity", "asc")  
+      where("popularity", "==", true),
+      where("publish", "==", true),
+      orderBy("date", "desc")
     );
 
     const unsubscribe = onSnapshot(articlesQuery, (snapshot) => {
-      const articles: Article[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Article[];
+      const articles: Article[] = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          date:
+            data.date instanceof Timestamp
+              ? data.date
+              : data.date ?? new Date().toISOString(),
+        } as Article;
+      });
 
       setPopularArticles(articles);
     });
@@ -53,6 +88,7 @@ export default function PopularArticles() {
                 <p className="font-semibold">Author:</p>
                 <p>{article.authorName}</p>
               </span>
+             
             </article>
           </div>
           {index < popularArticles.length - 1 && (
