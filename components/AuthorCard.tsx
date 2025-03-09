@@ -58,7 +58,7 @@ function AuthorCard({ authorData }) {
               {socialLinks.map((link, index) => (
                 <Link
                   key={index}
-                  href={link.href}
+                  href={link.href as string}
                   target="_blank"
                   aria-label={link.ariaLabel}
                   className="text-white text-2xl hover:text-purple-500 transition ease-in-out duration-300"

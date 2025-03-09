@@ -74,7 +74,7 @@ export default function PopularArticles() {
   }, []);
 
   return (
-    <article>
+    <article className="mb-9">
       <h2 className="uppercase font-semibold mt-16 mb-8">Most Popular</h2>
       {popularArticles.map((article, index) => (
         <article key={article.id}>
