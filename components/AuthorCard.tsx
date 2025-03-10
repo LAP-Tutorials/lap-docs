@@ -41,11 +41,11 @@ function AuthorCard({ authorData }) {
     : [];
 
   return (
-    <div className="author-card text-white border border-white p-6 md:p-8">
+    <div className="author-card text-white border border-white p-6 md:p-8 md:w-[70%] mx-auto">
       <div className="flex flex-col items-center md:flex-row md:items-start">
-        <div className="avatar-container mb-4 md:mb-0 md:mr-10">
+        <div className="avatar-container mb-4 md:mb-0 md:mr-20">
           <Image
-            className="w-full max-w-[150px] h-auto rounded-full"
+            className="w-full max-w-[240px] h-auto rounded-full"
             src={authorData.avatar || "/default-avatar.png"}
             alt={authorData.imgAlt}
             width={150}
