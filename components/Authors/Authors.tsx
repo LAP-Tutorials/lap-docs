@@ -14,7 +14,7 @@ type AuthorType = {
   avatar: string;
   imgAlt: string;
   job: string;
-  city: string;
+  city: string; 
 };
 
 // Function to shuffle an array
