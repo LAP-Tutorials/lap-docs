@@ -10,6 +10,7 @@ import {
   RiFacebookFill,
   RiLinkedinFill,
   RiDiscordFill,
+  RiLink,
 } from "react-icons/ri";
 
 // Define the social icons mapping
@@ -23,6 +24,7 @@ const SOCIAL_ICONS = {
   facebook: RiFacebookFill,
   linkedin: RiLinkedinFill,
   discord: RiDiscordFill,
+  link: RiLink,
 };
 
 // AuthorCard component
