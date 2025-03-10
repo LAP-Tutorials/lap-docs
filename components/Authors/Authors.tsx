@@ -1,7 +1,10 @@
-import { collection, getDocs } from "firebase/firestore";
+"use client";
+
+import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 // Define the structure of an author
 type AuthorType = {
@@ -14,20 +17,6 @@ type AuthorType = {
   city: string;
 };
 
-// Function to fetch authors from Firestore
-const getAuthors = async (): Promise<AuthorType[]> => {
-  const authorsCollection = collection(db, "authors");
-  const authorsSnapshot = await getDocs(authorsCollection);
-
-  return authorsSnapshot.docs.map((doc) => {
-    const data = doc.data() as AuthorType;
-    return {
-      ...data,
-      id: doc.id,
-    };
-  });
-};
-
 // Function to shuffle an array
 const shuffleArray = (array: any[]) => {
   for (let i = array.length - 1; i > 0; i--) {
@@ -37,16 +26,34 @@ const shuffleArray = (array: any[]) => {
   return array;
 };
 
-export default async function Authors() {
-  const data: AuthorType[] = await getAuthors();
+export default function Authors() {
+  const [authors, setAuthors] = useState<AuthorType[]>([]);
 
-  // Shuffle the authors and select the first 4
-  const shuffledAuthors = shuffleArray(data);
-  const selectedAuthors = shuffledAuthors.slice(0, 4);
+  useEffect(() => {
+    const authorsCollection = collection(db, "authors");
+
+    // Set up the listener
+    const unsubscribe = onSnapshot(authorsCollection, (snapshot) => {
+      const data: AuthorType[] = snapshot.docs.map((doc) => {
+        const authorData = doc.data() as AuthorType;
+        return {
+          ...authorData,
+          id: doc.id,
+        };
+      });
+
+      // Shuffle the authors and select the first 4
+      const shuffledAuthors = shuffleArray(data);
+      setAuthors(shuffledAuthors.slice(0, 4));
+    });
+
+    // Cleanup the listener on unmount
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 mb-48 max-w-[95rem] w-full mx-auto">
-      {selectedAuthors.map((author) => (
+      {authors.map((author) => (
         <article
           className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 md:gap-12 p-4 md:p-8 border border-white"
           key={author.id}
