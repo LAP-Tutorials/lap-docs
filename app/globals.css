@@ -194,6 +194,13 @@
   margin-bottom: 0.5em !important;
 }
 
+/* Images */
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+  margin: 1.5em 0;
+}
+
 /* Bold Text */
 .markdown-body strong,
 .markdown-body b {

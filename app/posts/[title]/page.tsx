@@ -209,7 +209,7 @@ export default async function ArticleDetails({
             Latest Posts
           </Subheading>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border border-white border-collapse mb-12 md:mb-48">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3  mb-12 md:mb-48">
             {latestArticles.map((article) => (
               <article className="border border-white p-8" key={article.id}>
                 <div className="flex items-center justify-between">
