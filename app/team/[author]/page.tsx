@@ -143,7 +143,7 @@ export default async function Page({ params }: { params: Promise<{ author: strin
 
   return (
     <main className="max-w-[95rem] w-full mx-auto px-4 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
-      <PostNavigation href="/authors">Author</PostNavigation>
+      <PostNavigation href="/team">Author</PostNavigation>
 
       <article className="max-w-[75rem] w-full mx-auto grid lg:grid-cols-[300px_680px] gap-8 md:gap-6 justify-around">
         {/* **Author Profile Section** */}
@@ -190,29 +190,38 @@ function AuthorArticles({ articles }: { articles: ArticleData[] }) {
     );
   }
 
+  // Create a copy of the articles array and shuffle it randomly
+  const shuffledArticles = [...articles].sort(() => Math.random() - 0.5);
+  // Then slice out only the first 4 posts
+  const postsToShow = shuffledArticles.slice(0, 4);
+
   return (
     <div className="grid md:grid-cols-2">
-      {articles.map((article) => (
-        <article className="flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-12 p-8 border border-white" key={article.uid}>
+      {postsToShow.map((article) => (
+        <article
+          className="flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-12 p-8 border border-white"
+          key={article.uid}
+        >
           <Link href={`/posts/${article.slug}`} className="flex-shrink-0">
             <img
-              className="h-[100px] w-[100px] sm:h-[150px] sm:w-[150px] object-cover hover:scale-105 transition-transform "
+              className="h-[100%] w-[100%] sm:h-[150px] sm:w-[100%] object-cover hover:scale-105 transition-transform"
               src={article.img}
               alt={article.title}
             />
           </Link>
-
           <div>
             <p className="heading3-title pb-2 sm:pb-4">
               <Link href={`/posts/${article.slug}`} className="hover:text-white transition-colors">
                 {article.title}
               </Link>
             </p>
-
             <div className="flex flex-wrap gap-2 sm:gap-4">
               <div className="flex items-center">
                 <p className="font-semibold pr-2">Date:</p>
-                <time dateTime={article.date.toISOString()} className="text-white">
+                <time
+                  dateTime={article.date.toISOString()}
+                  className="text-white"
+                >
                   {article.date.toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "long",
@@ -220,7 +229,6 @@ function AuthorArticles({ articles }: { articles: ArticleData[] }) {
                   })}
                 </time>
               </div>
-
               <div className="flex items-center">
                 <p className="font-semibold pr-2">Category:</p>
                 <span className="text-white">{article.label}</span>
@@ -232,3 +240,4 @@ function AuthorArticles({ articles }: { articles: ArticleData[] }) {
     </div>
   );
 }
+

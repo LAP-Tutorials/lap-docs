@@ -124,7 +124,7 @@ export default function LatestPosts() {
           </article>
           <div>
             <Image
-              className="w-full object-cover aspect-[9/6]"
+              className="w-full object-cover"
               // Use fallback image if latestArticle.img is empty
               src={latestArticle.img || "/default-avatar.png"}
               alt={latestArticle.imgAlt || "Article image"}
@@ -141,13 +141,13 @@ export default function LatestPosts() {
           {remainingArticles.map((article, index) => (
             <article className="mb-6" key={article.id}>
               <article className="grid md:grid-cols-[0fr_1fr] gap-6 sm:gap-12">
-                <Link href={`/posts/${article.slug}`} className="h-60 w-60">
+                <Link href={`/posts/${article.slug}`} className="h-70 md:w-[27rem]">
                   <Image
                     className="w-full h-full object-cover hover:scale-105 transition"
                     src={article.img || "/default-avatar.png"}
                     alt={article.imgAlt}
-                    width={240}
-                    height={240}
+                    width={1280}
+                    height={720}
                   />
                 </Link>
                 <article className="flex flex-col justify-between">

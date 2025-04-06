@@ -31,7 +31,7 @@ export default function Home() {
 
       <Subheading
         className="text-subheading"
-        url="/authors"
+        url="/team"
         linkText="Full Team"
       >
         Team

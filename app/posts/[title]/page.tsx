@@ -192,7 +192,7 @@ export default async function ArticleDetails({
         <div className="pt-10 pb-20">
           <Subheading
             className="text-subheading"
-            url={`/authors/${authorData.slug}`}
+            url={`/team/${authorData.slug}`}
             linkText="Check out"
           >
             Author

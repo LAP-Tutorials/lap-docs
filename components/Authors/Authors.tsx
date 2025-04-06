@@ -58,7 +58,7 @@ export default function Authors() {
           className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 md:gap-12 p-4 md:p-8 border border-white"
           key={author.id}
         >
-          <Link href={`/authors/${author.slug}`}>
+          <Link href={`/team/${author.slug}`}>
             <Image
               className="w-[9.375rem] h-[9.375rem] object-cover rounded-full hover:scale-105 transition"
               src={author.avatar || "/default-avatar.png"}
@@ -69,7 +69,7 @@ export default function Authors() {
           </Link>
           <article>
             <p className="heading3-title mb-4">
-              <Link href={`/authors/${author.slug}`}>{author.name}</Link>
+              <Link href={`/team/${author.slug}`}>{author.name}</Link>
             </p>
             <div className="flex gap-8">
               <span className="flex">

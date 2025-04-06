@@ -23,7 +23,7 @@ export default function Footer() {
                   <Link href="/posts">Posts</Link>
                 </li>
                 <li>
-                  <Link href="/authors">Team</Link>
+                  <Link href="/team">Team</Link>
                 </li>
               </ul>
             </nav>

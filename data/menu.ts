@@ -8,12 +8,8 @@ const menu: MenuItem[] = [
     href: "/posts",
     label: "Posts",
   },
-  // {
-  //   href: "/podcasts",
-  //   label: "Podcasts",
-  // },
   {
-    href: "/authors",
+    href: "/team",
     label: "Team",
   },
 ];
