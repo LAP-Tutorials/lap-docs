@@ -69,9 +69,8 @@ async function getAuthorData(slug: string) {
       })) as ArticleData[];
 
       return { author: authorData, articles };
-    }
-    // Fallback approach if composite index isn't available
-    catch (error) {
+    } catch (error) {
+      // Fallback approach if composite index isn't available
       console.log("Using fallback approach for querying articles:", error);
 
       // First get all articles by this author
@@ -89,13 +88,16 @@ async function getAuthorData(slug: string) {
           return {
             uid: doc.id,
             ...data,
-            date: data.date && typeof data.date.toDate === 'function'
-              ? data.date.toDate()
-              : (data.date instanceof Date ? data.date : new Date()),
-            publish: data.publish ?? false
+            date:
+              data.date && typeof data.date.toDate === "function"
+                ? data.date.toDate()
+                : data.date instanceof Date
+                ? data.date
+                : new Date(),
+            publish: data.publish ?? false,
           } as ArticleData;
         })
-        .filter(article => article.publish === true);
+        .filter((article) => article.publish === true);
 
       return { author: authorData, articles };
     }
@@ -120,7 +122,11 @@ const SOCIAL_ICONS: { [key: string]: any } = {
 };
 
 // **Async page component**
-export default async function Page({ params }: { params: Promise<{ author: string }> }) {
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ author: string }>;
+}) {
   const { author } = await params; // Await the params object
   const data = await getAuthorData(author);
 
@@ -137,7 +143,7 @@ export default async function Page({ params }: { params: Promise<{ author: strin
         .map(([platform, url]) => ({
           href: url,
           ariaLabel: `Visit ${authorData.name}'s ${platform} page`,
-          Icon: SOCIAL_ICONS[platform.toLowerCase()] || RiGithubFill, // Default to GitHub icon if unknown
+          Icon: SOCIAL_ICONS[platform.toLowerCase()] || RiGithubFill,
         }))
     : [];
 
@@ -164,7 +170,9 @@ export default async function Page({ params }: { params: Promise<{ author: strin
         {/* **Author Biography** */}
         <article>
           <h1 className="text-subheading pb-8">{authorData.name}</h1>
-          <p className="text-blog-summary pb-12">{authorData.biography.summary}</p>
+          <p className="text-blog-summary pb-12">
+            {authorData.biography.summary}
+          </p>
           <p className="text-blog-body">{authorData.biography.body}</p>
         </article>
       </article>
@@ -211,7 +219,10 @@ function AuthorArticles({ articles }: { articles: ArticleData[] }) {
           </Link>
           <div>
             <p className="heading3-title pb-2 sm:pb-4">
-              <Link href={`/posts/${article.slug}`} className="hover:text-white transition-colors">
+              <Link
+                href={`/posts/${article.slug}`}
+                className="hover:text-white transition-colors"
+              >
                 {article.title}
               </Link>
             </p>
@@ -240,4 +251,3 @@ function AuthorArticles({ articles }: { articles: ArticleData[] }) {
     </div>
   );
 }
-

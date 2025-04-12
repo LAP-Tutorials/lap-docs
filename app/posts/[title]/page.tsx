@@ -32,6 +32,7 @@ interface Article {
   content: string;
   date: Date;
   read: string;
+  publish: boolean;
   label: string;
   img: string;
   imgAlt: string;
@@ -115,11 +116,17 @@ export default async function ArticleDetails({
       authorUID: articleData.authorUID,
       authorName: authorData.name || "Unknown Author",
       authorAvatar: authorData.avatar || "/default-avatar.png",
+      publish: false
     };
 
     // Get latest articles (excluding current)
     const latestSnapshot = await getDocs(
-      query(collection(db, "articles"), orderBy("date", "desc"), limit(4))
+      query(
+        collection(db, "articles"),
+        where("publish", "==", true),
+        orderBy("date", "desc"),
+        limit(4)
+      )
     );
 
     const latestArticles = latestSnapshot.docs
@@ -188,7 +195,7 @@ export default async function ArticleDetails({
         <div className="w">
           <ArticleContent content={processedArticle.content} />
         </div>
-        
+
         <div className="pt-10 pb-20">
           <Subheading
             className="text-subheading"
