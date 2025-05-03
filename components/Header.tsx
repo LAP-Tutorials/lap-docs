@@ -98,9 +98,7 @@ export default function Header() {
 
         {/* Mobile menu */}
         <Sheet>
-          
           <SheetTrigger aria-labelledby="button-label">
-            
             <span id="button-label" hidden>
               Menu
             </span>
@@ -123,7 +121,10 @@ export default function Header() {
             className="w-full pt-14"
             aria-label="Menu Toggle"
           >
-            <nav className="flex flex-col flex-1 justify-end gap-6"               aria-labelledby="mobile-nav">
+            <nav
+              className="flex flex-col flex-1 justify-end gap-6"
+              aria-labelledby="mobile-nav"
+            >
               {menuLinks.map((m, i) => (
                 <Link key={i} href={m.href}>
                   {m.label}
@@ -177,41 +178,44 @@ export default function Header() {
         </Sheet>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex flex-1 items-center justify-end gap-6"          aria-labelledby="desktop-nav">
+        <nav
+          className="hidden md:flex flex-1 items-center justify-end gap-6"
+          aria-labelledby="desktop-nav"
+        >
           {/* Search box */}
-        <div ref={containerRef} className="relative ml-6 w-64">
-          <input
-            type="text"
-            placeholder="Search…"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-3 py-2 bg-[#121212] text-white border border-white focus:outline-none"
-          />
+          <div ref={containerRef} className="relative ml-6 w-64">
+            <input
+              type="text"
+              placeholder="Search…"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-3 py-2 bg-[#121212] text-white border border-white focus:outline-none"
+            />
 
-          {isOpen && suggestions.length > 0 && (
-            <ul className="absolute right-0 mt-1 w-full bg-[#121212] border border-white/60 shadow-lg max-h-60 overflow-auto z-50">
-              {suggestions.map((art) => (
-                <li
-                  key={art.id}
-                  className="flex items-center gap-2 px-3 py-2 hover:bg-[#892be250] transition"
-                >
-                  <img
-                    src={art.img}
-                    alt={art.imgAlt}
-                    className="w-10 h-10 object-cover"
-                  />
-                  <Link
-                    href={`/posts/${art.slug}`}
-                    onClick={() => setIsOpen(false)}
-                    className="truncate text-white"
+            {isOpen && suggestions.length > 0 && (
+              <ul className="absolute right-0 mt-1 w-full bg-[#121212] border border-white/60 shadow-lg max-h-60 overflow-auto z-50">
+                {suggestions.map((art) => (
+                  <li
+                    key={art.id}
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-[#892be250] transition"
                   >
-                    {art.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                    <img
+                      src={art.img}
+                      alt={art.imgAlt}
+                      className="w-14 h-10 object-cover"
+                    />
+                    <Link
+                      href={`/posts/${art.slug}`}
+                      onClick={() => setIsOpen(false)}
+                      className="truncate text-white"
+                    >
+                      {art.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           {menuLinks.map((m, i) => (
             <Link
               key={i}
@@ -230,7 +234,7 @@ export default function Header() {
           >
             <rect width="15" height="1" fill="white" />
           </svg>
-          
+
           <SocialSharing
             links={[
               {
@@ -266,8 +270,6 @@ export default function Header() {
             ]}
           />
         </nav>
-
-        
       </div>
 
       <hr className="border-white border-t-0 border mt-4" />
