@@ -26,6 +26,7 @@ export default function Articles() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [labels, setLabels] = useState<string[]>([]);
   const [selectedLabel, setSelectedLabel] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -51,34 +52,33 @@ export default function Articles() {
               }) || "No date"
             } as Article;
           })
-          // Filter out articles that are not published
+          // Filter out unpublished
           .filter(article => article.publish === true);
 
-        // Fetch authors and map to articles
+        // Fetch authors
         const authorsSnapshot = await getDocs(collection(db, "authors"));
         const authors = authorsSnapshot.docs.map(doc => ({
           uid: doc.id,
           name: doc.data().name,
-          ...doc.data(),
         }));
 
-        const articlesWithAuthors = articlesData.map(article => ({
+        const withAuthors = articlesData.map(article => ({
           ...article,
           authorName:
             authors.find(a => a.uid === article.authorUID)?.name ||
             "Unknown Author"
         }));
 
-        // Get unique labels from the published articles
+        // Unique labels
         const uniqueLabels = Array.from(
-          new Set(articlesData.map(article => article.label))
+          new Set(articlesData.map(a => a.label))
         );
         setLabels(["All", ...uniqueLabels]);
 
-        setArticles(articlesWithAuthors);
-        setLoading(false);
+        setArticles(withAuthors);
       } catch (error) {
         console.error("Error fetching data:", error);
+      } finally {
         setLoading(false);
       }
     };
@@ -86,48 +86,69 @@ export default function Articles() {
     fetchData();
   }, []);
 
-  const filteredArticles =
-    selectedLabel === "All"
-      ? articles
-      : articles.filter(article => article.label === selectedLabel);
+  if (loading) return <Loading />;
 
-  if (loading) {
-    return <Loading />;
-  }
+  // First filter by label, then by search term (title OR description)
+  const filtered = articles
+    .filter(a =>
+      selectedLabel === "All" ? true : a.label === selectedLabel
+    )
+    .filter(a =>
+      a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      a.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
   return (
     <div className="max-w-[95rem] w-full mx-auto">
-      <div className="flex flex-wrap justify-between items-center gap-2 md:gap-0 my-6">
+      {/* --- Search Bar --- */}
+      <div className="my-6 ">
+        <input
+          type="text"
+          placeholder="Search posts..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className="w-full md:w-1/2 px-4 py-2 border border-white bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white transition"
+        />
+      </div>
+
+      {/* --- Category Filters --- */}
+      <div className="flex flex-wrap justify-between items-center gap-2 md:gap-0 mb-6">
         <p className="font-semibold uppercase">Categories</p>
         <div className="flex flex-wrap gap-2">
-          {labels.map((label, index) => (
+          {labels.map((label, i) => (
             <Button
-              className={`px-3 py-2 bg-[#121212] text-white hover:bg-white hover:text-black border border-white rounded-full transition ease-in-out duration-300 ${
-                label === selectedLabel ? "bg-white text-black" : "border-white"
-              }`}
-              key={index}
+              key={i}
               onClick={() => setSelectedLabel(label)}
+              className={`
+                px-3 py-2 border rounded-full transition ease-in-out duration-300
+                ${
+                  label === selectedLabel
+                    ? "bg-white text-black"
+                    : "bg-transparent text-white border-white hover:bg-white hover:text-black"
+                }
+              `}
             >
               {label}
             </Button>
           ))}
         </div>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border-collapse mb-48">
-        {filteredArticles.map((article) => (
+
+      {/* --- Articles Grid --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-48">
+        {filtered.map(article => (
           <article className="border border-white p-8" key={article.id}>
             <div className="flex items-center justify-between">
               <time dateTime={article.date}>{article.date}</time>
-              <span className="px-3 py-2 border border-white rounded-full">
-                <p className="uppercase">{article.label}</p>
+              <span className="px-3 py-2 border border-white rounded-full uppercase">
+                {article.label}
               </span>
             </div>
-            <Link href={`posts/${article.slug}`}>
+            <Link href={`/posts/${article.slug}`}>
               <img
-                className="w-full my-8 hover:scale-105 transition"
                 src={article.img}
                 alt={article.imgAlt}
+                className="w-full my-8 hover:scale-105 transition"
               />
             </Link>
             <h2 className="heading3-title mb-3">
@@ -148,6 +169,11 @@ export default function Articles() {
             </div>
           </article>
         ))}
+        {filtered.length === 0 && (
+          <p className="col-span-full text-center text-gray-400">
+            No articles found.
+          </p>
+        )}
       </div>
     </div>
   );
