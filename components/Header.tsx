@@ -198,7 +198,7 @@ export default function Header() {
                   <img
                     src={art.img}
                     alt={art.imgAlt}
-                    className="w-10 h-10 object-cover rounded"
+                    className="w-10 h-10 object-cover"
                   />
                   <Link
                     href={`/posts/${art.slug}`}
