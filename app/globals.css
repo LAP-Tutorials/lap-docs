@@ -75,6 +75,8 @@
   html {
     font-family: General Sans, system-ui, sans-serif;
     scroll-behavior: smooth;
+    /* Offset native anchor/scroll operations for sticky header */
+    scroll-padding-top: 7.5rem;
   }
   body {
     @apply bg-background text-foreground;
@@ -164,7 +166,6 @@
   scrollbar-width: 4px;
   scrollbar-color: #8a2be2 #121212;
 }
-
 
 /* Markdown Styles */
 .markdown-body {

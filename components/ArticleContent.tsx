@@ -15,6 +15,35 @@ type TocItem = {
   children: TocItem[];
 };
 
+function getScrollParent(el: HTMLElement): HTMLElement {
+  // Prefer the document scroller when appropriate.
+  const docScroller =
+    (document.scrollingElement as HTMLElement | null) ??
+    (document.documentElement as HTMLElement | null) ??
+    (document.body as HTMLElement | null);
+
+  let parent = el.parentElement;
+  while (parent && parent !== document.body && parent !== document.documentElement) {
+    const style = window.getComputedStyle(parent);
+    const overflowY = style.overflowY;
+    const isScrollable =
+      (overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") &&
+      parent.scrollHeight > parent.clientHeight + 1;
+    if (isScrollable) return parent;
+    parent = parent.parentElement;
+  }
+
+  return docScroller ?? document.documentElement;
+}
+
+function isDocumentScroller(el: HTMLElement) {
+  const docScroller =
+    (document.scrollingElement as HTMLElement | null) ??
+    (document.documentElement as HTMLElement | null) ??
+    (document.body as HTMLElement | null);
+  return el === docScroller || el === document.documentElement || el === document.body;
+}
+
 function slugifyHeading(text: string) {
   return text
     .toLowerCase()
@@ -53,6 +82,7 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [tocTree, setTocTree] = useState<TocItem[]>([]);
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  const headingMapRef = useRef<Map<string, HTMLHeadingElement>>(new Map());
 
   const tocNodeStorageKey = useMemo(() => "lap:toc:collapsed:nodes", []);
 
@@ -123,6 +153,7 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
     if (!root) return;
 
     // Build TOC from headings and ensure headings have stable ids.
+    headingMapRef.current.clear();
     const headings = Array.from(
       root.querySelectorAll("h1, h2, h3, h4")
     ) as HTMLHeadingElement[];
@@ -141,13 +172,60 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
       seenIds.set(baseId, nextCount);
       const id = currentCount === 0 ? baseId : `${baseId}-${nextCount}`;
 
-      if (!heading.id) heading.id = id;
-
+      heading.id = id;
+      heading.setAttribute("id", id); // Explicitly set via setAttribute
+      headingMapRef.current.set(id, heading); // Store reference
       flat.push({ id: heading.id, title, level });
     }
 
     setTocTree(buildTocTree(flat));
   }, [sanitizedContent]);
+
+  useEffect(() => {
+    // If the page was loaded with a hash, scroll to it after headings have ids.
+    if (typeof window === "undefined") return;
+    if (!tocTree.length) return;
+
+    const raw = window.location.hash;
+    if (!raw || raw.length < 2) return;
+    const id = decodeURIComponent(raw.slice(1));
+
+    // Let layout settle before scrolling.
+    window.requestAnimationFrame(() => {
+      const container = containerRef.current;
+      const debug =
+        typeof window !== "undefined" &&
+        window.localStorage.getItem("lap:toc:debug") === "1";
+
+      let el: HTMLHeadingElement | null = null;
+      const byMap = headingMapRef.current.get(id) ?? null;
+      if (byMap && byMap.isConnected) el = byMap;
+
+      if (!el) {
+        const byId = document.getElementById(id);
+        if (byId && /^H[1-4]$/.test(byId.tagName)) {
+          el = byId as HTMLHeadingElement;
+        }
+      }
+
+      if (!el && container) {
+        const candidate = container.querySelector(
+          `h1[id="${id}"], h2[id="${id}"], h3[id="${id}"], h4[id="${id}"]`
+        );
+        if (candidate && /^H[1-4]$/.test((candidate as HTMLElement).tagName)) {
+          el = candidate as HTMLHeadingElement;
+        }
+      }
+
+      if (!el) {
+        if (debug) console.log(`[TOC] initial hash "${id}" not found`);
+        return;
+      }
+
+      if (debug) console.log(`[TOC] initial hash scroll to "${id}"`, el);
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [tocTree]);
 
   useEffect(() => {
     const root = containerRef.current;
@@ -251,29 +329,46 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
                   });
                 }}
                 onNavigate={(id) => {
-                  const el = document.getElementById(id);
-                  if (el) {
-                    // Use requestAnimationFrame to ensure rendering is complete
-                    requestAnimationFrame(() => {
-                      const rect = el.getBoundingClientRect();
-                      const headerHeight = 100; // approximate sticky header + spacing
-                      const targetY = window.scrollY + rect.top - headerHeight;
-                      window.scrollTo({
-                        top: targetY,
-                        behavior: "smooth",
-                      });
-                    });
+                  const container = containerRef.current;
+                  const debug =
+                    typeof window !== "undefined" &&
+                    window.localStorage.getItem("lap:toc:debug") === "1";
+
+                  // 1) Prefer the current article container (prevents collisions elsewhere)
+                  // 2) Prefer connected map refs (avoids stale nodes)
+                  let el: HTMLHeadingElement | null = null;
+                  const byMap = headingMapRef.current.get(id) ?? null;
+                  if (byMap && byMap.isConnected) el = byMap;
+
+                  if (!el && container) {
+                    el = container.querySelector(
+                      `h1[id="${id}"], h2[id="${id}"], h3[id="${id}"], h4[id="${id}"]`
+                    ) as HTMLHeadingElement | null;
                   }
 
-                  try {
-                    window.history.replaceState(
-                      null,
-                      "",
-                      `#${encodeURIComponent(id)}`
-                    );
-                  } catch {
-                    // Ignore history failures
+                  if (!el) {
+                    const byId = document.getElementById(id);
+                    // Only accept it if it's a heading; otherwise ignore and keep looking.
+                    if (byId && /^H[1-4]$/.test(byId.tagName)) {
+                      el = byId as HTMLHeadingElement;
+                    }
                   }
+
+                  if (!el) {
+                    if (debug) console.log(`[TOC] click id "${id}" not found`);
+                    return false;
+                  }
+
+                  if (debug) console.log(`[TOC] click scroll to "${id}"`, el);
+                  el.scrollIntoView({ behavior: "smooth", block: "start" });
+
+                  // Update hash without triggering browser's default jump.
+                  try {
+                    window.history.replaceState(null, "", `#${id}`);
+                  } catch {
+                    /* noop */
+                  }
+                  return true;
                 }}
               />
             </nav>
@@ -293,7 +388,7 @@ function TocList({
   items: TocItem[];
   collapsedIds: Set<string>;
   onToggle: (id: string) => void;
-  onNavigate: (id: string) => void;
+  onNavigate: (id: string) => boolean;
 }) {
   return (
     <ul className="space-y-2">
@@ -318,8 +413,9 @@ function TocList({
               href={`#${item.id}`}
               className="text-left w-full hover:underline"
               onClick={(event) => {
-                event.preventDefault();
-                onNavigate(item.id);
+                // Only block the native anchor behavior if we successfully scrolled.
+                const ok = onNavigate(item.id);
+                if (ok) event.preventDefault();
               }}
             >
               <span
