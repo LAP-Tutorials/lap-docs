@@ -75,6 +75,8 @@
   html {
     font-family: General Sans, system-ui, sans-serif;
     scroll-behavior: smooth;
+    /* Offset native anchor/scroll operations for sticky header */
+    scroll-padding-top: 7.5rem;
   }
   body {
     @apply bg-background text-foreground;
@@ -165,6 +167,19 @@
   scrollbar-color: #8a2be2 #121212;
 }
 
+/* WebKit Scrollbar Support (Chrome, Safari, iOS, Edge) */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #121212;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #8a2be2;
+  border-radius: 20px;
+}
 
 /* Markdown Styles */
 .markdown-body {
@@ -175,6 +190,7 @@
 .markdown-body h1 {
   font-weight: 600;
   font-size: clamp(3rem, 2.7857rem + 1.0714vw, 4.5rem);
+  scroll-margin-top: 7.5rem;
   margin-bottom: 0.5em !important;
   border-bottom: 1px solid #ffffff5b !important;
   padding-bottom: 0.1em !important;
@@ -183,6 +199,7 @@
 .markdown-body h2 {
   font-size: clamp(2.2rem, 2.0857rem + 0.6714vw, 3.3rem);
   font-weight: 600;
+  scroll-margin-top: 7.5rem;
   margin-bottom: 0.5em !important;
   border-bottom: 1px solid #ffffff5b !important;
   padding-bottom: 0.3em !important;
@@ -191,7 +208,12 @@
 .markdown-body h3 {
   font-size: clamp(1.9rem, 1.8857rem + 0.4714vw, 2.8rem);
   font-weight: 600;
+  scroll-margin-top: 7.5rem;
   margin-bottom: 0.5em !important;
+}
+
+.markdown-body h4 {
+  scroll-margin-top: 7.5rem;
 }
 
 /* Images */
@@ -319,22 +341,13 @@
   background-color: #161b22;
 }
 
-/* Custom ID Headings */
+/* Custom ID Headings - hash display removed per request
 .markdown-body h1[id],
 .markdown-body h2[id],
 .markdown-body h3[id] {
   position: relative;
 }
-
-.markdown-body h1[id]::after,
-.markdown-body h2[id]::after,
-.markdown-body h3[id]::after {
-  content: "#" attr(id);
-  font-size: 0.8em;
-  color: #ffffff5b;
-  margin-left: 0.5em;
-  text-decoration: none;
-}
+*/
 
 /* Footnote */
 .markdown-body .footnote {

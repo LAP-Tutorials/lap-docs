@@ -3,7 +3,6 @@ import "./globals.css";
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import ArticleContextProvider from "@/context/ArticleContext";
 import Script from 'next/script';
 
 export const metadata: Metadata = {
@@ -53,13 +52,11 @@ export default function RootLayout({
         )}
       </head>
       <body>
-        <ArticleContextProvider>
             <Container>
               <Header />
               {children}
               <Footer />
             </Container>
-        </ArticleContextProvider>
       </body>
     </html>
   );
