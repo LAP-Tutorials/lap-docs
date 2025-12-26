@@ -167,6 +167,20 @@
   scrollbar-color: #8a2be2 #121212;
 }
 
+/* WebKit Scrollbar Support (Chrome, Safari, iOS, Edge) */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #121212;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #8a2be2;
+  border-radius: 20px;
+}
+
 /* Markdown Styles */
 .markdown-body {
   color: #fff !important;
