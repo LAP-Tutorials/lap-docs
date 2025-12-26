@@ -310,8 +310,35 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
     };
   }, [sanitizedContent]);
 
+  const handleTocToggle = (id: string) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      try {
+        window.localStorage.setItem(
+          tocNodeStorageKey,
+          JSON.stringify(Array.from(next))
+        );
+      } catch {
+        // Ignore storage failures
+      }
+      return next;
+    });
+  };
+
   return (
-    <article className="grid md:grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px] gap-8 lg:gap-12 w-full max-w-[90rem] mx-auto mt-6 md:mt-24 mb-10 px-4">
+    <article className="grid md:grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px] gap-0 md:gap-8 lg:gap-12 w-full max-w-[90rem] mx-auto mt-6 md:mt-24 mb-10 px-4">
+      
+      <MobileToc 
+        items={tocTree} 
+        collapsedIds={collapsedIds} 
+        onToggle={handleTocToggle} 
+      />
+
       <div className="markdown-body w-full min-w-0" ref={containerRef}>
         <div dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
       </div>
@@ -325,25 +352,7 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
               <TocList
                 items={tocTree}
                 collapsedIds={collapsedIds}
-                onToggle={(id) => {
-                  setCollapsedIds((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(id)) {
-                      next.delete(id);
-                    } else {
-                      next.add(id);
-                    }
-                    try {
-                      window.localStorage.setItem(
-                        tocNodeStorageKey,
-                        JSON.stringify(Array.from(next))
-                      );
-                    } catch {
-                      // Ignore storage failures
-                    }
-                    return next;
-                  });
-                }}
+                onToggle={handleTocToggle}
               />
             </nav>
           </div>
@@ -352,6 +361,39 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
     </article>
   );
 };
+
+function MobileToc({
+  items,
+  collapsedIds,
+  onToggle,
+}: {
+  items: TocItem[];
+  collapsedIds: Set<string>;
+  onToggle: (id: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="lg:hidden border border-white p-4">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center justify-between w-full font-semibold uppercase"
+      >
+        Table of Content
+        <span>{isOpen ? "−" : "+"}</span>
+      </button>
+
+      {isOpen && (
+        <nav className="mt-4 max-h-96 overflow-auto">
+          <TocList items={items} collapsedIds={collapsedIds} onToggle={onToggle} />
+        </nav>
+      )}
+    </div>
+  );
+}
 
 function TocList({
   items,
