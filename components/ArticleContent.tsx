@@ -136,8 +136,8 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
       renderer.heading = function({ tokens, depth }) {
         const text = this.parser.parseInline(tokens);
         const title = text.toString();
-        // Strip HTML tags for cleaner ID generation
-        const cleanTitle = title.replace(/<[^>]*>/g, "");
+        // Strip HTML tags for cleaner ID generation (securely)
+        const cleanTitle = DOMPurify.sanitize(title, { ALLOWED_TAGS: [] });
         const baseId = slugifyHeading(cleanTitle) || "section";
         const nextCount = (seenIds.get(baseId) ?? 0) + 1;
         seenIds.set(baseId, nextCount);
