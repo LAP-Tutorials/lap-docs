@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 
@@ -8,9 +8,53 @@ interface ArticleContentProps {
   content: string;
 }
 
+type TocItem = {
+  id: string;
+  title: string;
+  level: number;
+  children: TocItem[];
+};
+
+function slugifyHeading(text: string) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[\s\u00A0]+/g, "-")
+    .replace(/[^a-z0-9\-]/g, "")
+    .replace(/\-+/g, "-")
+    .replace(/^\-+|\-+$/g, "");
+}
+
+function buildTocTree(flatItems: Array<Omit<TocItem, "children">>): TocItem[] {
+  const root: TocItem[] = [];
+  const stack: TocItem[] = [];
+
+  for (const flat of flatItems) {
+    const node: TocItem = { ...flat, children: [] };
+
+    while (stack.length > 0 && node.level <= stack[stack.length - 1].level) {
+      stack.pop();
+    }
+
+    if (stack.length === 0) {
+      root.push(node);
+    } else {
+      stack[stack.length - 1].children.push(node);
+    }
+
+    stack.push(node);
+  }
+
+  return root;
+}
+
 const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
   const [sanitizedContent, setSanitizedContent] = useState<string>("");
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [tocTree, setTocTree] = useState<TocItem[]>([]);
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+
+  const tocNodeStorageKey = useMemo(() => "lap:toc:collapsed:nodes", []);
 
   async function copyTextToClipboard(text: string) {
     if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
@@ -42,13 +86,68 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
       // Configure DOMPurify to allow iframes
       const cleanContent = DOMPurify.sanitize(rawContent, {
         ADD_TAGS: ["iframe"],
-        ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "height", "scrolling", "src", "width"],
+        ADD_ATTR: [
+          "allow",
+          "allowfullscreen",
+          "frameborder",
+          "height",
+          "scrolling",
+          "src",
+          "width",
+        ],
       });
 
       setSanitizedContent(cleanContent);
     }
     sanitizeContent();
   }, [content]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const raw = window.localStorage.getItem(tocNodeStorageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setCollapsedIds(new Set(parsed as string[]));
+        }
+      }
+    } catch {
+      // Ignore storage failures
+    }
+  }, [tocNodeStorageKey]);
+
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+
+    // Build TOC from headings and ensure headings have stable ids.
+    const headings = Array.from(
+      root.querySelectorAll("h1, h2, h3, h4")
+    ) as HTMLHeadingElement[];
+
+    const seenIds = new Map<string, number>();
+    const flat: Array<Omit<TocItem, "children">> = [];
+
+    for (const heading of headings) {
+      const title = (heading.textContent ?? "").trim();
+      if (!title) continue;
+
+      const level = Number(heading.tagName.replace("H", ""));
+      const baseId = heading.id?.trim() || slugifyHeading(title) || "section";
+      const currentCount = seenIds.get(baseId) ?? 0;
+      const nextCount = currentCount + 1;
+      seenIds.set(baseId, nextCount);
+      const id = currentCount === 0 ? baseId : `${baseId}-${nextCount}`;
+
+      if (!heading.id) heading.id = id;
+
+      flat.push({ id: heading.id, title, level });
+    }
+
+    setTocTree(buildTocTree(flat));
+  }, [sanitizedContent]);
 
   useEffect(() => {
     const root = containerRef.current;
@@ -65,7 +164,8 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
       const existingWrapper = pre.closest('div[data-copy-wrapper="true"]');
       if (existingWrapper) continue;
 
-      const codeText = pre.querySelector("code")?.textContent ?? pre.textContent ?? "";
+      const codeText =
+        pre.querySelector("code")?.textContent ?? pre.textContent ?? "";
       if (!codeText.trim()) continue;
 
       const wrapper = document.createElement("div");
@@ -92,7 +192,8 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
       let resetTimer: number | undefined;
 
       const handleClick = async () => {
-        const textToCopy = pre.querySelector("code")?.textContent ?? pre.textContent ?? "";
+        const textToCopy =
+          pre.querySelector("code")?.textContent ?? pre.textContent ?? "";
         if (!textToCopy.trim()) return;
 
         try {
@@ -116,12 +217,139 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
   }, [sanitizedContent]);
 
   return (
-    <article className="flex flex-col md:flex-row gap-6 md:gap-16 max-w-full lg:max-w-[70%] w-full mx-auto mt-6 md:mt-24 mb-10 px-4">
-      <div className="markdown-body w-full" ref={containerRef}>
+    <article className="grid md:grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px] gap-8 lg:gap-12 w-full max-w-7xl mx-auto mt-6 md:mt-24 mb-10 px-4">
+      <div className="markdown-body w-full min-w-0" ref={containerRef}>
         <div dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
       </div>
+
+      {tocTree.length > 0 ? (
+        <aside className="hidden lg:block shrink-0 self-start sticky top-16">
+          <div className="border border-white p-4">
+            <p className="uppercase font-semibold">Contents</p>
+
+            <nav className="mt-4 max-h-[calc(100vh-12rem)] overflow-auto">
+              <TocList
+                items={tocTree}
+                collapsedIds={collapsedIds}
+                onToggle={(id) => {
+                  setCollapsedIds((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(id)) {
+                      next.delete(id);
+                    } else {
+                      next.add(id);
+                    }
+                    try {
+                      window.localStorage.setItem(
+                        tocNodeStorageKey,
+                        JSON.stringify(Array.from(next))
+                      );
+                    } catch {
+                      // Ignore storage failures
+                    }
+                    return next;
+                  });
+                }}
+                onNavigate={(id) => {
+                  const el = document.getElementById(id);
+                  if (el) {
+                    // Use requestAnimationFrame to ensure rendering is complete
+                    requestAnimationFrame(() => {
+                      const rect = el.getBoundingClientRect();
+                      const headerHeight = 100; // approximate sticky header + spacing
+                      const targetY = window.scrollY + rect.top - headerHeight;
+                      window.scrollTo({
+                        top: targetY,
+                        behavior: "smooth",
+                      });
+                    });
+                  }
+
+                  try {
+                    window.history.replaceState(
+                      null,
+                      "",
+                      `#${encodeURIComponent(id)}`
+                    );
+                  } catch {
+                    // Ignore history failures
+                  }
+                }}
+              />
+            </nav>
+          </div>
+        </aside>
+      ) : null}
     </article>
   );
 };
+
+function TocList({
+  items,
+  collapsedIds,
+  onToggle,
+  onNavigate,
+}: {
+  items: TocItem[];
+  collapsedIds: Set<string>;
+  onToggle: (id: string) => void;
+  onNavigate: (id: string) => void;
+}) {
+  return (
+    <ul className="space-y-2">
+      {items.map((item) => (
+        <li key={item.id} className="space-y-2">
+          <div className="flex items-start gap-2">
+            {item.children.length > 0 ? (
+              <button
+                type="button"
+                className="mt-[2px] text-sm w-5 text-left"
+                aria-label={collapsedIds.has(item.id) ? "Expand" : "Collapse"}
+                aria-expanded={!collapsedIds.has(item.id)}
+                onClick={() => onToggle(item.id)}
+              >
+                {collapsedIds.has(item.id) ? "▸" : "▾"}
+              </button>
+            ) : (
+              <span className="mt-[2px] w-5" aria-hidden="true"></span>
+            )}
+
+            <a
+              href={`#${item.id}`}
+              className="text-left w-full hover:underline"
+              onClick={(event) => {
+                event.preventDefault();
+                onNavigate(item.id);
+              }}
+            >
+              <span
+                className={
+                  item.level === 2
+                    ? "text-base"
+                    : item.level === 3
+                    ? "text-sm"
+                    : "text-sm opacity-90"
+                }
+              >
+                {item.title}
+              </span>
+            </a>
+          </div>
+
+          {item.children.length > 0 && !collapsedIds.has(item.id) ? (
+            <div className="pl-4 border-l border-white/20">
+              <TocList
+                items={item.children}
+                collapsedIds={collapsedIds}
+                onToggle={onToggle}
+                onNavigate={onNavigate}
+              />
+            </div>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default ArticleContent;
