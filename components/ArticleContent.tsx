@@ -23,11 +23,17 @@ function getScrollParent(el: HTMLElement): HTMLElement {
     (document.body as HTMLElement | null);
 
   let parent = el.parentElement;
-  while (parent && parent !== document.body && parent !== document.documentElement) {
+  while (
+    parent &&
+    parent !== document.body &&
+    parent !== document.documentElement
+  ) {
     const style = window.getComputedStyle(parent);
     const overflowY = style.overflowY;
     const isScrollable =
-      (overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") &&
+      (overflowY === "auto" ||
+        overflowY === "scroll" ||
+        overflowY === "overlay") &&
       parent.scrollHeight > parent.clientHeight + 1;
     if (isScrollable) return parent;
     parent = parent.parentElement;
@@ -41,7 +47,11 @@ function isDocumentScroller(el: HTMLElement) {
     (document.scrollingElement as HTMLElement | null) ??
     (document.documentElement as HTMLElement | null) ??
     (document.body as HTMLElement | null);
-  return el === docScroller || el === document.documentElement || el === document.body;
+  return (
+    el === docScroller ||
+    el === document.documentElement ||
+    el === document.body
+  );
 }
 
 function slugifyHeading(text: string) {
@@ -166,11 +176,12 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
       if (!title) continue;
 
       const level = Number(heading.tagName.replace("H", ""));
-      const baseId = heading.id?.trim() || slugifyHeading(title) || "section";
-      const currentCount = seenIds.get(baseId) ?? 0;
-      const nextCount = currentCount + 1;
+      // Always regenerate ids from the visible heading text so they are deterministic
+      // and don't drift across re-renders.
+      const baseId = slugifyHeading(title) || "section";
+      const nextCount = (seenIds.get(baseId) ?? 0) + 1;
       seenIds.set(baseId, nextCount);
-      const id = currentCount === 0 ? baseId : `${baseId}-${nextCount}`;
+      const id = nextCount === 1 ? baseId : `${baseId}-${nextCount}`;
 
       heading.id = id;
       heading.setAttribute("id", id); // Explicitly set via setAttribute
@@ -411,11 +422,23 @@ function TocList({
 
             <a
               href={`#${item.id}`}
-              className="text-left w-full hover:underline"
+              className="text-left w-full hover:underline cursor-pointer pointer-events-auto"
               onClick={(event) => {
+                event.stopPropagation();
                 // Only block the native anchor behavior if we successfully scrolled.
                 const ok = onNavigate(item.id);
-                if (ok) event.preventDefault();
+                if (ok) {
+                  event.preventDefault();
+                } else {
+                  // Hard fallback: force hash update so the browser can try jumping.
+                  // (Doesn't prevent default, so this is effectively a no-op unless
+                  // a framework/router interferes with hash navigation.)
+                  try {
+                    window.location.hash = item.id;
+                  } catch {
+                    /* noop */
+                  }
+                }
               }}
             >
               <span
