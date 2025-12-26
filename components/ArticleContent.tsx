@@ -232,67 +232,79 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
     const root = containerRef.current;
     if (!root) return;
 
-    const preBlocks = Array.from(root.querySelectorAll("pre"));
+    const preBlocks = root.querySelectorAll("pre");
+    console.log("[CopyButton debugging] Found pre blocks:", preBlocks.length);
+
+    // console.log("[CopyButton] Found pre blocks:", preBlocks.length); // Removed debug log
 
     const copySvg =
       '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
     const checkSvg =
       '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>';
 
+    let processedCount = 0;
     for (const pre of preBlocks) {
       const existingWrapper = pre.closest('div[data-copy-wrapper="true"]');
-      if (existingWrapper) continue;
+      if (existingWrapper) {
+          // console.log("Skipping existing wrapper");
+          continue;
+      }
 
       const codeText =
         pre.querySelector("code")?.textContent ?? pre.textContent ?? "";
-      if (!codeText.trim()) continue;
+      if (!codeText.trim()) {
+          console.log("Skipping empty code block");
+          continue;
+      }
+
+      console.log("Wrapping pre block...");
 
       const wrapper = document.createElement("div");
       wrapper.dataset.copyWrapper = "true";
-      wrapper.className = "relative";
+      wrapper.style.position = "relative";
+      wrapper.style.border = "5px solid yellow"; // VISIBLE BORDER ON WRAPPER
+      wrapper.style.display = "block";
+      wrapper.style.marginBottom = "50px"; // Force space
 
       const parent = pre.parentNode;
-      if (!parent) continue;
+      if (!parent) {
+          console.log("No parent found for pre");
+          continue;
+      }
 
       parent.insertBefore(wrapper, pre);
-      wrapper.appendChild(pre);
-
-      pre.style.paddingTop = "52px";
-      pre.style.paddingRight = "52px";
-
+      
       const button = document.createElement("button");
       button.type = "button";
-      button.className =
-        "absolute top-3 right-3 h-8 w-8 flex items-center justify-center bg-[#121212] text-foreground transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 hover:bg-[#8a2be2] hover:border-[#8a2be2] hover:text-white";
+      
+      // Force it into flow
+      button.style.display = "block";
+      button.style.width = "100%";
+      button.style.height = "50px";
+      button.style.backgroundColor = "blue"; // Blue bar
+      button.style.color = "white";
+      button.style.fontSize = "20px";
+      button.innerText = "COPY BUTTON DEBUG";
+      button.style.cursor = "pointer";
+      button.style.marginBottom = "10px";
+
+      wrapper.appendChild(button); // Add button FIRST (above pre)
+      wrapper.appendChild(pre);    // Then pre
+
+      pre.style.position = "relative"; 
+      
+      /*
+      button.className = ...
       button.innerHTML = copySvg;
-      button.setAttribute("aria-label", "Copy code to clipboard");
-      button.setAttribute("title", "Copy");
+      */
 
-      let resetTimer: number | undefined;
-
-      const handleClick = async () => {
-        const textToCopy =
-          pre.querySelector("code")?.textContent ?? pre.textContent ?? "";
-        if (!textToCopy.trim()) return;
-
-        try {
-          await copyTextToClipboard(textToCopy);
-          button.innerHTML = checkSvg;
-          button.setAttribute("title", "Copied");
-        } catch {
-          button.setAttribute("title", "Copy failed");
-        }
-
-        if (resetTimer) window.clearTimeout(resetTimer);
-        resetTimer = window.setTimeout(() => {
-          button.innerHTML = copySvg;
-          button.setAttribute("title", "Copy");
-        }, 1500);
-      };
-
-      button.addEventListener("click", handleClick);
-      wrapper.appendChild(button);
+      // Duplicate declarations removed
+      if (processedCount === 0) {
+          console.log("[CopyButton debugging] First wrapper HTML:", wrapper.outerHTML);
+      }
+      processedCount++;
     }
+    console.log(`[CopyButton debugging] Processed ${processedCount} blocks.`);
   }, [sanitizedContent]);
 
   return (
@@ -303,8 +315,8 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
 
       {tocTree.length > 0 ? (
         <aside className="hidden lg:block shrink-0 self-start sticky top-16">
-          <div className="border border-white p-4">
-            <p className="uppercase font-semibold">Contents</p>
+          <div className="p-4">
+            <p className="uppercase font-semibold">Table of Content</p>
 
             <nav className="mt-4 max-h-[calc(100vh-12rem)] overflow-auto">
               <TocList

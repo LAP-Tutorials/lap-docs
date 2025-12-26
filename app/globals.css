@@ -327,22 +327,13 @@
   background-color: #161b22;
 }
 
-/* Custom ID Headings */
+/* Custom ID Headings - hash display removed per request
 .markdown-body h1[id],
 .markdown-body h2[id],
 .markdown-body h3[id] {
   position: relative;
 }
-
-.markdown-body h1[id]::after,
-.markdown-body h2[id]::after,
-.markdown-body h3[id]::after {
-  content: "#" attr(id);
-  font-size: 0.8em;
-  color: #ffffff5b;
-  margin-left: 0.5em;
-  text-decoration: none;
-}
+*/
 
 /* Footnote */
 .markdown-body .footnote {
