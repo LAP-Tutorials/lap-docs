@@ -121,9 +121,15 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
     }
   }
 
+  // Icons for the copy button
+  const copySvg =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+  const checkSvg =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>';
+
   useEffect(() => {
     async function sanitizeContent() {
-      // Use a custom renderer to add IDs to headings during parsing
+      // Use a custom renderer to add IDs to headings and wrap code blocks
       const renderer = new marked.Renderer();
       const seenIds = new Map<string, number>();
 
@@ -137,14 +143,35 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
         return `<h${depth} id="${id}">${text}</h${depth}>`;
       };
 
+      renderer.code = ({ text, lang }) => {
+        const languageClass = lang ? `language-${lang}` : "";
+        // Encode text for the data attribute to be safe
+        const safeCode = text.replace(/"/g, '&quot;');
+        
+        return `
+          <div class="relative group my-4" data-copy-wrapper="true">
+            <button 
+              type="button"
+              class="copy-btn absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md border border-white/20 bg-[#121212] text-white hover:bg-[#202020] transition-all"
+              aria-label="Copy code to clipboard"
+              title="Copy"
+              data-code="${safeCode}"
+            >
+              ${copySvg}
+            </button>
+            <pre><code class="${languageClass}">${text}</code></pre>
+          </div>
+        `;
+      };
+
       marked.use({ renderer });
 
       // Convert markdown to HTML
       const rawContent = await marked.parse(content);
 
-      // Configure DOMPurify to allow iframes
+      // Configure DOMPurify to allow iframes and buttons
       const cleanContent = DOMPurify.sanitize(rawContent, {
-        ADD_TAGS: ["iframe"],
+        ADD_TAGS: ["iframe", "button"],
         ADD_ATTR: [
           "allow",
           "allowfullscreen",
@@ -153,7 +180,12 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
           "scrolling",
           "src",
           "width",
-          "id", // Ensure ID is allowed
+          "id",
+          "class",         // checking class
+          "data-code",     // Custom attribute for code content
+          "aria-label",
+          "title",
+          "type"
         ],
       });
 
@@ -228,83 +260,45 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
     });
   }, [tocTree]);
 
+  // Event delegation for copy buttons
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
 
-    const preBlocks = root.querySelectorAll("pre");
-    console.log("[CopyButton debugging] Found pre blocks:", preBlocks.length);
-
-    // console.log("[CopyButton] Found pre blocks:", preBlocks.length); // Removed debug log
-
-    const copySvg =
-      '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
-    const checkSvg =
-      '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>';
-
-    let processedCount = 0;
-    for (const pre of preBlocks) {
-      const existingWrapper = pre.closest('div[data-copy-wrapper="true"]');
-      if (existingWrapper) {
-          // console.log("Skipping existing wrapper");
-          continue;
-      }
-
-      const codeText =
-        pre.querySelector("code")?.textContent ?? pre.textContent ?? "";
-      if (!codeText.trim()) {
-          console.log("Skipping empty code block");
-          continue;
-      }
-
-      console.log("Wrapping pre block...");
-
-      const wrapper = document.createElement("div");
-      wrapper.dataset.copyWrapper = "true";
-      wrapper.style.position = "relative";
-      wrapper.style.border = "5px solid yellow"; // VISIBLE BORDER ON WRAPPER
-      wrapper.style.display = "block";
-      wrapper.style.marginBottom = "50px"; // Force space
-
-      const parent = pre.parentNode;
-      if (!parent) {
-          console.log("No parent found for pre");
-          continue;
-      }
-
-      parent.insertBefore(wrapper, pre);
+    const handleCopyClick = async (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const button = target.closest(".copy-btn") as HTMLButtonElement;
       
-      const button = document.createElement("button");
-      button.type = "button";
-      
-      // Force it into flow
-      button.style.display = "block";
-      button.style.width = "100%";
-      button.style.height = "50px";
-      button.style.backgroundColor = "blue"; // Blue bar
-      button.style.color = "white";
-      button.style.fontSize = "20px";
-      button.innerText = "COPY BUTTON DEBUG";
-      button.style.cursor = "pointer";
-      button.style.marginBottom = "10px";
+      if (!button || !root.contains(button)) return;
 
-      wrapper.appendChild(button); // Add button FIRST (above pre)
-      wrapper.appendChild(pre);    // Then pre
+      e.preventDefault();
+      e.stopPropagation();
 
-      pre.style.position = "relative"; 
-      
-      /*
-      button.className = ...
-      button.innerHTML = copySvg;
-      */
+      const code = button.getAttribute("data-code");
+      // Fallback to finding the code block if attribute is empty/missing
+      const codeText = code || button.nextElementSibling?.querySelector("code")?.textContent || "";
 
-      // Duplicate declarations removed
-      if (processedCount === 0) {
-          console.log("[CopyButton debugging] First wrapper HTML:", wrapper.outerHTML);
+      if (!codeText) return;
+
+      try {
+        await copyTextToClipboard(codeText);
+        button.innerHTML = checkSvg;
+        button.setAttribute("title", "Copied");
+        
+        setTimeout(() => {
+          button.innerHTML = copySvg;
+          button.setAttribute("title", "Copy");
+        }, 1500);
+      } catch (err) {
+        console.error("Failed to copy:", err);
+        button.setAttribute("title", "Copy failed");
       }
-      processedCount++;
-    }
-    console.log(`[CopyButton debugging] Processed ${processedCount} blocks.`);
+    };
+
+    root.addEventListener("click", handleCopyClick);
+    return () => {
+      root.removeEventListener("click", handleCopyClick);
+    };
   }, [sanitizedContent]);
 
   return (
