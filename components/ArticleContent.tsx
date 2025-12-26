@@ -133,9 +133,12 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
       const renderer = new marked.Renderer();
       const seenIds = new Map<string, number>();
 
-      renderer.heading = ({ text, depth }) => {
+      renderer.heading = function({ tokens, depth }) {
+        const text = this.parser.parseInline(tokens);
         const title = text.toString();
-        const baseId = slugifyHeading(title) || "section";
+        // Strip HTML tags for cleaner ID generation
+        const cleanTitle = title.replace(/<[^>]*>/g, "");
+        const baseId = slugifyHeading(cleanTitle) || "section";
         const nextCount = (seenIds.get(baseId) ?? 0) + 1;
         seenIds.set(baseId, nextCount);
         const id = nextCount === 1 ? baseId : `${baseId}-${nextCount}`;
@@ -164,6 +167,10 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
         `;
       };
 
+      renderer.link = ({ href, title, text }) => {
+        return `<a href="${href}" title="${title || ''}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+      };
+
       marked.use({ renderer });
 
       // Convert markdown to HTML
@@ -185,7 +192,9 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
           "data-code",     // Custom attribute for code content
           "aria-label",
           "title",
-          "type"
+          "type",
+          "target",
+          "rel"
         ],
       });
 
@@ -302,7 +311,7 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
   }, [sanitizedContent]);
 
   return (
-    <article className="grid md:grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px] gap-8 lg:gap-12 w-full max-w-7xl mx-auto mt-6 md:mt-24 mb-10 px-4">
+    <article className="grid md:grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px] gap-8 lg:gap-12 w-full max-w-[90rem] mx-auto mt-6 md:mt-24 mb-10 px-4">
       <div className="markdown-body w-full min-w-0" ref={containerRef}>
         <div dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
       </div>
