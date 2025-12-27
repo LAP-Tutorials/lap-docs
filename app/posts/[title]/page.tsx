@@ -13,6 +13,8 @@ import Subheading from "@/components/Subheading";
 import Link from "next/link";
 import ArticleContent from "@/components/ArticleContent";
 import AuthorCard from "@/components/AuthorCard";
+import JsonLd from "@/components/JsonLd";
+import type { Metadata } from "next";
 
 import {
   RiInstagramLine,
@@ -46,24 +48,94 @@ export async function generateMetadata({
   params,
 }: {
   params: Promise<{ title: string }>;
-}) {
-  const { title } = await params; // Await the params object
+}): Promise<Metadata> {
+  const { title } = await params;
   try {
     const articlesRef = collection(db, "articles");
     const q = query(articlesRef, where("slug", "==", title));
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
-      return { title: "Article Not Found | L.A.P" };
+      return {
+        title: "Article Not Found",
+        description: "The requested article could not be found.",
+      };
     }
 
     const articleData = snapshot.docs[0].data();
+    const articleTitle = articleData.title || "Untitled Article";
+    const articleDescription = articleData.description || "Read this article on L.A.P Docs.";
+    const articleImage = articleData.img;
+    const articleDate = articleData.date?.toDate().toISOString();
+
+    // Fetch author name if available
+    let authorName = "L.A.P Team";
+    if (articleData.authorUID) {
+        const authorSnapshot = await getDocs(
+            query(collection(db, "authors"), where("uid", "==", articleData.authorUID))
+        );
+        if (!authorSnapshot.empty) {
+            authorName = authorSnapshot.docs[0].data().name || authorName;
+        }
+    }
+
+    // Generate keywords from Title and Description
+    const stopWords = new Set(["a", "an", "the", "and", "or", "but", "is", "are", "of", "to", "in", "on", "for", "with", "at", "by", "from", "up", "about", "into", "over", "after"]);
+    
+    const extractKeywords = (text: string) => {
+      return text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, "") // Remove bad chars
+        .split(/\s+/)
+        .filter(word => word.length > 2 && !stopWords.has(word));
+    };
+
+    const titleKeywords = extractKeywords(articleTitle);
+    const descKeywords = extractKeywords(articleDescription);
+    const uniqueKeywords = Array.from(new Set([
+      articleData.label, 
+      "Technology", 
+      "Tutorials", 
+      "L.A.P Docs",
+      ...titleKeywords, 
+      ...descKeywords
+    ]));
+
     return {
-      title: `${articleData.title} | L.A.P`,
+      title: articleTitle,
+      description: articleDescription,
+      keywords: uniqueKeywords,
+      authors: [{ name: authorName }],
+      alternates: {
+        canonical: `/posts/${articleData.slug}`,
+      },
+      openGraph: {
+        title: articleTitle,
+        description: articleDescription,
+        url: `/posts/${articleData.slug}`,
+        siteName: "L.A.P Docs",
+        type: "article",
+        publishedTime: articleDate,
+        authors: [authorName],
+        images: articleImage
+          ? [
+              {
+                url: articleImage,
+                alt: articleData.imgAlt || articleTitle,
+              },
+            ]
+          : [],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: articleTitle,
+        description: articleDescription,
+        images: articleImage ? [articleImage] : [],
+      },
     };
   } catch (error) {
     return {
-      title: "Error Loading Article | L.A.P",
+      title: "Error Loading Article",
     };
   }
 }
@@ -149,8 +221,36 @@ export default async function ArticleDetails({
       .filter((article) => article.id !== processedArticle.id)
       .slice(0, 3);
 
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: processedArticle.title,
+      description: processedArticle.description,
+      image: processedArticle.img ? [processedArticle.img] : [],
+      datePublished: processedArticle.date.toISOString(),
+      dateModified: processedArticle.date.toISOString(), // Assuming modified is same as published if not tracked
+      author: {
+        "@type": "Person",
+        name: processedArticle.authorName,
+        url: authorData.slug ? `https://lap-docs.netlify.app/team/${authorData.slug}` : undefined,
+      },
+      publisher: {
+        "@type": "Organization",
+        name: "L.A.P Docs",
+        logo: {
+          "@type": "ImageObject",
+          url: "https://lap-docs.netlify.app/logos/LAP-Logo-Color.png", // Verify this path
+        },
+      },
+      mainEntityOfPage: {
+        "@type": "WebPage",
+        "@id": `https://lap-docs.netlify.app/posts/${processedArticle.slug}`,
+      },
+    };
+
     return (
       <main className="max-w-[95rem] w-full mx-auto px-4 md:pt-8 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
+        <JsonLd data={jsonLd} />
         <PostNavigation href="/posts">POSTS</PostNavigation>
 
         <article className="grid md:grid-cols-2 gap-6 md:gap-6 pb-6 md:pb-24">

@@ -6,15 +6,43 @@ import NewsTicker from "@/components/NewsTicker/NewsTicker";
 import PageTitle from "@/components/PageTitle";
 import Subheading from "@/components/Subheading";
 import { Suspense } from "react";
+import type { Metadata } from "next";
+import JsonLd from "@/components/JsonLd";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "L.A.P Docs | Home",
   description: "Simplified text documents about everything made on the L.A.P - tutorials youtube channel",
+  openGraph: {
+    title: "L.A.P Docs | Home",
+    description: "Simplified text documents about everything made on the L.A.P - tutorials youtube channel",
+    url: "https://lap-docs.netlify.app/",
+    siteName: "L.A.P Docs",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "L.A.P Docs",
+    description: "Simplified text documents about everything made on the L.A.P - tutorials youtube channel",
+  },
 };
 
 export default function Home() {
+    const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: "L.A.P Docs",
+        url: "https://lap-docs.netlify.app/",
+        potentialAction: {
+          "@type": "SearchAction",
+          target: "https://lap-docs.netlify.app/search?q={search_term_string}",
+          "query-input": "required name=search_term_string",
+        },
+    };
+
   return (
     <main className="flex flex-col min-h-screen max-w-[95rem] w-full mx-auto px-4 lg:pt-0 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
+      <JsonLd data={jsonLd} />
       <PageTitle
         className="sr-only"
         imgSrc="/images/titles/lap-docs.svg"

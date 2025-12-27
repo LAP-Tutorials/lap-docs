@@ -6,8 +6,25 @@ import Footer from "@/components/Footer";
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: "L.A.P Docs",
+  metadataBase: new URL("https://lap-docs.netlify.app/"),
+  title: {
+    default: "L.A.P Docs",
+    template: "%s | L.A.P Docs",
+  },
   description: "Simplicity in Tech. L.A.P aims to make tech simple as possible for everyone.",
+  openGraph: {
+    title: "L.A.P Docs",
+    description: "Simplicity in Tech. L.A.P aims to make tech simple as possible for everyone.",
+    url: "https://lap-docs.netlify.app/",
+    siteName: "L.A.P Docs",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "L.A.P Docs",
+    description: "Simplicity in Tech. L.A.P aims to make tech simple as possible for everyone.",
+  },
 };
 
 export default function RootLayout({
