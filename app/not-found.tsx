@@ -1,9 +1,14 @@
 import PageTitle from "@/components/PageTitle";
 import Link from "next/link";
+import type { Metadata } from "next";
 
-export const metadata = {
-  title: "Page not found | L.A.P",
-  description: "Page does not exist",
+export const metadata: Metadata = {
+  title: "Page Not Found",
+  description: "The requested page does not exist.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function NotFound() {

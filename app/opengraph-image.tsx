@@ -15,40 +15,45 @@ export default async function Image() {
     (
       <div
         style={{
-          background: "linear-gradient(to bottom right, #000000, #111111)",
+          backgroundColor: "#050505", // Very dark background matching the site
           height: "100%",
           width: "100%",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          color: "white",
           fontFamily: "sans-serif",
+          position: "relative",
         }}
       >
         <div
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "4px solid white",
-                padding: "40px 80px",
-                borderRadius: "20px",
-                background: "black",
-            }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 900, // Extra bold
+          }}
         >
-            <div style={{ fontSize: 120, fontWeight: "bold", letterSpacing: "-0.05em" }}>
-            L.A.P
-            </div>
-            <div style={{ fontSize: 40, marginTop: "20px", color: "#CCCCCC", textTransform: "uppercase", letterSpacing: "0.2em" }}>
-            Docs
-            </div>
+          <span style={{ color: "#9D4EDD", fontSize: 160, letterSpacing: "-0.02em" }}>L.A.P</span>
+          <span style={{ color: "#9D4EDD", fontSize: 160, margin: "0 30px" }}>-</span>
+          <span style={{ color: "#9D4EDD", fontSize: 160, letterSpacing: "-0.02em" }}>DOCS</span>
         </div>
-        
-        <div style={{ position: "absolute", bottom: "40px", fontSize: 24, color: "#444" }}>
+
+        {/* Subtitle/Tagline matching the site header feel */}
+        <div style={{ 
+            marginTop: "40px",
+            color: "white", 
+            fontSize: 32, 
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            fontWeight: "bold"
+        }}>
             Simplicity in Tech
         </div>
+
+        {/* Decorative purple bar on the side/top like the screenshot? Or just keep it clean. 
+            The screenshot has a purple accent line. Let's add a subtle one. */}
+        <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "8px", background: "#9D4EDD" }} />
       </div>
     ),
     {

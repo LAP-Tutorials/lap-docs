@@ -3,6 +3,8 @@ import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import PostNavigation from "@/components/PostNavigation";
 import SocialSharing from "@/components/SocialSharing";
 import Link from "next/link";
+import JsonLd from "@/components/JsonLd";
+import type { Metadata } from "next";
 import {
   RiInstagramLine,
   RiTwitterFill,
@@ -121,6 +123,49 @@ const SOCIAL_ICONS: { [key: string]: any } = {
   link: RiLink,
 };
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ author: string }>;
+}): Promise<Metadata> {
+  const { author } = await params;
+  const data = await getAuthorData(author);
+
+  if (!data) {
+    return {
+      title: "Author Not Found | L.A.P Docs",
+      description: "The requested author could not be found.",
+    };
+  }
+
+  const { author: authorData } = data;
+
+  return {
+    title: `${authorData.name} | L.A.P Team`,
+    description: authorData.biography.summary,
+    openGraph: {
+      title: `${authorData.name} | L.A.P Team`,
+      description: authorData.biography.summary,
+      url: `https://lap-docs.netlify.app/team/${authorData.slug}`,
+      images: authorData.avatar
+        ? [
+            {
+              url: authorData.avatar,
+              alt: authorData.imgAlt || authorData.name,
+            },
+          ]
+        : [],
+      type: "profile",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${authorData.name} | L.A.P Team`,
+      description: authorData.biography.summary,
+      images: authorData.avatar ? [authorData.avatar] : [],
+    },
+  };
+}
+
 // **Async page component**
 export default async function Page({
   params,
@@ -147,8 +192,23 @@ export default async function Page({
         }))
     : [];
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    mainEntity: {
+      "@type": "Person",
+      name: authorData.name,
+      jobTitle: authorData.job,
+      image: authorData.avatar,
+      description: authorData.biography.summary,
+      url: `https://lap-docs.netlify.app/team/${authorData.slug}`,
+      sameAs: socialLinks.map((link) => link.href),
+    },
+  };
+
   return (
     <main className="max-w-[95rem] w-full mx-auto px-4 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
+      <JsonLd data={jsonLd} />
       <PostNavigation href="/team">Author</PostNavigation>
 
       <article className="max-w-[75rem] w-full mx-auto grid lg:grid-cols-[300px_680px] gap-8 md:gap-6 justify-around">

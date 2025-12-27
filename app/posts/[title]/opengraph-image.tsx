@@ -62,43 +62,68 @@ export default async function Image({
     (
       <div
         style={{
-          background: "linear-gradient(to bottom right, #000000, #1a1a1a)",
-          height: "100%",
-          width: "100%",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          padding: "60px",
-          color: "white",
-          fontFamily: "sans-serif",
+            backgroundColor: "#050505",
+            height: "100%",
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            padding: "60px",
+            fontFamily: "sans-serif",
+            position: "relative",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-             {/* Logo or Brand Name */}
+        <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "8px", background: "#9D4EDD" }} />
+
+        {/* Top: Branding */}
+        <div style={{ display: "flex", alignItems: "center" }}>
             <div style={{ 
-                fontSize: 32, 
-                fontWeight: "bold", 
-                color: "#CCCCCC",
-                border: "2px solid #CCCCCC",
-                padding: "8px 16px",
-                borderRadius: "50px"
+                fontSize: 48, 
+                fontWeight: 900, 
+                color: "#9D4EDD", // Purple
+                letterSpacing: "-0.02em"
             }}>
-                L.A.P
+                L.A.P - DOCS
             </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <div style={{ fontSize: 64, fontWeight: "bold", lineHeight: 1.1 }}>
+        {/* Center: Title & Author */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "40px" }}>
+          <div style={{ 
+              fontSize: 80, 
+              fontWeight: "bold", 
+              lineHeight: 1.1, 
+              color: "white", 
+              textTransform: "uppercase" 
+            }}>
             {articleTitle}
           </div>
-          <div style={{ fontSize: 32, color: "#AAAAAA" }}>
-             by {authorName}
+          <div style={{ 
+              fontSize: 28, 
+              color: "#9D4EDD", // Purple accent for label or "author"
+              fontWeight: "bold",
+              marginTop: "10px"
+            }}>
+             AUTHOR: <span style={{ color: "white" }}>{authorName.toUpperCase()}</span>
           </div>
         </div>
 
-        <div style={{ fontSize: 24, color: "#666666" }}>
-          lap-docs.netlify.app
+        {/* Bottom: Footer Info */}
+        <div style={{ 
+            width: "100%", 
+            display: "flex", 
+            justifyContent: "space-between", 
+            alignItems: "flex-end",
+            borderTop: "2px solid #333",
+            paddingTop: "24px"
+        }}>
+            <div style={{ fontSize: 24, color: "#888" }}>
+                lap-docs.netlify.app
+            </div>
+             <div style={{ fontSize: 24, color: "#9D4EDD", fontWeight: "bold" }}>
+                SIMPLICITY IN TECH
+            </div>
         </div>
       </div>
     ),
@@ -107,3 +132,4 @@ export default async function Image({
     }
   );
 }
+
