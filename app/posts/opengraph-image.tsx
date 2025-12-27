@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
 
-export const alt = "L.A.P Docs";
+export const alt = "L.A.P Docs Posts";
 export const size = {
   width: 1200,
   height: 630,
@@ -34,21 +34,17 @@ export default async function Image() {
             padding: "0 60px",
             borderBottom: "1px solid #222"
         }}>
-           {/* Logo Icon */}
            <div style={{
                width: "40px",
                height: "40px",
                background: "#9D4EDD",
-               clipPath: "polygon(0 100%, 50% 0, 100% 100%)", // Triangle-ish
                display: "flex"
            }} />
 
-           {/* Nav Links */}
            <div style={{ display: "flex", gap: "20px", color: "#ccc", fontSize: 18, fontWeight: 600 }}>
-             <span>Posts</span>
+             <span style={{ color: "#9D4EDD" }}>Posts</span>
              <span>Team</span>
              <span>YouTube</span>
-             <span>GitHub</span>
            </div>
         </div>
 
@@ -59,7 +55,6 @@ export default async function Image() {
             flexDirection: "column", 
             alignItems: "center", 
             justifyContent: "center",
-            marginTop: "-40px" // Slight offset up to balance nav
         }}>
             <div
             style={{
@@ -69,21 +64,19 @@ export default async function Image() {
                 fontWeight: 900,
             }}
             >
-            <span style={{ color: "#9D4EDD", fontSize: 200, letterSpacing: "-0.04em", lineHeight: 0.8 }}>L.A.P</span>
-            <span style={{ color: "#9D4EDD", fontSize: 200, margin: "0 30px", lineHeight: 0.8  }}>-</span>
-            <span style={{ color: "#9D4EDD", fontSize: 200, letterSpacing: "-0.04em", lineHeight: 0.8  }}>DOCS</span>
+            <span style={{ color: "#fff", fontSize: 180, letterSpacing: "-0.04em", lineHeight: 0.8 }}>LATEST</span>
+            <span style={{ color: "#9D4EDD", fontSize: 180, marginLeft: "30px", letterSpacing: "-0.04em", lineHeight: 0.8  }}>POSTS</span>
             </div>
             
             <div style={{ 
-                marginTop: "40px",
-                padding: "10px 20px",
-                background: "#9D4EDD",
-                color: "white", 
-                fontSize: 24, 
-                fontWeight: "bold",
-                textTransform: "uppercase"
+                marginTop: "30px",
+                color: "#888", 
+                fontSize: 32, 
+                fontWeight: 500,
+                textAlign: "center",
+                maxWidth: "800px"
             }}>
-                Simplicity in Tech
+                Explore our tutorials, guides, and articles.
             </div>
         </div>
       </div>

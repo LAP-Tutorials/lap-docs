@@ -62,68 +62,78 @@ export default async function Image({
     (
       <div
         style={{
-            backgroundColor: "#050505",
-            height: "100%",
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            padding: "60px",
-            fontFamily: "sans-serif",
-            position: "relative",
+          backgroundColor: "#050505",
+          height: "100%",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          fontFamily: "sans-serif",
+          position: "relative",
         }}
       >
-        <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "8px", background: "#9D4EDD" }} />
-
-        {/* Top: Branding */}
-        <div style={{ display: "flex", alignItems: "center" }}>
-            <div style={{ 
-                fontSize: 48, 
-                fontWeight: 900, 
-                color: "#9D4EDD", // Purple
-                letterSpacing: "-0.02em"
-            }}>
-                L.A.P - DOCS
-            </div>
-        </div>
-
-        {/* Center: Title & Author */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "40px" }}>
-          <div style={{ 
-              fontSize: 80, 
-              fontWeight: "bold", 
-              lineHeight: 1.1, 
-              color: "white", 
-              textTransform: "uppercase" 
-            }}>
-            {articleTitle}
-          </div>
-          <div style={{ 
-              fontSize: 28, 
-              color: "#9D4EDD", // Purple accent for label or "author"
-              fontWeight: "bold",
-              marginTop: "10px"
-            }}>
-             AUTHOR: <span style={{ color: "white" }}>{authorName.toUpperCase()}</span>
-          </div>
-        </div>
-
-        {/* Bottom: Footer Info */}
+        {/* Fake Navbar */}
         <div style={{ 
             width: "100%", 
+            height: "80px", 
             display: "flex", 
-            justifyContent: "space-between", 
-            alignItems: "flex-end",
-            borderTop: "2px solid #333",
-            paddingTop: "24px"
+            alignItems: "center", 
+            justifyContent: "space-between",
+            padding: "0 60px",
+            borderBottom: "1px solid #222"
         }}>
-            <div style={{ fontSize: 24, color: "#888" }}>
-                lap-docs.netlify.app
-            </div>
-             <div style={{ fontSize: 24, color: "#9D4EDD", fontWeight: "bold" }}>
-                SIMPLICITY IN TECH
-            </div>
+           <div style={{
+               width: "40px",
+               height: "40px",
+               background: "#9D4EDD",
+               display: "flex"
+           }} />
+
+           <div style={{ display: "flex", gap: "20px", color: "#ccc", fontSize: 18, fontWeight: 600 }}>
+             <span style={{ color: "#9D4EDD" }}>Posts</span>
+             <span>Team</span>
+             <span>YouTube</span>
+           </div>
+        </div>
+
+        {/* Hero Section / Content */}
+        <div style={{ 
+            flex: 1, 
+            display: "flex", 
+            flexDirection: "column", 
+            alignItems: "flex-start", 
+            justifyContent: "center",
+            padding: "0 80px"
+        }}>
+           <div style={{ 
+               color: "#9D4EDD", 
+               fontSize: 24, 
+               fontWeight: "bold",
+               marginBottom: "20px",
+               textTransform: "uppercase"
+           }}>
+             AUTHOR: {authorName}
+           </div>
+
+           <div style={{ 
+               fontSize: 80, 
+               fontWeight: 900, 
+               lineHeight: 1.1, 
+               color: "white", 
+               textTransform: "uppercase",
+               marginBottom: "40px"
+           }}>
+            {articleTitle}
+          </div>
+
+          <div style={{ 
+              display: "flex",
+              alignItems: "center",
+              gap: "20px"
+          }}>
+              <div style={{ padding: "10px 20px", background: "#333", borderRadius: "50px", color: "white", fontSize: 20 }}>
+                 Read Article
+              </div>
+          </div>
         </div>
       </div>
     ),
