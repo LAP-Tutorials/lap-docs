@@ -19,13 +19,13 @@ export const metadata: Metadata = {
     siteName: "L.A.P Docs",
     locale: "en_US",
     type: "website",
-    images: ["/og-image.png"],
+    images: ["https://lap-docs.netlify.app/og-image.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "L.A.P Docs",
     description: "Simplicity in Tech. L.A.P aims to make tech simple as possible for everyone.",
-    images: ["/twitter-image.png"],
+    images: ["https://lap-docs.netlify.app/twitter-image.png"],
   },
   other: {
     "og:logo": "https://lap-docs.netlify.app/logos/LAP-Logo-Transparent.png",
