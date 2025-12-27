@@ -8,6 +8,7 @@ import JsonLd from "@/components/JsonLd";
 export const metadata: Metadata = {
   title: "Posts",
   description: "Browse our latest articles, tutorials, and guides.",
+  keywords: ["Articles", "Tutorials", "Guides", "Tech Blog", "L.A.P Posts"],
   openGraph: {
     title: "Posts | L.A.P Docs",
     description: "Browse our latest articles, tutorials, and guides.",

@@ -12,6 +12,21 @@ export const metadata: Metadata = {
     template: "%s | L.A.P Docs",
   },
   description: "Simplicity in Tech. L.A.P aims to make tech simple as possible for everyone.",
+  keywords: ["L.A.P Docs", "Technology", "Tutorials", "Guides", "Tech Simplified", "Programming", "Web Development"],
+  authors: [{ name: "L.A.P Team", url: "https://lap-docs.netlify.app/team" }],
+  creator: "L.A.P Team",
+  publisher: "L.A.P Docs",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   openGraph: {
     title: "L.A.P Docs",
     description: "Simplicity in Tech. L.A.P aims to make tech simple as possible for everyone.",
@@ -19,13 +34,21 @@ export const metadata: Metadata = {
     siteName: "L.A.P Docs",
     locale: "en_US",
     type: "website",
-    images: "https://lap-docs.netlify.app/og-image.png",
+    images: [
+      {
+        url: "https://lap-docs.netlify.app/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "L.A.P Docs - Simplicity in Tech",
+      }
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "L.A.P Docs",
     description: "Simplicity in Tech. L.A.P aims to make tech simple as possible for everyone.",
-    images: "https://lap-docs.netlify.app/twitter-image.png",
+    images: ["https://lap-docs.netlify.app/twitter-image.png"],
+    creator: "@lap_mgmt", // Assuming handle, can be updated if known
   },
   other: {
     "og:logo": "https://lap-docs.netlify.app/logos/LAP-Logo-Transparent.png",

@@ -107,7 +107,7 @@ export async function generateMetadata({
       keywords: uniqueKeywords,
       authors: [{ name: authorName }],
       alternates: {
-        canonical: `/posts/${articleData.slug}`,
+        canonical: `https://lap-docs.netlify.app/posts/${articleData.slug}`,
       },
       openGraph: {
         title: articleTitle,

@@ -163,6 +163,9 @@ export async function generateMetadata({
       description: authorData.biography.summary,
       images: authorData.avatar ? [authorData.avatar] : [],
     },
+    alternates: {
+      canonical: `https://lap-docs.netlify.app/team/${authorData.slug}`,
+    },
   };
 }
 
