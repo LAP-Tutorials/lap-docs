@@ -20,64 +20,42 @@ export default async function Image() {
           width: "100%",
           display: "flex",
           flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
           fontFamily: "sans-serif",
           position: "relative",
         }}
       >
-        {/* Fake Navbar */}
-        <div style={{ 
-            width: "100%", 
-            height: "80px", 
-            display: "flex", 
-            alignItems: "center", 
-            justifyContent: "space-between",
-            padding: "0 60px",
-            borderBottom: "1px solid #222"
-        }}>
-           <div style={{
-               width: "40px",
-               height: "40px",
-               background: "#9D4EDD",
-               display: "flex"
-           }} />
+        <div style={{
+            width: "80px",
+            height: "80px",
+            background: "#9D4EDD",
+            marginBottom: "40px",
+            clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)",
+            display: "flex"
+        }} />
 
-           <div style={{ display: "flex", gap: "20px", color: "#ccc", fontSize: 18, fontWeight: 600 }}>
-             <span>Posts</span>
-             <span style={{ color: "#9D4EDD" }}>Team</span>
-             <span>YouTube</span>
-           </div>
-        </div>
-
-        {/* Hero Section */}
-        <div style={{ 
-            flex: 1, 
-            display: "flex", 
-            flexDirection: "column", 
-            alignItems: "center", 
+        <div
+        style={{
+            display: "flex",
+            alignItems: "center",
             justifyContent: "center",
+            fontWeight: 900,
+        }}
+        >
+            <span style={{ color: "#fff", fontSize: 200, letterSpacing: "-0.05em", lineHeight: 0.8 }}>L.A.P</span>
+            <span style={{ color: "#9D4EDD", fontSize: 200, marginLeft: "40px", letterSpacing: "-0.05em", lineHeight: 0.8  }}>TEAM</span>
+        </div>
+        
+        <div style={{ 
+            marginTop: "30px",
+            color: "#888", 
+            fontSize: 32, 
+            fontWeight: 500,
+            textAlign: "center",
+            letterSpacing: "0.05em"
         }}>
-            <div
-            style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 900,
-            }}
-            >
-            <span style={{ color: "#fff", fontSize: 180, letterSpacing: "-0.04em", lineHeight: 0.8 }}>OUR</span>
-            <span style={{ color: "#9D4EDD", fontSize: 180, marginLeft: "30px", letterSpacing: "-0.04em", lineHeight: 0.8  }}>TEAM</span>
-            </div>
-            
-            <div style={{ 
-                marginTop: "30px",
-                color: "#888", 
-                fontSize: 32, 
-                fontWeight: 500,
-                textAlign: "center",
-                maxWidth: "800px"
-            }}>
-                Meet the creators behind L.A.P Docs
-            </div>
+            Meet the Creators
         </div>
       </div>
     ),

@@ -20,71 +20,46 @@ export default async function Image() {
           width: "100%",
           display: "flex",
           flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
           fontFamily: "sans-serif",
           position: "relative",
         }}
       >
-        {/* Fake Navbar */}
-        <div style={{ 
-            width: "100%", 
-            height: "80px", 
-            display: "flex", 
-            alignItems: "center", 
-            justifyContent: "space-between",
-            padding: "0 60px",
-            borderBottom: "1px solid #222"
-        }}>
-           {/* Logo Icon */}
-           <div style={{
-               width: "40px",
-               height: "40px",
-               background: "#9D4EDD",
-               clipPath: "polygon(0 100%, 50% 0, 100% 100%)", // Triangle-ish
-               display: "flex"
-           }} />
+        {/* Logo Shape */}
+        <div style={{
+            width: "100px",
+            height: "100px",
+            background: "#9D4EDD",
+            marginBottom: "50px",
+            clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)", // Proper Triangle
+            display: "flex"
+        }} />
 
-           {/* Nav Links */}
-           <div style={{ display: "flex", gap: "20px", color: "#ccc", fontSize: 18, fontWeight: 600 }}>
-             <span>Posts</span>
-             <span>Team</span>
-             <span>YouTube</span>
-             <span>GitHub</span>
-           </div>
-        </div>
-
-        {/* Hero Section */}
-        <div style={{ 
-            flex: 1, 
-            display: "flex", 
-            flexDirection: "column", 
-            alignItems: "center", 
+        {/* Main Text */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
             justifyContent: "center",
-            marginTop: "-40px" // Slight offset up to balance nav
+            fontWeight: 900,
+          }}
+        >
+          <span style={{ color: "#9D4EDD", fontSize: 180, letterSpacing: "-0.04em", lineHeight: 0.8 }}>L.A.P</span>
+          <span style={{ color: "white", fontSize: 180, margin: "0 30px", lineHeight: 0.8  }}>-</span>
+          <span style={{ color: "#9D4EDD", fontSize: 180, letterSpacing: "-0.04em", lineHeight: 0.8  }}>DOCS</span>
+        </div>
+        
+        {/* Tagline */}
+        <div style={{ 
+            marginTop: "60px",
+            color: "white", 
+            fontSize: 32, 
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            fontWeight: 600
         }}>
-            <div
-            style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 900,
-            }}
-            >
-            <span style={{ color: "#9D4EDD", fontSize: 200, letterSpacing: "-0.04em", lineHeight: 0.8 }}>L.A.P</span>
-            <span style={{ color: "#9D4EDD", fontSize: 200, margin: "0 30px", lineHeight: 0.8  }}>-</span>
-            <span style={{ color: "#9D4EDD", fontSize: 200, letterSpacing: "-0.04em", lineHeight: 0.8  }}>DOCS</span>
-            </div>
-            
-            <div style={{ 
-                marginTop: "40px",
-                padding: "10px 20px",
-                background: "#9D4EDD",
-                color: "white", 
-                fontSize: 24, 
-                fontWeight: "bold",
-                textTransform: "uppercase"
-            }}>
-                Simplicity in Tech
-            </div>
+            Simplicity in Tech
         </div>
       </div>
     ),
