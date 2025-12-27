@@ -14,11 +14,13 @@ export const metadata: Metadata = {
     url: "https://lap-docs.netlify.app/team",
     siteName: "L.A.P Docs",
     type: "website",
+    images: ["/og-image.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Team | L.A.P Docs",
     description: "Meet the dedicated team behind L.A.P Docs.",
+    images: ["/twitter-image.png"],
   },
 };
 
