@@ -141,10 +141,10 @@ export async function generateMetadata({
   const { author: authorData } = data;
 
   return {
-    title: `${authorData.name} | L.A.P Team`,
+    title: `${authorData.name}`,
     description: authorData.biography.summary,
     openGraph: {
-      title: `${authorData.name} | L.A.P Team`,
+      title: `${authorData.name}`,
       description: authorData.biography.summary,
       url: `https://lap-docs.netlify.app/team/${authorData.slug}`,
       images: authorData.avatar
@@ -159,7 +159,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: `${authorData.name} | L.A.P Team`,
+      title: `${authorData.name}`,
       description: authorData.biography.summary,
       images: authorData.avatar ? [authorData.avatar] : [],
     },
