@@ -64,42 +64,71 @@ export async function generateMetadata({
 
     const articleData = snapshot.docs[0].data();
     const articleTitle = articleData.title || "Untitled Article";
-    const articleDescription = articleData.description || "Read this article on L.A.P Docs.";
+    const articleDescription =
+      articleData.description || "Read this article on L.A.P Docs.";
     const articleImage = articleData.img;
     const articleDate = articleData.date?.toDate().toISOString();
 
     // Fetch author name if available
     let authorName = "L.A.P Team";
     if (articleData.authorUID) {
-        const authorSnapshot = await getDocs(
-            query(collection(db, "authors"), where("uid", "==", articleData.authorUID))
-        );
-        if (!authorSnapshot.empty) {
-            authorName = authorSnapshot.docs[0].data().name || authorName;
-        }
+      const authorSnapshot = await getDocs(
+        query(
+          collection(db, "authors"),
+          where("uid", "==", articleData.authorUID)
+        )
+      );
+      if (!authorSnapshot.empty) {
+        authorName = authorSnapshot.docs[0].data().name || authorName;
+      }
     }
 
     // Generate keywords from Title and Description
-    const stopWords = new Set(["a", "an", "the", "and", "or", "but", "is", "are", "of", "to", "in", "on", "for", "with", "at", "by", "from", "up", "about", "into", "over", "after"]);
-    
+    const stopWords = new Set([
+      "a",
+      "an",
+      "the",
+      "and",
+      "or",
+      "but",
+      "is",
+      "are",
+      "of",
+      "to",
+      "in",
+      "on",
+      "for",
+      "with",
+      "at",
+      "by",
+      "from",
+      "up",
+      "about",
+      "into",
+      "over",
+      "after",
+    ]);
+
     const extractKeywords = (text: string) => {
       return text
         .toLowerCase()
         .replace(/[^a-z0-9\s]/g, "") // Remove bad chars
         .split(/\s+/)
-        .filter(word => word.length > 2 && !stopWords.has(word));
+        .filter((word) => word.length > 2 && !stopWords.has(word));
     };
 
     const titleKeywords = extractKeywords(articleTitle);
     const descKeywords = extractKeywords(articleDescription);
-    const uniqueKeywords = Array.from(new Set([
-      articleData.label, 
-      "Technology", 
-      "Tutorials", 
-      "L.A.P Docs",
-      ...titleKeywords, 
-      ...descKeywords
-    ]));
+    const uniqueKeywords = Array.from(
+      new Set([
+        articleData.label,
+        "Technology",
+        "Tutorials",
+        "L.A.P Docs",
+        ...titleKeywords,
+        ...descKeywords,
+      ])
+    );
 
     return {
       title: articleTitle,
@@ -188,7 +217,7 @@ export default async function ArticleDetails({
       authorUID: articleData.authorUID,
       authorName: authorData.name || "Unknown Author",
       authorAvatar: authorData.avatar || "/default-avatar.png",
-      publish: false
+      publish: false,
     };
 
     // Get latest articles (excluding current)
@@ -232,7 +261,9 @@ export default async function ArticleDetails({
       author: {
         "@type": "Person",
         name: processedArticle.authorName,
-        url: authorData.slug ? `https://lap-docs.netlify.app/team/${authorData.slug}` : undefined,
+        url: authorData.slug
+          ? `https://lap-docs.netlify.app/team/${authorData.slug}`
+          : undefined,
       },
       publisher: {
         "@type": "Organization",
@@ -292,7 +323,7 @@ export default async function ArticleDetails({
           />
         </div>
 
-        <div className="w">
+        <div className="w-full">
           <ArticleContent content={processedArticle.content} />
         </div>
 
