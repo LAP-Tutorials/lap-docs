@@ -1,7 +1,5 @@
 "use client";
 
-import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -17,43 +15,23 @@ type AuthorType = {
   city: string; 
 };
 
-// Function to shuffle an array
-const shuffleArray = (array: any[]) => {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-};
+// Function to shuffle an array (moved to inside component or utility if needed, but here we will just use it on mount to avoid hydration mismatch if we really want shuffle)
+// Actually, better to just display them. Randomness on every refresh is okay if done in useEffect, but for SSR we want content to be stable.
+// Taking first 4.
 
-export default function Authors() {
-  const [authors, setAuthors] = useState<AuthorType[]>([]);
+interface AuthorsProps {
+  initialAuthors: AuthorType[];
+}
 
-  useEffect(() => {
-    const authorsCollection = collection(db, "authors");
-
-    // Set up the listener
-    const unsubscribe = onSnapshot(authorsCollection, (snapshot) => {
-      const data: AuthorType[] = snapshot.docs.map((doc) => {
-        const authorData = doc.data() as AuthorType;
-        return {
-          ...authorData,
-          id: doc.id,
-        };
-      });
-
-      // Shuffle the authors and select the first 4
-      const shuffledAuthors = shuffleArray(data);
-      setAuthors(shuffledAuthors.slice(0, 4));
-    });
-
-    // Cleanup the listener on unmount
-    return () => unsubscribe();
-  }, []);
-
+export default function Authors({ initialAuthors }: AuthorsProps) {
+  // If we really want random, we must do it in useEffect to match server HTML first, then update (causing a flicker). 
+  // OR we pass a random seed/order from server.
+  // For now, let's just display the initialAuthors passed in. 
+  // The server can pass a specific set or random set.
+  
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 mb-48 max-w-[95rem] w-full mx-auto">
-      {authors.map((author) => (
+      {initialAuthors.map((author) => (
         <article
           className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 md:gap-12 p-4 md:p-8 border border-white"
           key={author.id}
@@ -87,3 +65,5 @@ export default function Authors() {
     </div>
   );
 }
+
+

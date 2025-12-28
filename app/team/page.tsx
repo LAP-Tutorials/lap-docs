@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import Loading from "./loading";
 import type { Metadata } from "next";
 import JsonLd from "@/components/JsonLd";
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 export const metadata: Metadata = {
   title: "Team",
@@ -24,7 +26,41 @@ export const metadata: Metadata = {
   },
 };
 
-export default function AuthorsPage() {
+type AuthorType = {
+  uid: string;
+  name: string;
+  job: string;
+  city: string;
+  avatar: string;
+  imgAlt: string;
+  slug: string;
+};
+
+async function getAuthors() {
+  try {
+    const querySnapshot = await getDocs(collection(db, "authors"));
+    const fetchedAuthors = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          uid: doc.id,
+          name: data.name || "",
+          job: data.job || "",
+          city: data.city || "",
+          avatar: data.avatar || "",
+          imgAlt: data.imgAlt || "",
+          slug: data.slug || "",
+        };
+    });
+    return fetchedAuthors;
+  } catch (error) {
+    console.error("Error fetching authors:", error);
+    return [];
+  }
+}
+
+export default async function AuthorsPage() {
+  const authors = await getAuthors();
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -44,7 +80,7 @@ export default function AuthorsPage() {
         Authors
       </PageTitle>
       <Suspense fallback={<Loading />}>
-        <AuthorsList />
+        <AuthorsList initialAuthors={authors} />
       </Suspense>
     </main>
   );

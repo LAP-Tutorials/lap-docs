@@ -4,6 +4,8 @@ import PageTitle from "@/components/PageTitle";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import JsonLd from "@/components/JsonLd";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
 
 export const metadata: Metadata = {
   title: "Posts",
@@ -25,7 +27,84 @@ export const metadata: Metadata = {
   },
 };
 
-export default function MagazinePage() {
+interface Article {
+  id: string;
+  title: string;
+  label: string;
+  date: string;
+  img: string;
+  imgAlt: string;
+  slug: string;
+  description: string;
+  read: string;
+  authorUID: string;
+  authorName?: string;
+  publish: boolean;
+}
+
+async function getArticles() {
+  try {
+    // Fetch articles, ordered by date descending
+    const articlesQuery = query(
+      collection(db, "articles"),
+      orderBy("date", "desc")
+    );
+    const articlesSnapshot = await getDocs(articlesQuery);
+
+    // Fetch authors
+    const authorsSnapshot = await getDocs(collection(db, "authors"));
+    // Create a map for faster lookup
+    const authorsMap = new Map(authorsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
+
+    const withAuthors = articlesSnapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        let dateResult = "No date";
+        
+        if (data.date) {
+             if (data.date.toDate) {
+                 dateResult = data.date.toDate().toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  });
+             } else if (typeof data.date === "string" || data.date instanceof Date) {
+                  dateResult = new Date(data.date).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  });
+             }
+        }
+
+        return {
+          id: doc.id,
+          title: data.title || "",
+          label: data.label || "",
+          date: dateResult,
+          img: data.img || "",
+          imgAlt: data.imgAlt || "",
+          slug: data.slug || "",
+          description: data.description || "",
+          read: data.read || "",
+          authorUID: data.authorUID || "",
+          authorName: authorsMap.get(data.authorUID) || "Unknown Author",
+          publish: data.publish || false,
+        } as Article;
+      })
+      // Filter out unpublished
+      .filter((article) => article.publish === true);
+
+    return withAuthors;
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return [];
+  }
+}
+
+export default async function MagazinePage() {
+  const articles = await getArticles();
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -45,7 +124,7 @@ export default function MagazinePage() {
         Posts
       </PageTitle>
       <Suspense fallback={<Loading />}>
-        <Articles />
+        <Articles initialArticles={articles} />
       </Suspense>
     </main>
   );

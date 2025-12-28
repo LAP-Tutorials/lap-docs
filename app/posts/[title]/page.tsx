@@ -254,7 +254,7 @@ export default async function ArticleDetails({
         <PostNavigation href="/posts">POSTS</PostNavigation>
 
         <article className="grid md:grid-cols-2 gap-6 md:gap-6 pb-6 md:pb-24">
-          <h2 className="text-subtitle">{processedArticle.title}</h2>
+          <h1 className="text-subtitle">{processedArticle.title}</h1>
           <p>{processedArticle.description}</p>
         </article>
 

@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { Timestamp } from "firebase/firestore";
 import Sidebar from "../Sidebar";
 import { Separator } from "@radix-ui/react-separator";
 import Link from "next/link";
@@ -41,47 +40,17 @@ const formatDate = (date: string | Timestamp) => {
   });
 };
 
-export default function LatestPosts() {
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(true);
+interface LatestPostsProps {
+  initialPosts: Article[];
+}
 
-  // Fetch articles from Firestore in real-time
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "articles"), (snapshot) => {
-      const fetchedArticles: Article[] = snapshot.docs
-        .map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            date:
-              data.date instanceof Timestamp
-                ? data.date.toDate().toISOString()
-                : data.date,
-          } as Article;
-        })
-        // Only include published articles
-        .filter((article) => article.publish === true);
+export default function LatestPosts({ initialPosts }: LatestPostsProps) {
+  // If initialPosts are passed, just use them.
+  // We can also just render them directly.
+  // We need to sort them here if they aren't already sorted, but let's assume parent passes sorted.
 
-      // Sort articles by date (newest first)
-      fetchedArticles.sort((a, b) => {
-        const dateA = new Date(
-          a.date instanceof Timestamp ? a.date.toDate().toISOString() : a.date
-        ).getTime();
-        const dateB = new Date(
-          b.date instanceof Timestamp ? b.date.toDate().toISOString() : b.date
-        ).getTime();
-        return dateB - dateA;
-      });
-
-      setArticles(fetchedArticles);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  if (loading) return <Loading />;
+  const articles = initialPosts;
+  
   if (articles.length === 0) return <p>No articles available.</p>;
 
   const latestArticle = articles[0]; // Get the latest article

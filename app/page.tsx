@@ -8,6 +8,8 @@ import Subheading from "@/components/Subheading";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import JsonLd from "@/components/JsonLd";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, orderBy, limit, Timestamp } from "firebase/firestore";
 
 export const metadata: Metadata = {
   title: "L.A.P Docs | Home",
@@ -29,7 +31,92 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
+type Article = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  authorName: string;
+  date: string | Timestamp;
+  read: string;
+  label: string;
+  img: string;
+  imgAlt: string;
+  publish: boolean;
+};
+
+type AuthorType = {
+  id: string;
+  slug: string;
+  name: string;
+  avatar: string;
+  imgAlt: string;
+  job: string;
+  city: string; 
+};
+
+async function getData() {
+  try {
+    // Fetch latest articles
+    const articlesQuery = query(
+      collection(db, "articles"),
+      orderBy("date", "desc")
+    );
+    const articlesSnapshot = await getDocs(articlesQuery);
+    
+    // Fetch authors for mapping names
+    const authorsSnapshot = await getDocs(collection(db, "authors"));
+    const authorsMap = new Map(authorsSnapshot.docs.map(d => [d.id, d.data().name]));
+    
+    const articles: Article[] = articlesSnapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            title: data.title || "",
+            slug: data.slug || "",
+            description: data.description || "",
+            authorName: data.authorName || authorsMap.get(data.authorUID) || "Unknown Author",
+            // Ensure date is a string. If it's a Timestamp, convert. If string, keep. Else current date.
+            date: data.date instanceof Timestamp 
+                  ? data.date.toDate().toISOString() 
+                  : (typeof data.date === 'string' ? data.date : new Date().toISOString()),
+            read: data.read || "",
+            label: data.label || "",
+            img: data.img || "",
+            imgAlt: data.imgAlt || "",
+            publish: data.publish || false,
+        } as Article;
+      })
+      .filter((a) => a.publish === true);
+
+     // Fetch all authors for the authors section - explicitly pick fields
+     const allAuthors = authorsSnapshot.docs.map(doc => {
+         const data = doc.data();
+         return {
+            id: doc.id,
+            slug: data.slug || "",
+            name: data.name || "",
+            avatar: data.avatar || "",
+            imgAlt: data.imgAlt || "",
+            job: data.job || "",
+            city: data.city || "",
+         };
+     });
+     
+     // Shuffle authors
+     const shuffledAuthors = [...allAuthors].sort(() => 0.5 - Math.random()).slice(0, 4);
+
+     return { articles, shuffledAuthors };
+  } catch (error) {
+    console.error("Error fetching home data:", error);
+    return { articles: [], shuffledAuthors: [] };
+  }
+}
+
+export default async function Home() {
+    const { articles, shuffledAuthors } = await getData();
+
     const jsonLd = {
         "@context": "https://schema.org",
         "@type": "WebSite",
@@ -57,7 +144,7 @@ export default function Home() {
         <NewsTicker />
       </Suspense>
 
-      <LatestPosts />
+      <LatestPosts initialPosts={articles} />
 
       <Subheading
         className="text-subheading"
@@ -68,7 +155,7 @@ export default function Home() {
       </Subheading>
 
       <Suspense fallback={<AuthorsLoading />}>
-        <Authors />
+        <Authors initialAuthors={shuffledAuthors} />
       </Suspense>
     </main>
   );

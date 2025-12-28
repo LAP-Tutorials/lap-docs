@@ -1,9 +1,7 @@
 "use client";
 
-import { db } from "@/lib/firebase";
 import { Button } from "../ui/button";
-import { useState, useEffect } from "react";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { useState } from "react";
 import Link from "next/link";
 import Loading from "./loading";
 
@@ -22,78 +20,38 @@ interface Article {
   publish: boolean;
 }
 
-export default function Articles() {
-  const [articles, setArticles] = useState<Article[]>([]);
+interface Author {
+  uid: string;
+  name: string;
+}
+
+interface ArticlesProps {
+  initialArticles: Article[];
+}
+
+export default function Articles({ initialArticles }: ArticlesProps) {
   const [labels, setLabels] = useState<string[]>([]);
   const [selectedLabel, setSelectedLabel] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
+  // Determine loading state: if initialArticles is empty, we might assume loading or empty state.
+  // Actually, for SSR, we can assume data is ready.
+  // Unless we want a suspense boundary higher up.
+  // Let's just use initialArticles directly.
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch articles, ordered by date descending
-        const articlesQuery = query(
-          collection(db, "articles"),
-          orderBy("date", "desc")
-        );
-        const articlesSnapshot = await getDocs(articlesQuery);
-        
-        const articlesData = articlesSnapshot.docs
-          .map(doc => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              ...data,
-              date: data.date?.toDate().toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              }) || "No date"
-            } as Article;
-          })
-          // Filter out unpublished
-          .filter(article => article.publish === true);
-
-        // Fetch authors
-        const authorsSnapshot = await getDocs(collection(db, "authors"));
-        const authors = authorsSnapshot.docs.map(doc => ({
-          uid: doc.id,
-          name: doc.data().name,
-        }));
-
-        const withAuthors = articlesData.map(article => ({
-          ...article,
-          authorName:
-            authors.find(a => a.uid === article.authorUID)?.name ||
-            "Unknown Author"
-        }));
-
-        // Unique labels
-        const uniqueLabels = Array.from(
-          new Set(articlesData.map(a => a.label))
-        );
-        setLabels(["All", ...uniqueLabels]);
-
-        setArticles(withAuthors);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) return <Loading />;
+  // Extract unique labels
+  useState(() => {
+    const uniqueLabels = Array.from(
+      new Set(initialArticles.map((a) => a.label))
+    );
+    setLabels(["All", ...uniqueLabels]);
+  });
 
   // First filter by label, then by search term (title OR description)
-  const filtered = articles
-    .filter(a =>
+  const filtered = initialArticles
+    .filter((a) =>
       selectedLabel === "All" ? true : a.label === selectedLabel
     )
-    .filter(a =>
+    .filter((a) =>
       a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       a.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -106,7 +64,7 @@ export default function Articles() {
           type="text"
           placeholder="Search posts..."
           value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full md:w-1/2 px-4 py-2 border border-white bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white transition"
         />
       </div>
@@ -136,7 +94,7 @@ export default function Articles() {
 
       {/* --- Articles Grid --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-48">
-        {filtered.map(article => (
+        {filtered.map((article) => (
           <article className="border border-white p-8" key={article.id}>
             <div className="flex items-center justify-between">
               <time dateTime={article.date}>{article.date}</time>
@@ -152,9 +110,7 @@ export default function Articles() {
               />
             </Link>
             <h2 className="heading3-title mb-3">
-              <Link href={`/posts/${article.slug}`}>
-                {article.title}
-              </Link>
+              <Link href={`/posts/${article.slug}`}>{article.title}</Link>
             </h2>
             <p className="mt-3 mb-12">{article.description}</p>
             <div className="flex flex-wrap gap-4">
