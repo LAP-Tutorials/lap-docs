@@ -223,12 +223,12 @@ export default async function ArticleDetails({
 
     const jsonLd = {
       "@context": "https://schema.org",
-      "@type": "BlogPosting",
+      "@type": "Article",
       headline: processedArticle.title,
       description: processedArticle.description,
       image: processedArticle.img ? [processedArticle.img] : [],
       datePublished: processedArticle.date.toISOString(),
-      dateModified: processedArticle.date.toISOString(), // Assuming modified is same as published if not tracked
+      dateModified: processedArticle.date.toISOString(),
       author: {
         "@type": "Person",
         name: processedArticle.authorName,
@@ -239,7 +239,7 @@ export default async function ArticleDetails({
         name: "L.A.P Docs",
         logo: {
           "@type": "ImageObject",
-          url: "https://lap-docs.netlify.app/logos/LAP-Logo-Color.png", // Verify this path
+          url: "https://lap-docs.netlify.app/logos/LAP-Logo-Color.png",
         },
       },
       mainEntityOfPage: {
