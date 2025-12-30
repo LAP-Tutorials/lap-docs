@@ -1,4 +1,5 @@
 import { db } from "@/lib/firebase";
+import { safeTimestampToDate } from "@/lib/utils";
 import {
   collection,
   query,
@@ -67,9 +68,8 @@ export async function generateMetadata({
     const articleDescription =
       articleData.description || "Read this article on L.A.P Docs.";
     const articleImage = articleData.img;
-    const articleDate = articleData.date
-      ? articleData.date.toDate().toISOString()
-      : new Date().toISOString();
+    // Safe date conversion
+    const articleDate = safeTimestampToDate(articleData.date).toISOString();
 
     // Fetch author name if available
     let authorName = "L.A.P Team";
@@ -165,6 +165,7 @@ export async function generateMetadata({
       },
     };
   } catch (error) {
+    console.error("Error generating metadata:", error);
     return {
       title: "Error Loading Article",
     };
@@ -210,7 +211,7 @@ export default async function ArticleDetails({
       title: articleData.title,
       slug: articleData.slug,
       content: articleData.content,
-      date: articleData.date ? articleData.date.toDate() : new Date(),
+      date: safeTimestampToDate(articleData.date),
       read: articleData.read,
       label: articleData.label,
       img: articleData.img,
@@ -240,7 +241,7 @@ export default async function ArticleDetails({
         return {
           id: doc.id,
           ...data,
-          date: data.date ? data.date.toDate() : new Date(),
+          date: safeTimestampToDate(data.date),
           authorName: data.authorName || "Unknown Author",
           label: data.label || "No Label",
           slug: data.slug,
