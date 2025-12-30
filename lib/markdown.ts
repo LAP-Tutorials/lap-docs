@@ -27,8 +27,20 @@ export async function processMarkdown(content: string): Promise<string> {
   marked.use({
     renderer: {
       heading({ tokens, depth }) {
-        const text = this.parser.parseInline(tokens);
-        const title = text.toString();
+        let title = "";
+        try {
+          if (this.parser && typeof this.parser.parseInline === "function") {
+            title = this.parser.parseInline(tokens);
+          } else {
+            // Fallback: join text from tokens if parser is unavailable
+            title = tokens.map((t: any) => t.text || "").join("");
+          }
+        } catch (e) {
+          console.error("Error parsing heading tokens:", e);
+          // Last resort fallback
+          title = "Section";
+        }
+
         // Strip HTML tags for clean ID generation
         const cleanTitle = DOMPurify.sanitize(title, { ALLOWED_TAGS: [] });
         const baseId = slugifyHeading(cleanTitle) || "section";
@@ -36,7 +48,7 @@ export async function processMarkdown(content: string): Promise<string> {
         seenIds.set(baseId, nextCount);
         const id = nextCount === 1 ? baseId : `${baseId}-${nextCount}`;
 
-        return `<h${depth} id="${id}">${text}</h${depth}>`;
+        return `<h${depth} id="${id}">${title}</h${depth}>`;
       },
       code({ text, lang }) {
         const languageClass = lang ? `language-${lang}` : "";
