@@ -232,7 +232,10 @@ export default async function Page({
 
         {/* **Author Biography** */}
         <article>
-          <h1 className="text-subheading pb-8">{authorData.name}</h1>
+          <h1 className="text-subheading pb-2">{authorData.name}</h1>
+          <p className="text-blog-summary pb-12 text-white/50">
+            {authorData.job}
+          </p>
           <p className="text-blog-summary pb-12">
             {authorData.biography.summary}
           </p>
