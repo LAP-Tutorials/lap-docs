@@ -70,7 +70,8 @@ async function getData() {
     // Fetch latest articles
     const articlesQuery = query(
       collection(db, "articles"),
-      orderBy("date", "desc")
+      orderBy("date", "desc"),
+      limit(7)
     );
     const articlesSnapshot = await getDocs(articlesQuery);
 

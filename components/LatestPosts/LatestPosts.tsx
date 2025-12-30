@@ -50,7 +50,7 @@ export default function LatestPosts({ initialPosts }: LatestPostsProps) {
   // We need to sort them here if they aren't already sorted, but let's assume parent passes sorted.
 
   const articles = initialPosts;
-  
+
   if (articles.length === 0) return <p>No articles available.</p>;
 
   const latestArticle = articles[0]; // Get the latest article
@@ -100,6 +100,7 @@ export default function LatestPosts({ initialPosts }: LatestPostsProps) {
               width={1488}
               height={992}
               priority
+              sizes="(max-width: 768px) 100vw, 50vw"
             />
           </div>
         </article>
@@ -110,13 +111,17 @@ export default function LatestPosts({ initialPosts }: LatestPostsProps) {
           {remainingArticles.map((article, index) => (
             <article className="mb-6" key={article.id}>
               <article className="grid md:grid-cols-[0fr_1fr] gap-6 sm:gap-12">
-                <Link href={`/posts/${article.slug}`} className="h-70 md:w-[27rem]">
+                <Link
+                  href={`/posts/${article.slug}`}
+                  className="h-70 md:w-[27rem]"
+                >
                   <Image
                     className="w-full h-full object-cover hover:scale-105 transition"
                     src={article.img || "/default-avatar.png"}
                     alt={article.imgAlt}
                     width={1280}
                     height={720}
+                    sizes="(max-width: 768px) 100vw, 30vw"
                   />
                 </Link>
                 <article className="flex flex-col justify-between">

@@ -12,7 +12,7 @@ type AuthorType = {
   avatar: string;
   imgAlt: string;
   job: string;
-  city: string; 
+  city: string;
 };
 
 // Function to shuffle an array (moved to inside component or utility if needed, but here we will just use it on mount to avoid hydration mismatch if we really want shuffle)
@@ -24,11 +24,11 @@ interface AuthorsProps {
 }
 
 export default function Authors({ initialAuthors }: AuthorsProps) {
-  // If we really want random, we must do it in useEffect to match server HTML first, then update (causing a flicker). 
+  // If we really want random, we must do it in useEffect to match server HTML first, then update (causing a flicker).
   // OR we pass a random seed/order from server.
-  // For now, let's just display the initialAuthors passed in. 
+  // For now, let's just display the initialAuthors passed in.
   // The server can pass a specific set or random set.
-  
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 mb-48 max-w-[95rem] w-full mx-auto">
       {initialAuthors.map((author) => (
@@ -43,6 +43,7 @@ export default function Authors({ initialAuthors }: AuthorsProps) {
               alt={author.imgAlt}
               width={150}
               height={150}
+              sizes="150px"
             />
           </Link>
           <article>
@@ -65,5 +66,3 @@ export default function Authors({ initialAuthors }: AuthorsProps) {
     </div>
   );
 }
-
-
