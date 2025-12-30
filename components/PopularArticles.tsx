@@ -41,8 +41,15 @@ const formatDate = (date: string | Timestamp) => {
   });
 };
 
-export default function PopularArticles() {
-  const [popularArticles, setPopularArticles] = useState<Article[]>([]);
+interface PopularArticlesProps {
+  initialArticles?: Article[];
+}
+
+export default function PopularArticles({
+  initialArticles = [],
+}: PopularArticlesProps) {
+  const [popularArticles, setPopularArticles] =
+    useState<Article[]>(initialArticles);
 
   useEffect(() => {
     // Query Firestore for articles that have popularity == true AND publish == true
@@ -73,6 +80,11 @@ export default function PopularArticles() {
     return () => unsubscribe();
   }, []);
 
+  // Only render the section if there are articles to show
+  if (popularArticles.length === 0) {
+    return null; // Don't render empty "Most Popular" heading
+  }
+
   return (
     <article className="mb-9">
       <h2 className="uppercase font-semibold mt-16 mb-8">Most Popular</h2>
@@ -88,7 +100,6 @@ export default function PopularArticles() {
                 <p className="font-semibold">Author:</p>
                 <p>{article.authorName}</p>
               </span>
-             
             </article>
           </div>
           {index < popularArticles.length - 1 && (

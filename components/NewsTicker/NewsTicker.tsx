@@ -42,11 +42,21 @@ export default function NewsTicker() {
       {/* News ticker container */}
       <div className="relative flex overflow-hidden w-full">
         <div ref={tickerRef} className="flex gap-4 whitespace-nowrap">
-          {[...news, ...news, ...news, ...news].map((newsItem, index) => (
+          {/* First set - visible to screen readers and crawlers */}
+          {news.map((newsItem, index) => (
             <div
-              key={index}
+              key={`original-${index}`}
               className="text-white text-lg font-normal"
-              aria-hidden={index >= news.length ? "true" : undefined}
+            >
+              <p>{newsItem} +++</p>
+            </div>
+          ))}
+          {/* Duplicated sets for animation - hidden from assistive tech */}
+          {[...news, ...news, ...news].map((newsItem, index) => (
+            <div
+              key={`duplicate-${index}`}
+              className="text-white text-lg font-normal"
+              aria-hidden="true"
             >
               <p>{newsItem} +++</p>
             </div>
