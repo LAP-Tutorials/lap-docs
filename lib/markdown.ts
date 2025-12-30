@@ -59,10 +59,10 @@ export async function processMarkdown(content: string): Promise<string> {
         const safeCode = text.replace(/"/g, "&quot;");
 
         return `
-      <div class="relative group my-4" data-copy-wrapper="true">
+      <div data-copy-wrapper="true">
         <button 
           type="button"
-          class="copy-btn absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md border border-white/20 bg-[#121212] text-white hover:bg-[#202020] transition-all"
+          class="copy-btn"
           aria-label="Copy code to clipboard"
           title="Copy"
           data-code="${safeCode}"
@@ -85,10 +85,17 @@ export async function processMarkdown(content: string): Promise<string> {
 
   const cleanContent = sanitizeHtml(String(rawContent), {
     allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+      "img",
       "iframe",
       "button",
       "svg",
       "path",
+      "rect",
+      "line",
+      "circle",
+      "polyline",
+      "polygon",
+      "div",
     ]),
     allowedAttributes: {
       a: ["href", "name", "target", "rel", "title"],
@@ -104,9 +111,26 @@ export async function processMarkdown(content: string): Promise<string> {
         "title",
       ],
       button: ["id", "class", "data-code", "aria-label", "title", "type"],
+      div: ["class", "data-copy-wrapper"],
       "*": ["id", "class"],
-      svg: ["xmlns", "width", "height", "viewBox", "fill"],
-      path: ["d"],
+      svg: [
+        "xmlns",
+        "width",
+        "height",
+        "viewBox",
+        "fill",
+        "stroke",
+        "stroke-width",
+        "stroke-linecap",
+        "stroke-linejoin",
+        "aria-hidden",
+      ],
+      path: ["d", "fill", "stroke"],
+      rect: ["x", "y", "width", "height", "rx", "ry", "fill", "stroke"],
+      line: ["x1", "y1", "x2", "y2", "stroke"],
+      circle: ["cx", "cy", "r", "fill", "stroke"],
+      polyline: ["points", "fill", "stroke"],
+      polygon: ["points", "fill", "stroke"],
     },
     allowedSchemes: ["http", "https", "mailto", "tel"],
     allowedSchemesByTag: {

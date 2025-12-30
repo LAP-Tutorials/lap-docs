@@ -260,6 +260,45 @@
   margin-bottom: 1em !important;
 }
 
+/* Code Block with Copy Button Wrapper */
+.markdown-body [data-copy-wrapper] {
+  position: relative;
+  margin: 1rem 0;
+}
+
+.markdown-body [data-copy-wrapper] pre {
+  margin: 0 !important;
+}
+
+/* Copy Button */
+.markdown-body .copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.375rem;
+  background-color: #121212;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.markdown-body .copy-btn:hover {
+  background-color: #202020;
+}
+
+.markdown-body .copy-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
 .markdown-body pre code {
   background-color: transparent !important;
   padding: 0 !important;
