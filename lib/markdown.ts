@@ -1,4 +1,4 @@
-import { marked } from "marked";
+import { Marked } from "marked";
 import DOMPurify from "isomorphic-dompurify";
 
 function slugifyHeading(text: string) {
@@ -15,32 +15,35 @@ function slugifyHeading(text: string) {
 }
 
 export async function processMarkdown(content: string): Promise<string> {
-  const renderer = new marked.Renderer();
+  if (!content) return "";
+
+  const marked = new Marked();
   const seenIds = new Map<string, number>();
 
   // Icon for copy button
   const copySvg =
     '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
 
-  renderer.heading = function ({ tokens, depth }) {
-    const text = this.parser.parseInline(tokens);
-    const title = text.toString();
-    // Strip HTML tags for clean ID generation
-    const cleanTitle = DOMPurify.sanitize(title, { ALLOWED_TAGS: [] });
-    const baseId = slugifyHeading(cleanTitle) || "section";
-    const nextCount = (seenIds.get(baseId) ?? 0) + 1;
-    seenIds.set(baseId, nextCount);
-    const id = nextCount === 1 ? baseId : `${baseId}-${nextCount}`;
+  marked.use({
+    renderer: {
+      heading({ tokens, depth }) {
+        const text = this.parser.parseInline(tokens);
+        const title = text.toString();
+        // Strip HTML tags for clean ID generation
+        const cleanTitle = DOMPurify.sanitize(title, { ALLOWED_TAGS: [] });
+        const baseId = slugifyHeading(cleanTitle) || "section";
+        const nextCount = (seenIds.get(baseId) ?? 0) + 1;
+        seenIds.set(baseId, nextCount);
+        const id = nextCount === 1 ? baseId : `${baseId}-${nextCount}`;
 
-    return `<h${depth} id="${id}">${text}</h${depth}>`;
-  };
+        return `<h${depth} id="${id}">${text}</h${depth}>`;
+      },
+      code({ text, lang }) {
+        const languageClass = lang ? `language-${lang}` : "";
+        // Encode text for data attribute
+        const safeCode = text.replace(/"/g, "&quot;");
 
-  renderer.code = ({ text, lang }) => {
-    const languageClass = lang ? `language-${lang}` : "";
-    // Encode text for data attribute
-    const safeCode = text.replace(/"/g, "&quot;");
-
-    return `
+        return `
       <div class="relative group my-4" data-copy-wrapper="true">
         <button 
           type="button"
@@ -54,15 +57,16 @@ export async function processMarkdown(content: string): Promise<string> {
         <pre><code class="${languageClass}">${text}</code></pre>
       </div>
     `;
-  };
+      },
+      link({ href, title, text }) {
+        return `<a href="${href}" title="${
+          title || ""
+        }" target="_blank" rel="noopener noreferrer">${text}</a>`;
+      },
+    },
+  });
 
-  renderer.link = ({ href, title, text }) => {
-    return `<a href="${href}" title="${
-      title || ""
-    }" target="_blank" rel="noopener noreferrer">${text}</a>`;
-  };
-
-  const rawContent = await marked.parse(content, { renderer });
+  const rawContent = await marked.parse(content);
 
   const cleanContent = DOMPurify.sanitize(rawContent, {
     ADD_TAGS: ["iframe", "button"],

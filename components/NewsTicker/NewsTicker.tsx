@@ -43,7 +43,11 @@ export default function NewsTicker() {
       <div className="relative flex overflow-hidden w-full">
         <div ref={tickerRef} className="flex gap-4 whitespace-nowrap">
           {[...news, ...news, ...news, ...news].map((newsItem, index) => (
-            <div key={index} className="text-white text-lg font-normal">
+            <div
+              key={index}
+              className="text-white text-lg font-normal"
+              aria-hidden={index >= news.length ? "true" : undefined}
+            >
               <p>{newsItem} +++</p>
             </div>
           ))}
