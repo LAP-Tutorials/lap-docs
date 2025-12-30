@@ -67,7 +67,9 @@ export async function generateMetadata({
     const articleDescription =
       articleData.description || "Read this article on L.A.P Docs.";
     const articleImage = articleData.img;
-    const articleDate = articleData.date?.toDate().toISOString();
+    const articleDate = articleData.date
+      ? articleData.date.toDate().toISOString()
+      : new Date().toISOString();
 
     // Fetch author name if available
     let authorName = "L.A.P Team";
@@ -208,7 +210,7 @@ export default async function ArticleDetails({
       title: articleData.title,
       slug: articleData.slug,
       content: articleData.content,
-      date: articleData.date?.toDate(),
+      date: articleData.date ? articleData.date.toDate() : new Date(),
       read: articleData.read,
       label: articleData.label,
       img: articleData.img,
@@ -238,7 +240,7 @@ export default async function ArticleDetails({
         return {
           id: doc.id,
           ...data,
-          date: data.date?.toDate(),
+          date: data.date ? data.date.toDate() : new Date(),
           authorName: data.authorName || "Unknown Author",
           label: data.label || "No Label",
           slug: data.slug,
