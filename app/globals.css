@@ -143,6 +143,19 @@
   font-display: swap;
 }
 
+@keyframes ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-ticker {
+  animation: ticker 75s linear infinite;
+}
+
 @font-face {
   font-family: "General Sans";
   font-weight: 600;
