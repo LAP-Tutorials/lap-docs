@@ -1,5 +1,8 @@
 import { Marked } from "marked";
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from "sanitize-html";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function slugifyHeading(text: string) {
   return text
@@ -42,7 +45,7 @@ export async function processMarkdown(content: string): Promise<string> {
         }
 
         // Strip HTML tags for clean ID generation
-        const cleanTitle = DOMPurify.sanitize(title, { ALLOWED_TAGS: [] });
+        const cleanTitle = title.replace(/<[^>]*>/g, "");
         const baseId = slugifyHeading(cleanTitle) || "section";
         const nextCount = (seenIds.get(baseId) ?? 0) + 1;
         seenIds.set(baseId, nextCount);
@@ -80,26 +83,45 @@ export async function processMarkdown(content: string): Promise<string> {
 
   const rawContent = await marked.parse(content);
 
-  const cleanContent = DOMPurify.sanitize(rawContent, {
-    ADD_TAGS: ["iframe", "button"],
-    ADD_ATTR: [
-      "allow",
-      "allowfullscreen",
-      "frameborder",
-      "height",
-      "scrolling",
-      "src",
-      "width",
-      "id",
-      "class",
-      "data-code",
-      "aria-label",
-      "title",
-      "type",
-      "target",
-      "rel",
-    ],
+  const cleanContent = sanitizeHtml(String(rawContent), {
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+      "iframe",
+      "button",
+      "svg",
+      "path",
+    ]),
+    allowedAttributes: {
+      a: ["href", "name", "target", "rel", "title"],
+      img: ["src", "alt", "title", "width", "height", "loading"],
+      iframe: [
+        "allow",
+        "allowfullscreen",
+        "frameborder",
+        "height",
+        "scrolling",
+        "src",
+        "width",
+        "title",
+      ],
+      button: ["id", "class", "data-code", "aria-label", "title", "type"],
+      "*": ["id", "class"],
+      svg: ["xmlns", "width", "height", "viewBox", "fill"],
+      path: ["d"],
+    },
+    allowedSchemes: ["http", "https", "mailto", "tel"],
+    allowedSchemesByTag: {
+      iframe: ["https"],
+    },
+    transformTags: {
+      a: (tagName, attribs) => ({
+        tagName,
+        attribs: {
+          ...attribs,
+          target: "_blank",
+          rel: "noopener noreferrer",
+        },
+      }),
+    },
   });
-
   return cleanContent;
 }
