@@ -25,7 +25,7 @@ import {
   RiPatreonFill,
 } from "react-icons/ri";
 
-import { marked } from "marked";
+import { processMarkdown } from "@/lib/markdown";
 
 interface Article {
   id: string;
@@ -220,6 +220,8 @@ export default async function ArticleDetails({
       publish: false,
     };
 
+    const processedHtml = await processMarkdown(articleData.content || "");
+
     // Get latest articles (excluding current)
     const latestSnapshot = await getDocs(
       query(
@@ -324,7 +326,7 @@ export default async function ArticleDetails({
         </div>
 
         <div className="w-full">
-          <ArticleContent content={processedArticle.content} />
+          <ArticleContent htmlContent={processedHtml} />
         </div>
 
         <div className="pt-10 pb-20">

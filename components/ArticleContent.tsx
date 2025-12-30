@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { marked } from "marked";
-import DOMPurify from "dompurify";
 
 interface ArticleContentProps {
-  content: string;
+  htmlContent: string;
 }
 
 type TocItem = {
@@ -14,58 +12,6 @@ type TocItem = {
   level: number;
   children: TocItem[];
 };
-
-function getScrollParent(el: HTMLElement): HTMLElement {
-  // Prefer the document scroller when appropriate.
-  const docScroller =
-    (document.scrollingElement as HTMLElement | null) ??
-    (document.documentElement as HTMLElement | null) ??
-    (document.body as HTMLElement | null);
-
-  let parent = el.parentElement;
-  while (
-    parent &&
-    parent !== document.body &&
-    parent !== document.documentElement
-  ) {
-    const style = window.getComputedStyle(parent);
-    const overflowY = style.overflowY;
-    const isScrollable =
-      (overflowY === "auto" ||
-        overflowY === "scroll" ||
-        overflowY === "overlay") &&
-      parent.scrollHeight > parent.clientHeight + 1;
-    if (isScrollable) return parent;
-    parent = parent.parentElement;
-  }
-
-  return docScroller ?? document.documentElement;
-}
-
-function isDocumentScroller(el: HTMLElement) {
-  const docScroller =
-    (document.scrollingElement as HTMLElement | null) ??
-    (document.documentElement as HTMLElement | null) ??
-    (document.body as HTMLElement | null);
-  return (
-    el === docScroller ||
-    el === document.documentElement ||
-    el === document.body
-  );
-}
-
-function slugifyHeading(text: string) {
-  return text
-    .toString()
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-") // Replace spaces with -
-    .replace(/&/g, "-and-") // Replace & with 'and'
-    .replace(/[^\w\-]+/g, "") // Remove all non-word characters
-    .replace(/\-\-+/g, "-") // Replace multiple - with single -
-    .replace(/^-+/, "") // Trim - from start of text
-    .replace(/-+$/, ""); // Trim - from end of text
-}
 
 function buildTocTree(flatItems: Array<Omit<TocItem, "children">>): TocItem[] {
   const root: TocItem[] = [];
@@ -90,8 +36,7 @@ function buildTocTree(flatItems: Array<Omit<TocItem, "children">>): TocItem[] {
   return root;
 }
 
-const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
-  const [sanitizedContent, setSanitizedContent] = useState<string>("");
+const ArticleContent: React.FC<ArticleContentProps> = ({ htmlContent }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [tocTree, setTocTree] = useState<TocItem[]>([]);
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
@@ -128,82 +73,6 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
     '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>';
 
   useEffect(() => {
-    async function sanitizeContent() {
-      // Use a custom renderer to add IDs to headings and wrap code blocks
-      const renderer = new marked.Renderer();
-      const seenIds = new Map<string, number>();
-
-      renderer.heading = function({ tokens, depth }) {
-        const text = this.parser.parseInline(tokens);
-        const title = text.toString();
-        // Strip HTML tags for cleaner ID generation (securely)
-        const cleanTitle = DOMPurify.sanitize(title, { ALLOWED_TAGS: [] });
-        const baseId = slugifyHeading(cleanTitle) || "section";
-        const nextCount = (seenIds.get(baseId) ?? 0) + 1;
-        seenIds.set(baseId, nextCount);
-        const id = nextCount === 1 ? baseId : `${baseId}-${nextCount}`;
-        
-        return `<h${depth} id="${id}">${text}</h${depth}>`;
-      };
-
-      renderer.code = ({ text, lang }) => {
-        const languageClass = lang ? `language-${lang}` : "";
-        // Encode text for the data attribute to be safe
-        const safeCode = text.replace(/"/g, '&quot;');
-        
-        return `
-          <div class="relative group my-4" data-copy-wrapper="true">
-            <button 
-              type="button"
-              class="copy-btn absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-md border border-white/20 bg-[#121212] text-white hover:bg-[#202020] transition-all"
-              aria-label="Copy code to clipboard"
-              title="Copy"
-              data-code="${safeCode}"
-            >
-              ${copySvg}
-            </button>
-            <pre><code class="${languageClass}">${text}</code></pre>
-          </div>
-        `;
-      };
-
-      renderer.link = ({ href, title, text }) => {
-        return `<a href="${href}" title="${title || ''}" target="_blank" rel="noopener noreferrer">${text}</a>`;
-      };
-
-      marked.use({ renderer });
-
-      // Convert markdown to HTML
-      const rawContent = await marked.parse(content);
-
-      // Configure DOMPurify to allow iframes and buttons
-      const cleanContent = DOMPurify.sanitize(rawContent, {
-        ADD_TAGS: ["iframe", "button"],
-        ADD_ATTR: [
-          "allow",
-          "allowfullscreen",
-          "frameborder",
-          "height",
-          "scrolling",
-          "src",
-          "width",
-          "id",
-          "class",         // checking class
-          "data-code",     // Custom attribute for code content
-          "aria-label",
-          "title",
-          "type",
-          "target",
-          "rel"
-        ],
-      });
-
-      setSanitizedContent(cleanContent);
-    }
-    sanitizeContent();
-  }, [content]);
-
-  useEffect(() => {
     if (typeof window === "undefined") return;
 
     try {
@@ -238,15 +107,15 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
 
       const level = Number(heading.tagName.replace("H", ""));
       const id = heading.id;
-      
+
       if (id) {
-          headingMapRef.current.set(id, heading);
-          flat.push({ id, title, level });
+        headingMapRef.current.set(id, heading);
+        flat.push({ id, title, level });
       }
     }
 
     setTocTree(buildTocTree(flat));
-  }, [sanitizedContent]);
+  }, [htmlContent]);
 
   useEffect(() => {
     // If the page was loaded with a hash, scroll to it after headings have ids.
@@ -261,10 +130,10 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
     window.requestAnimationFrame(() => {
       const el = document.getElementById(id);
       if (el) {
-          const headerOffset = 120;
-          const elementPosition = el.getBoundingClientRect().top + window.scrollY;
-          const offsetPosition = elementPosition - headerOffset;
-          window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+        const headerOffset = 120;
+        const elementPosition = el.getBoundingClientRect().top + window.scrollY;
+        const offsetPosition = elementPosition - headerOffset;
+        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
       }
     });
   }, [tocTree]);
@@ -277,7 +146,7 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
     const handleCopyClick = async (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const button = target.closest(".copy-btn") as HTMLButtonElement;
-      
+
       if (!button || !root.contains(button)) return;
 
       e.preventDefault();
@@ -285,7 +154,10 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
 
       const code = button.getAttribute("data-code");
       // Fallback to finding the code block if attribute is empty/missing
-      const codeText = code || button.nextElementSibling?.querySelector("code")?.textContent || "";
+      const codeText =
+        code ||
+        button.nextElementSibling?.querySelector("code")?.textContent ||
+        "";
 
       if (!codeText) return;
 
@@ -293,7 +165,7 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
         await copyTextToClipboard(codeText);
         button.innerHTML = checkSvg;
         button.setAttribute("title", "Copied");
-        
+
         setTimeout(() => {
           button.innerHTML = copySvg;
           button.setAttribute("title", "Copy");
@@ -308,7 +180,7 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
     return () => {
       root.removeEventListener("click", handleCopyClick);
     };
-  }, [sanitizedContent]);
+  }, [htmlContent]);
 
   const handleTocToggle = (id: string) => {
     setCollapsedIds((prev) => {
@@ -332,15 +204,14 @@ const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
 
   return (
     <article className="grid md:grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px] gap-0 md:gap-8 lg:gap-12 w-full max-w-[90rem] mx-auto mt-6 md:mt-24 mb-10 px-4">
-      
-      <MobileToc 
-        items={tocTree} 
-        collapsedIds={collapsedIds} 
-        onToggle={handleTocToggle} 
+      <MobileToc
+        items={tocTree}
+        collapsedIds={collapsedIds}
+        onToggle={handleTocToggle}
       />
 
       <div className="markdown-body w-full min-w-0" ref={containerRef}>
-        <div dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
+        <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
       </div>
 
       {tocTree.length > 0 ? (
@@ -388,7 +259,11 @@ function MobileToc({
 
       {isOpen && (
         <nav className="mt-4 max-h-96 overflow-auto">
-          <TocList items={items} collapsedIds={collapsedIds} onToggle={onToggle} />
+          <TocList
+            items={items}
+            collapsedIds={collapsedIds}
+            onToggle={onToggle}
+          />
         </nav>
       )}
     </div>
