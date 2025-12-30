@@ -44,8 +44,13 @@ export async function processMarkdown(content: string): Promise<string> {
           title = "Section";
         }
 
-        // Strip HTML tags for clean ID generation
-        const cleanTitle = title.replace(/<[^>]*>/g, "");
+        // Strip HTML tags for clean ID generation (loop until no more tags to prevent bypass)
+        let cleanTitle = title;
+        let prevTitle;
+        do {
+          prevTitle = cleanTitle;
+          cleanTitle = cleanTitle.replace(/<[^>]*>/g, "");
+        } while (cleanTitle !== prevTitle);
         const baseId = slugifyHeading(cleanTitle) || "section";
         const nextCount = (seenIds.get(baseId) ?? 0) + 1;
         seenIds.set(baseId, nextCount);
