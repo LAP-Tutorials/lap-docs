@@ -54,27 +54,32 @@ async function getArticles() {
     // Fetch authors
     const authorsSnapshot = await getDocs(collection(db, "authors"));
     // Create a map for faster lookup
-    const authorsMap = new Map(authorsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
+    const authorsMap = new Map(
+      authorsSnapshot.docs.map((doc) => [doc.id, doc.data().name])
+    );
 
     const withAuthors = articlesSnapshot.docs
       .map((doc) => {
         const data = doc.data();
         let dateResult = "No date";
-        
+
         if (data.date) {
-             if (data.date.toDate) {
-                 dateResult = data.date.toDate().toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  });
-             } else if (typeof data.date === "string" || data.date instanceof Date) {
-                  dateResult = new Date(data.date).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  });
-             }
+          if (data.date.toDate) {
+            dateResult = data.date.toDate().toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+          } else if (
+            typeof data.date === "string" ||
+            data.date instanceof Date
+          ) {
+            dateResult = new Date(data.date).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+          }
         }
 
         return {
@@ -129,3 +134,5 @@ export default async function MagazinePage() {
     </main>
   );
 }
+
+export const revalidate = 60;

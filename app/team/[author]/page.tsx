@@ -317,3 +317,5 @@ function AuthorArticles({ articles }: { articles: ArticleData[] }) {
     </div>
   );
 }
+
+export const revalidate = 60;

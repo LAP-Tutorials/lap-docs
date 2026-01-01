@@ -403,3 +403,5 @@ export default async function ArticleDetails({
     );
   }
 }
+
+export const revalidate = 60;

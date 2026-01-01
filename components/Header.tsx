@@ -47,10 +47,14 @@ export default function Header() {
     <header className="flex flex-col justify-between max-w-[95rem] w-full mx-auto px-4 md:pt-8 pt-4 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
       <div className="flex">
         {/* Logo */}
-        <div className="flex flex-1">
-          <Link href="/" aria-label="Return to homepage">
+        <div className="flex flex-1 z-50 relative">
+          <Link
+            href="/"
+            aria-label="Return to homepage"
+            className="block w-fit"
+          >
             <img
-              className="w-[8%]"
+              className="w-[10%]"
               src="/logos/LAP-Logo-Transparent.png"
               alt="logo"
             />

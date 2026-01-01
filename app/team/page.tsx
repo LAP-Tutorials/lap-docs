@@ -40,16 +40,16 @@ async function getAuthors() {
   try {
     const querySnapshot = await getDocs(collection(db, "authors"));
     const fetchedAuthors = querySnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          uid: doc.id,
-          name: data.name || "",
-          job: data.job || "",
-          city: data.city || "",
-          avatar: data.avatar || "",
-          imgAlt: data.imgAlt || "",
-          slug: data.slug || "",
-        };
+      const data = doc.data();
+      return {
+        uid: doc.id,
+        name: data.name || "",
+        job: data.job || "",
+        city: data.city || "",
+        avatar: data.avatar || "",
+        imgAlt: data.imgAlt || "",
+        slug: data.slug || "",
+      };
     });
     return fetchedAuthors;
   } catch (error) {
@@ -85,3 +85,5 @@ export default async function AuthorsPage() {
     </main>
   );
 }
+
+export const revalidate = 60;
