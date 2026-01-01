@@ -21,6 +21,7 @@ type PopularArticle = {
   popularity: boolean;
   publish: boolean;
   date: string;
+  popularityRank?: number;
 };
 
 async function getPopularArticles(): Promise<PopularArticle[]> {
@@ -35,7 +36,7 @@ async function getPopularArticles(): Promise<PopularArticle[]> {
       collection(db, "articles"),
       where("popularity", "==", true),
       where("publish", "==", true),
-      orderBy("date", "desc")
+      orderBy("popularityRank", "asc")
     );
 
     const snapshot = await getDocs(articlesQuery);

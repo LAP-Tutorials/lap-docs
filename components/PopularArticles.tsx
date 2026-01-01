@@ -22,6 +22,7 @@ type Article = {
   popularity: boolean;
   publish: boolean;
   date: string | Timestamp;
+  popularityRank?: number;
 };
 
 // Helper function to convert Firestore Timestamp or ISO string to a readable date
@@ -58,7 +59,7 @@ export default function PopularArticles({
       collection(db, "articles"),
       where("popularity", "==", true),
       where("publish", "==", true),
-      orderBy("date", "desc")
+      orderBy("popularityRank", "asc")
     );
 
     const unsubscribe = onSnapshot(articlesQuery, (snapshot) => {
