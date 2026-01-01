@@ -247,7 +247,7 @@ function MobileToc({
   if (items.length === 0) return null;
 
   return (
-    <div className="lg:hidden border border-white p-4">
+    <div className="lg:hidden border border-white p-4 mb-5">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
