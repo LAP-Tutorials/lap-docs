@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, ReactNode } from "react";
 import { Timestamp } from "firebase/firestore";
-import Sidebar from "../Sidebar";
 import { Separator } from "@radix-ui/react-separator";
 import Link from "next/link";
 import Loading from "./loading";
@@ -42,9 +41,13 @@ const formatDate = (date: string | Timestamp) => {
 
 interface LatestPostsProps {
   initialPosts: Article[];
+  sidebar?: ReactNode;
 }
 
-export default function LatestPosts({ initialPosts }: LatestPostsProps) {
+export default function LatestPosts({
+  initialPosts,
+  sidebar,
+}: LatestPostsProps) {
   // If initialPosts are passed, just use them.
   // We can also just render them directly.
   // We need to sort them here if they aren't already sorted, but let's assume parent passes sorted.
@@ -162,9 +165,7 @@ export default function LatestPosts({ initialPosts }: LatestPostsProps) {
             </article>
           ))}
         </div>
-        <div className="lg:w-1/4">
-          <Sidebar />
-        </div>
+        <div className="lg:w-1/4">{sidebar}</div>
       </div>
     </>
   );

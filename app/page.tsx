@@ -5,6 +5,7 @@ import AuthorsLoading from "@/components/Authors/loading";
 import NewsTicker from "@/components/NewsTicker/NewsTicker";
 import PageTitle from "@/components/PageTitle";
 import Subheading from "@/components/Subheading";
+import Sidebar from "@/components/Sidebar";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import JsonLd from "@/components/JsonLd";
@@ -165,7 +166,7 @@ export default async function Home() {
         <NewsTicker />
       </Suspense>
 
-      <LatestPosts initialPosts={articles} />
+      <LatestPosts initialPosts={articles} sidebar={<Sidebar />} />
 
       <Subheading className="text-subheading" url="/team" linkText="Full Team">
         Team
