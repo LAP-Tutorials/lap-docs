@@ -64,11 +64,6 @@ export default function Footer() {
                     Instagram
                   </Link>
                 </li>
-                <li>
-                  <Link href="https://x.com/lap_mgmt" target="_blank">
-                    Twitter / X
-                  </Link>
-                </li>
               </ul>
             </nav>
           </div>

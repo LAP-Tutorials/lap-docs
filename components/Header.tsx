@@ -125,11 +125,6 @@ export default function Header() {
                     Icon: RiInstagramLine,
                   },
                   {
-                    href: "https://x.com/lap_mgmt",
-                    ariaLabel: "Visit our X page",
-                    Icon: RiTwitterFill,
-                  },
-                  {
                     href: "https://www.tiktok.com/@lap_mgmt",
                     ariaLabel: "Visit our TikTok page",
                     Icon: RiTiktokFill,
@@ -188,11 +183,6 @@ export default function Header() {
                 href: "https://www.instagram.com/lap.mgmt.team/",
                 ariaLabel: "Visit our Instagram page",
                 Icon: RiInstagramLine,
-              },
-              {
-                href: "https://x.com/lap_mgmt",
-                ariaLabel: "Visit our X page",
-                Icon: RiTwitterFill,
               },
               {
                 href: "https://www.tiktok.com/@lap_mgmt",

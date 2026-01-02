@@ -29,11 +29,6 @@ export default function FooterSocialLinks() {
             Icon: RiInstagramLine,
           },
           {
-            href: "https://x.com/lap_mgmt",
-            ariaLabel: "Visit our X page",
-            Icon: RiTwitterFill,
-          },
-          {
             href: "https://www.tiktok.com/@lap_mgmt",
             ariaLabel: "Visit our TikTok page",
             Icon: RiTiktokFill,
