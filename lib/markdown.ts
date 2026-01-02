@@ -83,6 +83,12 @@ export async function processMarkdown(content: string): Promise<string> {
           title || ""
         }" target="_blank" rel="noopener noreferrer">${text}</a>`;
       },
+
+      image({ href, title, text }) {
+        return `<img src="${href}" alt="${text}" title="${
+          title || ""
+        }" loading="lazy" decoding="async" />`;
+      },
     },
   });
 
@@ -104,7 +110,7 @@ export async function processMarkdown(content: string): Promise<string> {
     ]),
     allowedAttributes: {
       a: ["href", "name", "target", "rel", "title"],
-      img: ["src", "alt", "title", "width", "height", "loading"],
+      img: ["src", "alt", "title", "width", "height", "loading", "decoding"],
       iframe: [
         "allow",
         "allowfullscreen",
