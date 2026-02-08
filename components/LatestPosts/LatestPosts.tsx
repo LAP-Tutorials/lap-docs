@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Timestamp } from "firebase/firestore";
 import { Separator } from "@radix-ui/react-separator";
 import Link from "next/link";
-import Loading from "./loading";
+
 import Image from "next/image";
 
 // Define the structure of an article

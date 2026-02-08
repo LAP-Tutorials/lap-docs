@@ -15,10 +15,11 @@ export default function SocialSharing({ links }: SocialSharingProps) {
     <div className="flex gap-3">
       {links.map((link, index) => (
         <Link
-          key={index}
+          key={link.href}
           href={link.href}
           aria-label={link.ariaLabel}
           target="_blank"
+          rel="noopener noreferrer"
           className="text-white text-2xl hover:text-[#8a2be2] transition ease-in-out duration-300"
         >
           <link.Icon />

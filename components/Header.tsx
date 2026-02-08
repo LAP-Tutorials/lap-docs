@@ -7,7 +7,6 @@ import Search, { SearchItem } from "./Search";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import {
   RiInstagramLine,
-  RiTwitterFill,
   RiYoutubeFill,
   RiGithubFill,
   RiTiktokFill,

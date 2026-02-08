@@ -3,6 +3,7 @@
 import { Button } from "../ui/button";
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Article {
   id: string;
@@ -101,9 +102,11 @@ export default function Articles({ initialArticles }: ArticlesProps) {
               </span>
             </div>
             <Link href={`/posts/${article.slug}`}>
-              <img
+              <Image
                 src={article.img}
                 alt={article.imgAlt}
+                width={800}
+                height={450}
                 className="w-full my-8 hover:scale-105 transition"
               />
             </Link>

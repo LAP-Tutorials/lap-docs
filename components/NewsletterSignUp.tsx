@@ -24,7 +24,6 @@ export default function NewsletterSignUp({
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
     setError,
   } = useForm<TSubscribeNewsletterSchema>({
     resolver: zodResolver(subscribeNewsletterSchema),

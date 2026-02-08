@@ -34,7 +34,7 @@ export default function FooterSocialLinks() {
           },
           {
             href: "http://patreon.com/lap_mgmt",
-            ariaLabel: "Visit our GitHub page",
+            ariaLabel: "Visit our Patreon page",
             Icon: RiPatreonFill,
           },
         ]}

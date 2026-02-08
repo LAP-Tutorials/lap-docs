@@ -1,5 +1,3 @@
-import { useEffect, useRef, useState } from "react";
-
 // Static mission statements
 const news = [
   "Welcome to LAP Docs, our mission is to provide you with the best possible tutorials that is easy to understand and follow. I hope you enjoy your stay with us and our tutorials actually help you learn something new.",

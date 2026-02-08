@@ -15,6 +15,7 @@ import ArticleContent from "@/components/ArticleContent";
 import AuthorCard from "@/components/AuthorCard";
 import JsonLd from "@/components/JsonLd";
 import type { Metadata } from "next";
+import Image from "next/image";
 
 import { processMarkdown } from "@/lib/markdown";
 
@@ -310,11 +311,13 @@ export default async function ArticleDetails({
           </span>
         </div>
 
-        <div>
-          <img
+        <div className="relative w-full h-auto aspect-[16/9]">
+          <Image
             src={processedArticle.img}
             alt={processedArticle.imgAlt}
-            className="w-full h-auto"
+            fill
+            sizes="(min-width: 768px) 768px, 100vw"
+            className="object-cover w-full h-auto"
           />
         </div>
 
@@ -358,10 +361,12 @@ export default async function ArticleDetails({
                   </span>
                 </div>
                 <Link href={`/posts/${article.slug}`}>
-                  <img
+                  <Image
                     className="w-full my-8 hover:scale-105 transition-transform"
                     src={article.img}
                     alt={article.imgAlt}
+                    width={800}
+                    height={450}
                   />
                 </Link>
                 <h2 className="heading3-title mb-3">
