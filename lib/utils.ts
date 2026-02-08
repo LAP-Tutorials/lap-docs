@@ -10,7 +10,7 @@ export function safeTimestampToDate(value: any): Date {
   if (value instanceof Date) return value;
 
   // Handle Firestore Timestamp
-  if (value && typeof value.toDate === "function") {
+  if (typeof value.toDate === "function") {
     try {
       return value.toDate();
     } catch (e) {

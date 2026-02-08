@@ -3,7 +3,6 @@
 import { Button } from "../ui/button";
 import { useState } from "react";
 import Link from "next/link";
-import Loading from "./loading";
 
 interface Article {
   id: string;
@@ -41,19 +40,18 @@ export default function Articles({ initialArticles }: ArticlesProps) {
   // Extract unique labels
   useState(() => {
     const uniqueLabels = Array.from(
-      new Set(initialArticles.map((a) => a.label))
+      new Set(initialArticles.map((a) => a.label)),
     );
     setLabels(["All", ...uniqueLabels]);
   });
 
   // First filter by label, then by search term (title OR description)
   const filtered = initialArticles
-    .filter((a) =>
-      selectedLabel === "All" ? true : a.label === selectedLabel
-    )
-    .filter((a) =>
-      a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.description.toLowerCase().includes(searchTerm.toLowerCase())
+    .filter((a) => (selectedLabel === "All" ? true : a.label === selectedLabel))
+    .filter(
+      (a) =>
+        a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.description.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
   return (

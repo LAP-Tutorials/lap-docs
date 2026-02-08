@@ -9,22 +9,12 @@ import {
   limit,
 } from "firebase/firestore";
 import PostNavigation from "@/components/PostNavigation";
-import SocialSharing from "@/components/SocialSharing";
 import Subheading from "@/components/Subheading";
 import Link from "next/link";
 import ArticleContent from "@/components/ArticleContent";
 import AuthorCard from "@/components/AuthorCard";
 import JsonLd from "@/components/JsonLd";
 import type { Metadata } from "next";
-
-import {
-  RiInstagramLine,
-  RiTwitterFill,
-  RiYoutubeFill,
-  RiGithubFill,
-  RiTiktokFill,
-  RiPatreonFill,
-} from "react-icons/ri";
 
 import { processMarkdown } from "@/lib/markdown";
 
@@ -77,8 +67,8 @@ export async function generateMetadata({
       const authorSnapshot = await getDocs(
         query(
           collection(db, "authors"),
-          where("uid", "==", articleData.authorUID)
-        )
+          where("uid", "==", articleData.authorUID),
+        ),
       );
       if (!authorSnapshot.empty) {
         authorName = authorSnapshot.docs[0].data().name || authorName;
@@ -129,7 +119,7 @@ export async function generateMetadata({
         "L.A.P Docs",
         ...titleKeywords,
         ...descKeywords,
-      ])
+      ]),
     );
 
     return {
@@ -199,8 +189,8 @@ export default async function ArticleDetails({
     const authorSnapshot = await getDocs(
       query(
         collection(db, "authors"),
-        where("uid", "==", articleData.authorUID)
-      )
+        where("uid", "==", articleData.authorUID),
+      ),
     );
 
     const authorData = authorSnapshot.docs[0]?.data() || {};
@@ -231,8 +221,8 @@ export default async function ArticleDetails({
         collection(db, "articles"),
         where("publish", "==", true),
         orderBy("date", "desc"),
-        limit(4)
-      )
+        limit(4),
+      ),
     );
 
     const latestArticles = latestSnapshot.docs

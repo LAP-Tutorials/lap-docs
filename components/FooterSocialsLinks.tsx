@@ -1,7 +1,6 @@
 import SocialSharing from "./SocialSharing";
 import {
   RiInstagramLine,
-  RiTwitterFill,
   RiYoutubeFill,
   RiGithubFill,
   RiTiktokFill,

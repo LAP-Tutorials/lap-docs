@@ -1,4 +1,3 @@
-import { RiInstagramLine, RiTwitterFill, RiYoutubeFill, RiGithubFill } from "react-icons/ri";
 import Link from "next/link";
 
 export type SocialMediaLink = {

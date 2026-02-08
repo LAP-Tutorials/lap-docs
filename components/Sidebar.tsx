@@ -1,5 +1,5 @@
 import Image from "next/image";
-import NewsletterSignUp from "./NewsletterSignUp";
+
 import PopularArticles from "./PopularArticles";
 import { Button } from "./ui/button";
 import magazineCover from "@/public/logos/LAP-Logo-Color.png";
@@ -29,14 +29,14 @@ async function getPopularArticles(): Promise<PopularArticle[]> {
     // Fetch authors for mapping names
     const authorsSnapshot = await getDocs(collection(db, "authors"));
     const authorsMap = new Map(
-      authorsSnapshot.docs.map((d) => [d.id, d.data().name])
+      authorsSnapshot.docs.map((d) => [d.id, d.data().name]),
     );
 
     const articlesQuery = query(
       collection(db, "articles"),
       where("popularity", "==", true),
       where("publish", "==", true),
-      orderBy("popularityRank", "asc")
+      orderBy("popularityRank", "asc"),
     );
 
     const snapshot = await getDocs(articlesQuery);
@@ -55,8 +55,8 @@ async function getPopularArticles(): Promise<PopularArticle[]> {
           data.date instanceof Timestamp
             ? data.date.toDate().toISOString()
             : typeof data.date === "string"
-            ? data.date
-            : new Date().toISOString(),
+              ? data.date
+              : new Date().toISOString(),
       };
     });
   } catch (error) {

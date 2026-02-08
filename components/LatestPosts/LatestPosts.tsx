@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Timestamp } from "firebase/firestore";
 import { Separator } from "@radix-ui/react-separator";
 import Link from "next/link";

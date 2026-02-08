@@ -25,23 +25,6 @@ type Article = {
   popularityRank?: number;
 };
 
-// Helper function to convert Firestore Timestamp or ISO string to a readable date
-const formatDate = (date: string | Timestamp) => {
-  let parsedDate: Date;
-
-  if (date instanceof Timestamp) {
-    parsedDate = date.toDate(); // Convert Firestore Timestamp to JavaScript Date
-  } else {
-    parsedDate = new Date(date); // Convert ISO string to JavaScript Date
-  }
-
-  return parsedDate.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-};
-
 interface PopularArticlesProps {
   initialArticles?: Article[];
 }
@@ -59,7 +42,7 @@ export default function PopularArticles({
       collection(db, "articles"),
       where("popularity", "==", true),
       where("publish", "==", true),
-      orderBy("popularityRank", "asc")
+      orderBy("popularityRank", "asc"),
     );
 
     const unsubscribe = onSnapshot(articlesQuery, (snapshot) => {
@@ -71,7 +54,7 @@ export default function PopularArticles({
           date:
             data.date instanceof Timestamp
               ? data.date
-              : data.date ?? new Date().toISOString(),
+              : (data.date ?? new Date().toISOString()),
         } as Article;
       });
 
