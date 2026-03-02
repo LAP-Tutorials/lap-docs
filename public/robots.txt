@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://lap-docs.netlify.app/sitemap.xml
+Sitemap: https://lap.onl/sitemap.xml

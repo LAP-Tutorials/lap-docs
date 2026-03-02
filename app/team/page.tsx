@@ -13,16 +13,16 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Team | L.A.P Docs",
     description: "Meet the dedicated team behind L.A.P Docs.",
-    url: "https://lap-docs.netlify.app/team",
+    url: "https://lap.onl/team",
     siteName: "L.A.P Docs",
     type: "website",
-    images: "https://lap-docs.netlify.app/og-image.png",
+    images: "https://lap.onl/og-image.png",
   },
   twitter: {
     card: "summary_large_image",
     title: "Team | L.A.P Docs",
     description: "Meet the dedicated team behind L.A.P Docs.",
-    images: "https://lap-docs.netlify.app/twitter-image.png",
+    images: "https://lap.onl/twitter-image.png",
   },
 };
 
@@ -66,7 +66,7 @@ export default async function AuthorsPage() {
     "@type": "CollectionPage",
     name: "L.A.P Team",
     description: "Meet the dedicated team behind L.A.P Docs.",
-    url: "https://lap-docs.netlify.app/team",
+    url: "https://lap.onl/team",
   };
 
   return (

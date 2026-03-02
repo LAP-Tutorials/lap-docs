@@ -1,6 +1,6 @@
 # LAP Docs
 
-LAP Docs is a simple blog with all my video content that has been transformed into a text-based format. This project is built using [Next.js](https://nextjs.org) and styled with [Tailwind CSS](https://tailwindcss.com) and SCSS. It offers a clean, responsive, and SEO-friendly way to access video transcripts and related text content. The site design inspiration from [Fyrre Magazine](href="https://fyrre-magazine.vercel.app/) 
+LAP Docs is a simple blog with all my video content that has been transformed into a text-based format. This project is built using [Next.js](https://nextjs.org) and styled with [Tailwind CSS](https://tailwindcss.com) and SCSS. It offers a clean, responsive, and SEO-friendly way to access video transcripts and related text content. The site design inspiration from [Fyrre Magazine](href="https://fyrre-magazine.vercel.app/)
 
 ## Table of Contents
 
@@ -107,7 +107,7 @@ This project is open source. See the [LICENSE](LICENSE) file for more informatio
 
 ## Contact
 
-For any questions, feedback, or support, please reach out via [lap.mgmt.contact@gmail.com](mailto:lap.mgmt.contact@gmail.com) or visit the [LAP Docs live site](https://lap-docs.netlify.app).
+For any questions, feedback, or support, please reach out via [lap.mgmt.contact@gmail.com](mailto:lap.mgmt.contact@gmail.com) or visit the [LAP Docs live site](https://lap.onl).
 
 ---
 

@@ -8,7 +8,7 @@ const nextConfig = {
     remotePatterns: [
   {
     protocol: "https",
-    hostname: "lap-docs.netlify.app",
+    hostname: "lap.onl",
     port: "",
     pathname: "/**",
   },

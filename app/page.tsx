@@ -27,18 +27,18 @@ export const metadata: Metadata = {
     title: "L.A.P Docs | Home",
     description:
       "Simplified text documents about everything made on the L.A.P - tutorials youtube channel",
-    url: "https://lap-docs.netlify.app/",
+    url: "https://lap.onl/",
     siteName: "L.A.P Docs",
     type: "website",
     locale: "en_US",
-    images: "https://lap-docs.netlify.app/og-image.png",
+    images: "https://lap.onl/og-image.png",
   },
   twitter: {
     card: "summary_large_image",
     title: "L.A.P Docs",
     description:
       "Simplified text documents about everything made on the L.A.P - tutorials youtube channel",
-    images: "https://lap-docs.netlify.app/twitter-image.png",
+    images: "https://lap.onl/twitter-image.png",
   },
 };
 
@@ -72,14 +72,14 @@ async function getData() {
     const articlesQuery = query(
       collection(db, "articles"),
       orderBy("date", "desc"),
-      limit(7)
+      limit(7),
     );
     const articlesSnapshot = await getDocs(articlesQuery);
 
     // Fetch authors for mapping names
     const authorsSnapshot = await getDocs(collection(db, "authors"));
     const authorsMap = new Map(
-      authorsSnapshot.docs.map((d) => [d.id, d.data().name])
+      authorsSnapshot.docs.map((d) => [d.id, d.data().name]),
     );
 
     const articles: Article[] = articlesSnapshot.docs
@@ -99,8 +99,8 @@ async function getData() {
             data.date instanceof Timestamp
               ? data.date.toDate().toISOString()
               : typeof data.date === "string"
-              ? data.date
-              : new Date().toISOString(),
+                ? data.date
+                : new Date().toISOString(),
           read: data.read || "",
           label: data.label || "",
           img: data.img || "",
@@ -143,10 +143,10 @@ export default async function Home() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "L.A.P Docs",
-    url: "https://lap-docs.netlify.app/",
+    url: "https://lap.onl/",
     potentialAction: {
       "@type": "SearchAction",
-      target: "https://lap-docs.netlify.app/search?q={search_term_string}",
+      target: "https://lap.onl/search?q={search_term_string}",
       "query-input": "required name=search_term_string",
     },
   };

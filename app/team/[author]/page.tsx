@@ -60,7 +60,7 @@ async function getAuthorData(slug: string) {
         collection(db, "articles"),
         where("authorUID", "==", authorData.uid),
         where("publish", "==", true),
-        orderBy("date", "desc")
+        orderBy("date", "desc"),
       );
       const articlesSnapshot = await getDocs(articlesQuery);
 
@@ -79,7 +79,7 @@ async function getAuthorData(slug: string) {
       const articlesQuery = query(
         collection(db, "articles"),
         where("authorUID", "==", authorData.uid),
-        orderBy("date", "desc")
+        orderBy("date", "desc"),
       );
       const articlesSnapshot = await getDocs(articlesQuery);
 
@@ -94,8 +94,8 @@ async function getAuthorData(slug: string) {
               data.date && typeof data.date.toDate === "function"
                 ? data.date.toDate()
                 : data.date instanceof Date
-                ? data.date
-                : new Date(),
+                  ? data.date
+                  : new Date(),
             publish: data.publish ?? false,
           } as ArticleData;
         })
@@ -146,7 +146,7 @@ export async function generateMetadata({
     openGraph: {
       title: `${authorData.name}`,
       description: authorData.biography.summary,
-      url: `https://lap-docs.netlify.app/team/${authorData.slug}`,
+      url: `https://lap.onl/team/${authorData.slug}`,
       images: authorData.avatar
         ? [
             {
@@ -164,7 +164,7 @@ export async function generateMetadata({
       images: authorData.avatar ? [authorData.avatar] : [],
     },
     alternates: {
-      canonical: `https://lap-docs.netlify.app/team/${authorData.slug}`,
+      canonical: `https://lap.onl/team/${authorData.slug}`,
     },
   };
 }
@@ -204,7 +204,7 @@ export default async function Page({
       jobTitle: authorData.job,
       image: authorData.avatar,
       description: authorData.biography.summary,
-      url: `https://lap-docs.netlify.app/team/${authorData.slug}`,
+      url: `https://lap.onl/team/${authorData.slug}`,
       sameAs: socialLinks.map((link) => link.href),
     },
   };

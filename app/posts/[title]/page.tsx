@@ -129,7 +129,7 @@ export async function generateMetadata({
       keywords: uniqueKeywords,
       authors: [{ name: authorName }],
       alternates: {
-        canonical: `https://lap-docs.netlify.app/posts/${articleData.slug}`,
+        canonical: `https://lap.onl/posts/${articleData.slug}`,
       },
       openGraph: {
         title: articleTitle,
@@ -258,7 +258,7 @@ export default async function ArticleDetails({
         "@type": "Person",
         name: processedArticle.authorName,
         url: authorData.slug
-          ? `https://lap-docs.netlify.app/team/${authorData.slug}`
+          ? `https://lap.onl/team/${authorData.slug}`
           : undefined,
       },
       publisher: {
@@ -266,12 +266,12 @@ export default async function ArticleDetails({
         name: "L.A.P Docs",
         logo: {
           "@type": "ImageObject",
-          url: "https://lap-docs.netlify.app/logos/LAP-Logo-Color.png",
+          url: "https://lap.onl/logos/LAP-Logo-Color.png",
         },
       },
       mainEntityOfPage: {
         "@type": "WebPage",
-        "@id": `https://lap-docs.netlify.app/posts/${processedArticle.slug}`,
+        "@id": `https://lap.onl/posts/${processedArticle.slug}`,
       },
     };
 

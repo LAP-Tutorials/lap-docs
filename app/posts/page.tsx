@@ -14,16 +14,16 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Posts | L.A.P Docs",
     description: "Browse our latest articles, tutorials, and guides.",
-    url: "https://lap-docs.netlify.app/posts",
+    url: "https://lap.onl/posts",
     siteName: "L.A.P Docs",
     type: "website",
-    images: "https://lap-docs.netlify.app/og-image.png",
+    images: "https://lap.onl/og-image.png",
   },
   twitter: {
     card: "summary_large_image",
     title: "Posts | L.A.P Docs",
     description: "Browse our latest articles, tutorials, and guides.",
-    images: "https://lap-docs.netlify.app/twitter-image.png",
+    images: "https://lap.onl/twitter-image.png",
   },
 };
 
@@ -47,7 +47,7 @@ async function getArticles() {
     // Fetch articles, ordered by date descending
     const articlesQuery = query(
       collection(db, "articles"),
-      orderBy("date", "desc")
+      orderBy("date", "desc"),
     );
     const articlesSnapshot = await getDocs(articlesQuery);
 
@@ -55,7 +55,7 @@ async function getArticles() {
     const authorsSnapshot = await getDocs(collection(db, "authors"));
     // Create a map for faster lookup
     const authorsMap = new Map(
-      authorsSnapshot.docs.map((doc) => [doc.id, doc.data().name])
+      authorsSnapshot.docs.map((doc) => [doc.id, doc.data().name]),
     );
 
     const withAuthors = articlesSnapshot.docs
@@ -115,7 +115,7 @@ export default async function MagazinePage() {
     "@type": "CollectionPage",
     name: "L.A.P Posts",
     description: "Browse our latest articles, tutorials, and guides.",
-    url: "https://lap-docs.netlify.app/posts",
+    url: "https://lap.onl/posts",
   };
 
   return (
