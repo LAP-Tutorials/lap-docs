@@ -23,22 +23,26 @@ export default function Header() {
   // Fetch minimal article data on mount
   useEffect(() => {
     (async () => {
-      const q = query(collection(db, "articles"), orderBy("date", "desc"));
-      const snap = await getDocs(q);
-      const items = snap.docs
-        // only published
-        .filter((d) => (d.data() as any).publish === true)
-        .map((d) => {
-          const data = d.data() as any;
-          return {
-            id: d.id,
-            title: data.title,
-            slug: data.slug,
-            img: data.img,
-            imgAlt: data.imgAlt || data.title,
-          } as SearchItem;
-        });
-      setAllArticles(items);
+      try {
+        const q = query(collection(db, "articles"), orderBy("date", "desc"));
+        const snap = await getDocs(q);
+        const items = snap.docs
+          // only published
+          .filter((d) => (d.data() as any).publish === true)
+          .map((d) => {
+            const data = d.data() as any;
+            return {
+              id: d.id,
+              title: data.title || "",
+              slug: data.slug || "",
+              img: data.img || "",
+              imgAlt: data.imgAlt || data.title || "",
+            } as SearchItem;
+          });
+        setAllArticles(items);
+      } catch (error) {
+        console.error("Error fetching articles for search:", error);
+      }
     })();
   }, []);
 

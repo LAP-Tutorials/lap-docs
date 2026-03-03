@@ -71,7 +71,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const GA_TRACKING_ID = process.env.MEASURING_ID || "";
+  const GA_TRACKING_ID = process.env.NEXT_PUBLIC_MEASURING_ID || "";
 
   return (
     <html lang="en" className="scroll-smooth">

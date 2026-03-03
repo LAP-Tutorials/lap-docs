@@ -45,21 +45,32 @@ export default function PopularArticles({
       orderBy("popularityRank", "asc"),
     );
 
-    const unsubscribe = onSnapshot(articlesQuery, (snapshot) => {
-      const articles: Article[] = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          date:
-            data.date instanceof Timestamp
-              ? data.date
-              : (data.date ?? new Date().toISOString()),
-        } as Article;
-      });
+    const unsubscribe = onSnapshot(
+      articlesQuery,
+      (snapshot) => {
+        const articles: Article[] = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            title: data.title || "",
+            slug: data.slug || "",
+            authorName: data.authorName || "Unknown Author",
+            popularity: data.popularity || false,
+            publish: data.publish || false,
+            date:
+              data.date instanceof Timestamp
+                ? data.date
+                : (data.date ?? new Date().toISOString()),
+            popularityRank: data.popularityRank,
+          } as Article;
+        });
 
-      setPopularArticles(articles);
-    });
+        setPopularArticles(articles);
+      },
+      (error) => {
+        console.error("Error listening to popular articles:", error);
+      },
+    );
 
     return () => unsubscribe();
   }, []);
