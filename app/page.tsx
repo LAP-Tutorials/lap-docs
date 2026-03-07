@@ -40,6 +40,9 @@ export const metadata: Metadata = {
       "Simplified text documents about everything made on the L.A.P - tutorials youtube channel",
     images: "https://lap.onl/twitter-image.png",
   },
+  alternates: {
+    canonical: "https://lap.onl/",
+  },
 };
 
 type Article = {
