@@ -20,22 +20,22 @@ import {
 } from "firebase/firestore";
 
 export const metadata: Metadata = {
-  title: "L.A.P Docs | Home",
+  title: "L.A.P - Docs",
   description:
     "Simplified text documents about everything made on the L.A.P - tutorials youtube channel",
   openGraph: {
-    title: "L.A.P Docs | Home",
+    title: "L.A.P - Docs",
     description:
       "Simplified text documents about everything made on the L.A.P - tutorials youtube channel",
     url: "https://lap.onl/",
-    siteName: "L.A.P Docs",
+    siteName: "L.A.P - Docs",
     type: "website",
     locale: "en_US",
     images: "https://lap.onl/og-image.png",
   },
   twitter: {
     card: "summary_large_image",
-    title: "L.A.P Docs",
+    title: "L.A.P - Docs",
     description:
       "Simplified text documents about everything made on the L.A.P - tutorials youtube channel",
     images: "https://lap.onl/twitter-image.png",
@@ -142,7 +142,8 @@ export default async function Home() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "L.A.P Docs",
+    name: "L.A.P - Docs",
+    alternateName: ["L.A.P Docs", "LAP Docs"],
     url: "https://lap.onl/",
     potentialAction: {
       "@type": "SearchAction",
@@ -157,9 +158,9 @@ export default async function Home() {
       <PageTitle
         className="sr-only"
         imgSrc="/images/titles/lap-docs.svg"
-        imgAlt="The words 'L.A.P Docs' in bold uppercase lettering"
+        imgAlt="The words 'L.A.P - Docs' in bold uppercase lettering"
       >
-        L.A.P Docs
+        L.A.P - Docs
       </PageTitle>
 
       <Suspense fallback={<NewsLoading />}>

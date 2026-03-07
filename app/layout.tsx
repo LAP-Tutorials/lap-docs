@@ -8,8 +8,8 @@ import Script from "next/script";
 export const metadata: Metadata = {
   metadataBase: new URL("https://lap.onl/"),
   title: {
-    default: "L.A.P Docs",
-    template: "%s | L.A.P Docs",
+    default: "L.A.P - Docs",
+    template: "%s | L.A.P - Docs",
   },
   description:
     "Simplicity in Tech. L.A.P aims to make tech simple as possible for everyone.",
@@ -37,11 +37,11 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "L.A.P Docs",
+    title: "L.A.P - Docs",
     description:
       "Simplicity in Tech. L.A.P aims to make tech simple as possible for everyone.",
     url: "https://lap.onl/",
-    siteName: "L.A.P Docs",
+    siteName: "L.A.P - Docs",
     locale: "en_US",
     type: "website",
     images: [
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "L.A.P Docs",
+    title: "L.A.P - Docs",
     description:
       "Simplicity in Tech. L.A.P aims to make tech simple as possible for everyone.",
     images: ["https://lap.onl/twitter-image.png"],
