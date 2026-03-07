@@ -4,6 +4,29 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Script from "next/script";
+import localFont from "next/font/local";
+
+const generalSans = localFont({
+  src: [
+    {
+      path: "../public/fonts/general-sans/GeneralSans-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/general-sans/GeneralSans-Medium.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/general-sans/GeneralSans-Semibold.woff2",
+      weight: "600",
+      style: "normal",
+    },
+  ],
+  variable: "--font-general-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://lap.onl/"),
@@ -74,7 +97,7 @@ export default function RootLayout({
   const GA_TRACKING_ID = process.env.NEXT_PUBLIC_MEASURING_ID || "";
 
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className={`scroll-smooth ${generalSans.variable}`}>
       <head>
         <link rel="icon" href="/logos/LAP-Logo-Color.png" type="image/png" />
         <link

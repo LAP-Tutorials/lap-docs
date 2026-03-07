@@ -103,6 +103,7 @@ export default function LatestPosts({
               width={1488}
               height={992}
               priority
+              fetchPriority="high"
               sizes="(max-width: 768px) 100vw, 50vw"
             />
           </div>

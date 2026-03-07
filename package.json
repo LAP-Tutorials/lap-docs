@@ -50,5 +50,10 @@
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.3",
     "typescript": "^5.2.2"
-  }
+  },
+  "browserslist": [
+    "defaults",
+    "not IE 11",
+    "not dead"
+  ]
 }

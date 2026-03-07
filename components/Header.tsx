@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import menuLinks from "@/data/menu";
 import SocialSharing from "./SocialSharing";
 import Search, { SearchItem } from "./Search";
@@ -56,10 +57,13 @@ export default function Header() {
             aria-label="Return to homepage"
             className="block w-fit"
           >
-            <img
+            <Image
               className="w-[10%]"
               src="/logos/LAP-Logo-Transparent.png"
               alt="logo"
+              width={600}
+              height={600}
+              priority
             />
           </Link>
         </div>

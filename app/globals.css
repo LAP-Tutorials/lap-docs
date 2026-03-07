@@ -73,7 +73,7 @@
     @apply border-border;
   }
   html {
-    font-family: General Sans, system-ui, sans-serif;
+    font-family: var(--font-general-sans), system-ui, sans-serif;
     scroll-behavior: smooth;
     /* Offset native anchor/scroll operations for sticky header */
     scroll-padding-top: 7.5rem;
@@ -127,22 +127,6 @@
   }
 }
 
-@font-face {
-  font-family: "General Sans";
-  font-weight: 400;
-  font-style: normal;
-  src: url("/fonts/general-sans/GeneralSans-Regular.woff2"), format("woff2");
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "General Sans";
-  font-weight: 500;
-  font-style: normal;
-  src: url("/fonts/general-sans/GeneralSans-Medium.woff2"), format("woff2");
-  font-display: swap;
-}
-
 @keyframes ticker {
   0% {
     transform: translateX(0);
@@ -154,14 +138,6 @@
 
 .animate-ticker {
   animation: ticker 75s linear infinite;
-}
-
-@font-face {
-  font-family: "General Sans";
-  font-weight: 600;
-  font-style: normal;
-  src: url("/fonts/general-sans/GeneralSans-Semibold.woff2"), format("woff2");
-  font-display: swap;
 }
 
 /* Text selection */
