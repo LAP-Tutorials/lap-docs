@@ -3,6 +3,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import CookieBanner from "@/components/CookieBanner";
 import Script from "next/script";
 import localFont from "next/font/local";
 
@@ -132,6 +133,9 @@ export default function RootLayout({
                 __html: `
                   window.dataLayer = window.dataLayer || [];
                   function gtag(){dataLayer.push(arguments);}
+                  gtag('consent', 'default', {
+                    'analytics_storage': 'denied'
+                  });
                   gtag('js', new Date());
                   gtag('config', '${GA_TRACKING_ID}', {
                     page_path: window.location.pathname,
@@ -147,6 +151,7 @@ export default function RootLayout({
           <Header />
           {children}
           <Footer />
+          <CookieBanner />
         </Container>
       </body>
     </html>

@@ -6,7 +6,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://lap.onl";
 
   // Static routes
-  const routes = ["", "/posts", "/team"].map((route) => ({
+  const routes = [
+    "",
+    "/posts",
+    "/team",
+    "/privacy-policy",
+    "/terms-of-service",
+  ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date().toISOString(),
   }));
