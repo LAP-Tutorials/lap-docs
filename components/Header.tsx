@@ -17,6 +17,7 @@ import {
 import { useState, useEffect } from "react";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { SITE_NAME } from "@/lib/seo";
 
 export default function Header() {
   const [allArticles, setAllArticles] = useState<SearchItem[]>([]);
@@ -54,17 +55,18 @@ export default function Header() {
         <div className="flex flex-1 z-50 relative">
           <Link
             href="/"
-            aria-label="Return to homepage"
-            className="block w-fit"
+            aria-label={`${SITE_NAME} home`}
+            className="flex items-center gap-3 w-fit"
           >
             <Image
-              className="w-[10%]"
+              className="w-10 md:w-12 h-auto"
               src="/logos/LAP-Logo-Transparent.png"
-              alt="logo"
+              alt={`${SITE_NAME} logo`}
               width={600}
               height={600}
               priority
             />
+            <span className="sr-only">{SITE_NAME}</span>
           </Link>
         </div>
 

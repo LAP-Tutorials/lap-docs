@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import FooterSocialLinks from "./FooterSocialsLinks";
 import Image from "next/image";
+import Link from "next/link";
+import { SITE_NAME } from "@/lib/seo";
+import FooterSocialLinks from "./FooterSocialsLinks";
 
 export default function Footer() {
   return (
@@ -11,7 +12,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row flex-wrap lg:justify-between gap-6 max-w-[95rem] w-full">
           <Image
             src="/logos/lap-logo-white.png"
-            alt=""
+            alt={`${SITE_NAME} logo`}
             width={100}
             height={50}
           />
@@ -43,7 +44,7 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="http://patreon.com/lap_mgmt" target="_blank">
+                  <Link href="https://www.patreon.com/lap_mgmt" target="_blank">
                     Patreon
                   </Link>
                 </li>
@@ -84,7 +85,7 @@ export default function Footer() {
             <FooterSocialLinks />
           </div>
           <div className="flex flex-col md:flex-row items-center md:items-start gap-4 text-gray-400 md:text-white font-regular text-sm md:order-1">
-            <p>© {new Date().getFullYear()} L.A.P. All rights reserved.</p>
+            <p>Copyright {new Date().getFullYear()} L.A.P. All rights reserved.</p>
           </div>
         </div>
       </div>

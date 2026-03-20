@@ -1,6 +1,6 @@
 import React from "react";
 
-const JsonLd = ({ data }: { data: Record<string, any> }) => {
+const JsonLd = ({ data }: { data: unknown }) => {
   return (
     <script
       type="application/ld+json"

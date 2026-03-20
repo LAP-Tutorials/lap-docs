@@ -5,24 +5,43 @@ import Loading from "./loading";
 import type { Metadata } from "next";
 import JsonLd from "@/components/JsonLd";
 import { db } from "@/lib/firebase";
+import {
+  DEFAULT_OG_IMAGE_PATH,
+  DEFAULT_TWITTER_IMAGE_PATH,
+  SITE_LOCALE,
+  SITE_NAME,
+  absoluteUrl,
+  buildBreadcrumbSchema,
+} from "@/lib/seo";
 import { collection, getDocs } from "firebase/firestore";
 
 export const metadata: Metadata = {
   title: "Team",
-  description: "Meet the dedicated team behind L.A.P Docs.",
+  description: "Meet the dedicated team behind L.A.P - Docs.",
   openGraph: {
-    title: "Team | L.A.P Docs",
-    description: "Meet the dedicated team behind L.A.P Docs.",
-    url: "https://lap.onl/team",
-    siteName: "L.A.P Docs",
+    title: `Team | ${SITE_NAME}`,
+    description: "Meet the dedicated team behind L.A.P - Docs.",
+    url: absoluteUrl("/team"),
+    siteName: SITE_NAME,
     type: "website",
-    images: "https://lap.onl/og-image.png",
+    locale: SITE_LOCALE,
+    images: [
+      {
+        url: DEFAULT_OG_IMAGE_PATH,
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME} team preview`,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Team | L.A.P Docs",
-    description: "Meet the dedicated team behind L.A.P Docs.",
-    images: "https://lap.onl/twitter-image.png",
+    title: `Team | ${SITE_NAME}`,
+    description: "Meet the dedicated team behind L.A.P - Docs.",
+    images: [DEFAULT_TWITTER_IMAGE_PATH],
+  },
+  alternates: {
+    canonical: absoluteUrl("/team"),
   },
 };
 
@@ -61,13 +80,25 @@ async function getAuthors() {
 export default async function AuthorsPage() {
   const authors = await getAuthors();
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "L.A.P Team",
-    description: "Meet the dedicated team behind L.A.P Docs.",
-    url: "https://lap.onl/team",
-  };
+  const pageUrl = absoluteUrl("/team");
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: "Team",
+      description: "Meet the dedicated team behind L.A.P - Docs.",
+      url: pageUrl,
+      isPartOf: {
+        "@type": "WebSite",
+        name: SITE_NAME,
+        url: absoluteUrl("/"),
+      },
+    },
+    buildBreadcrumbSchema([
+      { name: "Home", path: "/" },
+      { name: "Team", path: "/team" },
+    ]),
+  ];
 
   return (
     <main className="flex flex-col min-h-screen max-w-[95rem] w-full mx-auto px-4 lg:pt-0 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">

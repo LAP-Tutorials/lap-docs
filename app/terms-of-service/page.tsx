@@ -1,13 +1,62 @@
 import type { Metadata } from "next";
+import JsonLd from "@/components/JsonLd";
+import {
+  DEFAULT_OG_IMAGE_PATH,
+  DEFAULT_TWITTER_IMAGE_PATH,
+  SITE_LOCALE,
+  SITE_NAME,
+  absoluteUrl,
+  buildBreadcrumbSchema,
+} from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "Terms of Service for L.A.P - Docs",
+  description: `Terms of Service for ${SITE_NAME}`,
+  alternates: {
+    canonical: absoluteUrl("/terms-of-service"),
+  },
+  openGraph: {
+    title: `Terms of Service | ${SITE_NAME}`,
+    description: `Terms of Service for ${SITE_NAME}`,
+    url: absoluteUrl("/terms-of-service"),
+    siteName: SITE_NAME,
+    locale: SITE_LOCALE,
+    type: "website",
+    images: [
+      {
+        url: DEFAULT_OG_IMAGE_PATH,
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME} terms of service preview`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `Terms of Service | ${SITE_NAME}`,
+    description: `Terms of Service for ${SITE_NAME}`,
+    images: [DEFAULT_TWITTER_IMAGE_PATH],
+  },
 };
 
 export default function TermsOfService() {
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: "Terms of Service",
+      url: absoluteUrl("/terms-of-service"),
+      description: `Terms of Service for ${SITE_NAME}`,
+    },
+    buildBreadcrumbSchema([
+      { name: "Home", path: "/" },
+      { name: "Terms of Service", path: "/terms-of-service" },
+    ]),
+  ];
+
   return (
     <main className="flex flex-col min-h-screen max-w-4xl mx-auto px-6 py-12 w-full text-white">
+      <JsonLd data={jsonLd} />
       <h1 className="text-4xl font-bold mb-8">Terms of Service</h1>
       <p className="mb-4 text-gray-300">
         Last updated:{" "}

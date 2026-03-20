@@ -1,9 +1,11 @@
 import { MetadataRoute } from "next";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
+import { safeTimestampToDate } from "@/lib/utils";
+import { absoluteUrl } from "@/lib/seo";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = "https://lap.onl";
+  const lastModified = new Date();
 
   // Static routes
   const routes = [
@@ -13,8 +15,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/privacy-policy",
     "/terms-of-service",
   ].map((route) => ({
-    url: `${baseUrl}${route}`,
-    lastModified: new Date().toISOString(),
+    url: absoluteUrl(route || "/"),
+    lastModified,
+    changeFrequency: route === "" ? ("daily" as const) : ("weekly" as const),
+    priority: route === "" ? 1 : 0.7,
   }));
 
   try {
@@ -26,9 +30,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const matchRoutes = querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
-        url: `${baseUrl}/posts/${data.slug}`,
-        lastModified:
-          data.date?.toDate().toISOString() || new Date().toISOString(),
+        url: absoluteUrl(`/posts/${data.slug}`),
+        lastModified: safeTimestampToDate(data.date),
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
       };
     });
 
@@ -41,14 +46,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         const data = doc.data();
         if (!data.slug) return null;
         return {
-          url: `${baseUrl}/team/${data.slug}`,
-          lastModified: new Date().toISOString(), // Author profiles might not have a date field, defaulting to now
+          url: absoluteUrl(`/team/${data.slug}`),
+          lastModified,
+          changeFrequency: "monthly" as const,
+          priority: 0.6,
         };
       })
-      .filter(
-        (route): route is { url: string; lastModified: string } =>
-          route !== null,
-      );
+      .filter((route): route is NonNullable<typeof route> => route !== null);
 
     return [...routes, ...matchRoutes, ...authorRoutes];
   } catch (error) {

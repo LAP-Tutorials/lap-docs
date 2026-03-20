@@ -1,6 +1,10 @@
 {
-  "name": "L.A.P Docs",
-  "short_name": "LAP Docs",
+  "name": "L.A.P - Docs",
+  "short_name": "L.A.P - Docs",
+  "description": "Step-by-step technical docs, tutorials, and guides from the L.A.P YouTube channel.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
   "icons": [
     {
       "src": "/icons/android-chrome-192x192.png",
@@ -13,7 +17,7 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
+  "theme_color": "#050505",
+  "background_color": "#050505",
   "display": "standalone"
 }

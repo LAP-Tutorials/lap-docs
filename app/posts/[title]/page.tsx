@@ -18,6 +18,13 @@ import type { Metadata } from "next";
 import Image from "next/image";
 
 import { processMarkdown } from "@/lib/markdown";
+import {
+  SITE_LOCALE,
+  SITE_NAME,
+  absoluteUrl,
+  buildBreadcrumbSchema,
+  buildPublisherSchema,
+} from "@/lib/seo";
 
 interface Article {
   id: string;
@@ -51,14 +58,23 @@ export async function generateMetadata({
       return {
         title: "Article Not Found",
         description: "The requested article could not be found.",
+        robots: {
+          index: false,
+          follow: false,
+        },
       };
     }
 
     const articleData = snapshot.docs[0].data();
     const articleTitle = articleData.title || "Untitled Article";
     const articleDescription =
-      articleData.description || "Read this article on L.A.P Docs.";
-    const articleImage = articleData.img;
+      articleData.description || `Read this article on ${SITE_NAME}.`;
+    const articleSlug = articleData.slug || title;
+    const articleUrl = absoluteUrl(`/posts/${articleSlug}`);
+    const articleImage = articleData.img
+      ? absoluteUrl(articleData.img)
+      : absoluteUrl(`/posts/${articleSlug}/opengraph-image`);
+    const generatedOgImage = absoluteUrl(`/posts/${articleSlug}/opengraph-image`);
     // Safe date conversion
     const articleDate = safeTimestampToDate(articleData.date).toISOString();
 
@@ -117,7 +133,7 @@ export async function generateMetadata({
         articleData.label,
         "Technology",
         "Tutorials",
-        "L.A.P Docs",
+        SITE_NAME,
         ...titleKeywords,
         ...descKeywords,
       ]),
@@ -128,31 +144,39 @@ export async function generateMetadata({
       description: articleDescription,
       keywords: uniqueKeywords,
       authors: [{ name: authorName }],
+      creator: authorName,
+      publisher: SITE_NAME,
+      category: articleData.label || "Tutorials",
       alternates: {
-        canonical: `https://lap.onl/posts/${articleData.slug}`,
+        canonical: articleUrl,
       },
       openGraph: {
         title: articleTitle,
         description: articleDescription,
-        url: `/posts/${articleData.slug}`,
-        siteName: "L.A.P Docs",
+        url: articleUrl,
+        siteName: SITE_NAME,
+        locale: SITE_LOCALE,
         type: "article",
         publishedTime: articleDate,
         authors: [authorName],
-        images: articleImage
-          ? [
-              {
-                url: articleImage,
-                alt: articleData.imgAlt || articleTitle,
-              },
-            ]
-          : [],
+        images: [
+          {
+            url: articleImage,
+            alt: articleData.imgAlt || articleTitle,
+          },
+          {
+            url: generatedOgImage,
+            width: 1200,
+            height: 630,
+            alt: `${articleTitle} on ${SITE_NAME}`,
+          },
+        ],
       },
       twitter: {
         card: "summary_large_image",
         title: articleTitle,
         description: articleDescription,
-        images: articleImage ? [articleImage] : [],
+        images: [articleImage],
       },
     };
   } catch (error) {
@@ -215,6 +239,15 @@ export default async function ArticleDetails({
     };
 
     const processedHtml = await processMarkdown(articleData.content || "");
+    const articleUrl = absoluteUrl(`/posts/${processedArticle.slug}`);
+    const articleImages = Array.from(
+      new Set(
+        [
+          processedArticle.img ? absoluteUrl(processedArticle.img) : null,
+          absoluteUrl(`/posts/${processedArticle.slug}/opengraph-image`),
+        ].filter((value): value is string => Boolean(value)),
+      ),
+    );
 
     // Get latest articles (excluding current)
     const latestSnapshot = await getDocs(
@@ -246,34 +279,36 @@ export default async function ArticleDetails({
       .filter((article) => article.id !== processedArticle.id)
       .slice(0, 3);
 
-    const jsonLd = {
-      "@context": "https://schema.org",
-      "@type": "Article",
-      headline: processedArticle.title,
-      description: processedArticle.description,
-      image: processedArticle.img ? [processedArticle.img] : [],
-      datePublished: processedArticle.date.toISOString(),
-      dateModified: processedArticle.date.toISOString(),
-      author: {
-        "@type": "Person",
-        name: processedArticle.authorName,
-        url: authorData.slug
-          ? `https://lap.onl/team/${authorData.slug}`
-          : undefined,
-      },
-      publisher: {
-        "@type": "Organization",
-        name: "L.A.P Docs",
-        logo: {
-          "@type": "ImageObject",
-          url: "https://lap.onl/logos/LAP-Logo-Color.png",
+    const jsonLd = [
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: processedArticle.title,
+        description: processedArticle.description,
+        image: articleImages,
+        datePublished: processedArticle.date.toISOString(),
+        dateModified: processedArticle.date.toISOString(),
+        articleSection: processedArticle.label || undefined,
+        inLanguage: "en-US",
+        author: {
+          "@type": "Person",
+          name: processedArticle.authorName,
+          url: authorData.slug
+            ? absoluteUrl(`/team/${authorData.slug}`)
+            : undefined,
+        },
+        publisher: buildPublisherSchema(),
+        mainEntityOfPage: {
+          "@type": "WebPage",
+          "@id": articleUrl,
         },
       },
-      mainEntityOfPage: {
-        "@type": "WebPage",
-        "@id": `https://lap.onl/posts/${processedArticle.slug}`,
-      },
-    };
+      buildBreadcrumbSchema([
+        { name: "Home", path: "/" },
+        { name: "Posts", path: "/posts" },
+        { name: processedArticle.title, path: `/posts/${processedArticle.slug}` },
+      ]),
+    ];
 
     return (
       <main className="max-w-[95rem] w-full mx-auto px-4 md:pt-8 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">

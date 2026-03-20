@@ -11,6 +11,16 @@ import type { Metadata } from "next";
 import JsonLd from "@/components/JsonLd";
 import { db } from "@/lib/firebase";
 import {
+  DEFAULT_OG_IMAGE_PATH,
+  DEFAULT_TWITTER_IMAGE_PATH,
+  SITE_DESCRIPTION,
+  SITE_LOCALE,
+  SITE_NAME,
+  SITE_URL,
+  buildOrganizationSchema,
+  buildWebsiteSchema,
+} from "@/lib/seo";
+import {
   collection,
   getDocs,
   query,
@@ -20,28 +30,32 @@ import {
 } from "firebase/firestore";
 
 export const metadata: Metadata = {
-  title: "L.A.P - Docs",
-  description:
-    "Simplified text documents about everything made on the L.A.P - tutorials youtube channel",
+  title: SITE_NAME,
+  description: SITE_DESCRIPTION,
   openGraph: {
-    title: "L.A.P - Docs",
-    description:
-      "Simplified text documents about everything made on the L.A.P - tutorials youtube channel",
-    url: "https://lap.onl/",
-    siteName: "L.A.P - Docs",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    siteName: SITE_NAME,
     type: "website",
-    locale: "en_US",
-    images: "https://lap.onl/og-image.png",
+    locale: SITE_LOCALE,
+    images: [
+      {
+        url: DEFAULT_OG_IMAGE_PATH,
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME} homepage preview`,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "L.A.P - Docs",
-    description:
-      "Simplified text documents about everything made on the L.A.P - tutorials youtube channel",
-    images: "https://lap.onl/twitter-image.png",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    images: [DEFAULT_TWITTER_IMAGE_PATH],
   },
   alternates: {
-    canonical: "https://lap.onl/",
+    canonical: SITE_URL,
   },
 };
 
@@ -142,18 +156,7 @@ async function getData() {
 export default async function Home() {
   const { articles, shuffledAuthors } = await getData();
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "L.A.P - Docs",
-    alternateName: ["L.A.P Docs", "LAP Docs"],
-    url: "https://lap.onl/",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: "https://lap.onl/search?q={search_term_string}",
-      "query-input": "required name=search_term_string",
-    },
-  };
+  const jsonLd = [buildWebsiteSchema(), buildOrganizationSchema()];
 
   return (
     <main className="flex flex-col min-h-screen max-w-[95rem] w-full mx-auto px-4 lg:pt-0 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">

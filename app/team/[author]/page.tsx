@@ -6,6 +6,14 @@ import Link from "next/link";
 import JsonLd from "@/components/JsonLd";
 import type { Metadata } from "next";
 import {
+  SITE_LOCALE,
+  SITE_NAME,
+  SITE_URL,
+  absoluteUrl,
+  buildBreadcrumbSchema,
+  buildPublisherSchema,
+} from "@/lib/seo";
+import {
   RiInstagramLine,
   RiTwitterFill,
   RiYoutubeFill,
@@ -133,12 +141,20 @@ export async function generateMetadata({
 
   if (!data) {
     return {
-      title: "Author Not Found | L.A.P Docs",
+      title: `Author Not Found | ${SITE_NAME}`,
       description: "The requested author could not be found.",
+      robots: {
+        index: false,
+        follow: false,
+      },
     };
   }
 
   const { author: authorData } = data;
+  const authorUrl = absoluteUrl(`/team/${authorData.slug}`);
+  const authorImage = authorData.avatar
+    ? absoluteUrl(authorData.avatar)
+    : absoluteUrl("/default-avatar.png");
 
   return {
     title: `${authorData.name}`,
@@ -146,25 +162,25 @@ export async function generateMetadata({
     openGraph: {
       title: `${authorData.name}`,
       description: authorData.biography.summary,
-      url: `https://lap.onl/team/${authorData.slug}`,
-      images: authorData.avatar
-        ? [
-            {
-              url: authorData.avatar,
-              alt: authorData.imgAlt || authorData.name,
-            },
-          ]
-        : [],
+      url: authorUrl,
+      siteName: SITE_NAME,
+      locale: SITE_LOCALE,
+      images: [
+        {
+          url: authorImage,
+          alt: authorData.imgAlt || authorData.name,
+        },
+      ],
       type: "profile",
     },
     twitter: {
       card: "summary_large_image",
       title: `${authorData.name}`,
       description: authorData.biography.summary,
-      images: authorData.avatar ? [authorData.avatar] : [],
+      images: [authorImage],
     },
     alternates: {
-      canonical: `https://lap.onl/team/${authorData.slug}`,
+      canonical: authorUrl,
     },
   };
 }
@@ -195,19 +211,40 @@ export default async function Page({
         }))
     : [];
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "ProfilePage",
-    mainEntity: {
-      "@type": "Person",
-      name: authorData.name,
-      jobTitle: authorData.job,
-      image: authorData.avatar,
-      description: authorData.biography.summary,
-      url: `https://lap.onl/team/${authorData.slug}`,
-      sameAs: socialLinks.map((link) => link.href),
+  const authorUrl = absoluteUrl(`/team/${authorData.slug}`);
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "ProfilePage",
+      url: authorUrl,
+      mainEntity: {
+        "@type": "Person",
+        "@id": `${authorUrl}#person`,
+        name: authorData.name,
+        jobTitle: authorData.job,
+        image: authorData.avatar ? absoluteUrl(authorData.avatar) : undefined,
+        description: authorData.biography.summary,
+        url: authorUrl,
+        sameAs: socialLinks.map((link) => link.href),
+        worksFor: buildPublisherSchema(),
+        hasPart: articles.map((article) => ({
+          "@type": "Article",
+          headline: article.title,
+          url: absoluteUrl(`/posts/${article.slug}`),
+        })),
+      },
+      isPartOf: {
+        "@type": "WebSite",
+        name: SITE_NAME,
+        url: SITE_URL,
+      },
     },
-  };
+    buildBreadcrumbSchema([
+      { name: "Home", path: "/" },
+      { name: "Team", path: "/team" },
+      { name: authorData.name, path: `/team/${authorData.slug}` },
+    ]),
+  ];
 
   return (
     <main className="max-w-[95rem] w-full mx-auto px-4 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
@@ -219,7 +256,7 @@ export default async function Page({
         <div className="w-fit">
           <img
             src={authorData.avatar || "/default-avatar.png"}
-            alt={authorData.imgAlt}
+            alt={authorData.imgAlt || authorData.name}
             className="w-full max-w-[300px] h-auto rounded-full"
           />
           {socialLinks.length > 0 && (

@@ -5,25 +5,44 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import JsonLd from "@/components/JsonLd";
 import { db } from "@/lib/firebase";
+import {
+  DEFAULT_OG_IMAGE_PATH,
+  DEFAULT_TWITTER_IMAGE_PATH,
+  SITE_LOCALE,
+  SITE_NAME,
+  absoluteUrl,
+  buildBreadcrumbSchema,
+} from "@/lib/seo";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 
 export const metadata: Metadata = {
   title: "Posts",
-  description: "Browse our latest articles, tutorials, and guides.",
+  description: "Browse the latest L.A.P - Docs articles, tutorials, and guides.",
   keywords: ["Articles", "Tutorials", "Guides", "Tech Blog", "L.A.P Posts"],
   openGraph: {
-    title: "Posts | L.A.P Docs",
-    description: "Browse our latest articles, tutorials, and guides.",
-    url: "https://lap.onl/posts",
-    siteName: "L.A.P Docs",
+    title: `Posts | ${SITE_NAME}`,
+    description: "Browse the latest L.A.P - Docs articles, tutorials, and guides.",
+    url: absoluteUrl("/posts"),
+    siteName: SITE_NAME,
     type: "website",
-    images: "https://lap.onl/og-image.png",
+    locale: SITE_LOCALE,
+    images: [
+      {
+        url: DEFAULT_OG_IMAGE_PATH,
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME} posts preview`,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Posts | L.A.P Docs",
-    description: "Browse our latest articles, tutorials, and guides.",
-    images: "https://lap.onl/twitter-image.png",
+    title: `Posts | ${SITE_NAME}`,
+    description: "Browse the latest L.A.P - Docs articles, tutorials, and guides.",
+    images: [DEFAULT_TWITTER_IMAGE_PATH],
+  },
+  alternates: {
+    canonical: absoluteUrl("/posts"),
   },
 };
 
@@ -110,13 +129,25 @@ async function getArticles() {
 export default async function MagazinePage() {
   const articles = await getArticles();
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "L.A.P Posts",
-    description: "Browse our latest articles, tutorials, and guides.",
-    url: "https://lap.onl/posts",
-  };
+  const pageUrl = absoluteUrl("/posts");
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: "Posts",
+      description: "Browse the latest L.A.P - Docs articles, tutorials, and guides.",
+      url: pageUrl,
+      isPartOf: {
+        "@type": "WebSite",
+        name: SITE_NAME,
+        url: absoluteUrl("/"),
+      },
+    },
+    buildBreadcrumbSchema([
+      { name: "Home", path: "/" },
+      { name: "Posts", path: "/posts" },
+    ]),
+  ];
 
   return (
     <main className="flex flex-col min-h-screen max-w-[95rem] w-full mx-auto px-4 lg:pt-0 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">

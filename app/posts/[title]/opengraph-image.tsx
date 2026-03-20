@@ -1,10 +1,11 @@
 import { ImageResponse } from "next/og";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
+import { SITE_NAME } from "@/lib/seo";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
-export const alt = "L.A.P Docs Article";
+export const alt = `${SITE_NAME} article preview`;
 export const size = {
   width: 1200,
   height: 630,
@@ -18,25 +19,12 @@ export default async function Image({
   params: Promise<{ title: string }>;
 }) {
   const { title } = await params;
-  
+
   // Default values
-  let articleTitle = "L.A.P Docs";
+  let articleTitle = SITE_NAME;
   let authorName = "L.A.P Team";
 
   try {
-     // Note: Firestore Edge support might be limited depending on the SDK version and environment. 
-     // If this fails in edge runtime, we might need to use node runtime or a different fetching method.
-     // For now, assuming standard usage or changing runtime if needed.
-     
-     // However, Firestore JS SDK isn't always edge-friendly. 
-     // Let's rely on standard fetch if we had an API, but here we have direct DB access.
-     // To be safe with "edge" runtime and Firebase, we might need to remove "runtime = edge" 
-     // or ensure using a compatible adapter. 
-     // Given the environment (Next.js 15), let's try 'nodejs' runtime if 'edge' is problematic, 
-     // but 'edge' is preferred for OG. 
-     // actually, let's stick to Node.js runtime for Firebase compatibility unless we know it works on Edge.
-     // Removing `export const runtime = 'edge'` to default to Node.js (Serverless) which supports Firebase Admin/Client SDKs reliably.
-     
     const articlesRef = collection(db, "articles");
     const q = query(articlesRef, where("slug", "==", title));
     const snapshot = await getDocs(q);
