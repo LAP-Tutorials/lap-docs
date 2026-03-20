@@ -1,10 +1,11 @@
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import PostNavigation from "@/components/PostNavigation";
 import SocialSharing from "@/components/SocialSharing";
 import Link from "next/link";
 import JsonLd from "@/components/JsonLd";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import {
   SITE_LOCALE,
   SITE_NAME,
@@ -50,6 +51,43 @@ type ArticleData = {
   publish: boolean; // Added publish field
 };
 
+function buildAuthorSummary(author: AuthorData) {
+  const role = author.job || "team member";
+  const city = author.city ? ` based in ${author.city}` : "";
+  return `${author.name} is a ${role} on the ${SITE_NAME} team${city}.`;
+}
+
+function buildAuthorBody(author: AuthorData) {
+  const city = author.city ? ` Based in ${author.city},` : "";
+  return `${city} ${author.name} contributes to ${SITE_NAME} by supporting tutorials, documentation, and the broader learning experience for the community.`.trim();
+}
+
+async function getLatestPublishedArticles(count = 4) {
+  const latestSnapshot = await getDocs(
+    query(
+      collection(db, "articles"),
+      where("publish", "==", true),
+      orderBy("date", "desc"),
+      limit(count),
+    ),
+  );
+
+  return latestSnapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      uid: doc.id,
+      title: data.title || "Untitled",
+      img: data.img || "/default-image.png",
+      date: data.date?.toDate?.() || new Date(),
+      read: data.read || "Unknown",
+      label: data.label || "No Label",
+      slug: data.slug || "",
+      authorUID: data.authorUID || "",
+      publish: data.publish ?? false,
+    } as ArticleData;
+  });
+}
+
 // Function to fetch author data
 async function getAuthorData(slug: string) {
   try {
@@ -60,7 +98,12 @@ async function getAuthorData(slug: string) {
 
     if (authorSnapshot.empty) return null;
 
-    const authorData = authorSnapshot.docs[0].data() as AuthorData;
+    const authorDoc = authorSnapshot.docs[0];
+    const authorRaw = authorDoc.data();
+    const authorData = {
+      ...authorRaw,
+      uid: authorRaw.uid || authorDoc.id,
+    } as AuthorData;
 
     // Approach 1: Try with composite index (if you've created it in Firebase console)
     try {
@@ -155,13 +198,15 @@ export async function generateMetadata({
   const authorImage = authorData.avatar
     ? absoluteUrl(authorData.avatar)
     : absoluteUrl("/default-avatar.png");
+  const authorDescription =
+    authorData.biography?.summary?.trim() || buildAuthorSummary(authorData);
 
   return {
     title: `${authorData.name}`,
-    description: authorData.biography.summary,
+    description: authorDescription,
     openGraph: {
       title: `${authorData.name}`,
-      description: authorData.biography.summary,
+      description: authorDescription,
       url: authorUrl,
       siteName: SITE_NAME,
       locale: SITE_LOCALE,
@@ -176,7 +221,7 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: `${authorData.name}`,
-      description: authorData.biography.summary,
+      description: authorDescription,
       images: [authorImage],
     },
     alternates: {
@@ -195,10 +240,19 @@ export default async function Page({
   const data = await getAuthorData(author);
 
   if (!data) {
-    return <div className="p-8">Author not found</div>;
+    notFound();
   }
 
   const { author: authorData, articles } = data;
+  const authoredArticles = articles;
+  const fallbackArticles =
+    authoredArticles.length === 0 ? await getLatestPublishedArticles() : [];
+  const displayArticles =
+    authoredArticles.length > 0 ? authoredArticles : fallbackArticles;
+  const authorSummary =
+    authorData.biography?.summary?.trim() || buildAuthorSummary(authorData);
+  const authorBody =
+    authorData.biography?.body?.trim() || buildAuthorBody(authorData);
 
   // **Dynamically Generate Social Media Links**
   const socialLinks = authorData.socials
@@ -223,11 +277,11 @@ export default async function Page({
         name: authorData.name,
         jobTitle: authorData.job,
         image: authorData.avatar ? absoluteUrl(authorData.avatar) : undefined,
-        description: authorData.biography.summary,
+        description: authorSummary,
         url: authorUrl,
         sameAs: socialLinks.map((link) => link.href),
         worksFor: buildPublisherSchema(),
-        hasPart: articles.map((article) => ({
+        hasPart: authoredArticles.map((article) => ({
           "@type": "Article",
           headline: article.title,
           url: absoluteUrl(`/posts/${article.slug}`),
@@ -273,19 +327,25 @@ export default async function Page({
           <p className="text-blog-summary pb-12 text-white/50">
             {authorData.job}
           </p>
-          <p className="text-blog-summary pb-12">
-            {authorData.biography.summary}
-          </p>
-          <p className="text-blog-body">{authorData.biography.body}</p>
+          <p className="text-blog-summary pb-12">{authorSummary}</p>
+          <p className="text-blog-body">{authorBody}</p>
         </article>
       </article>
 
       {/* **Author Articles** */}
       <div className="pb-12 md:pb-48">
         <h2 className="text-blog-subheading mt-[9.5rem] pt-12 pb-12 md:pb-24">
-          Posts by {authorData.name}
+          {authoredArticles.length > 0
+            ? `Posts by ${authorData.name}`
+            : `Latest Posts on ${SITE_NAME}`}
         </h2>
-        <AuthorArticles articles={articles} />
+        {authoredArticles.length === 0 && (
+          <p className="pb-8 text-white/70">
+            {authorData.name} does not have published posts on the site yet, so
+            we are showing the latest docs below.
+          </p>
+        )}
+        <AuthorArticles articles={displayArticles} />
       </div>
     </main>
   );
