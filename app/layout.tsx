@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CookieBanner from "@/components/CookieBanner";
+import JsonLd from "@/components/JsonLd";
 import Script from "next/script";
 import localFont from "next/font/local";
 import {
@@ -13,6 +14,8 @@ import {
   SITE_LOCALE,
   SITE_NAME,
   SITE_URL,
+  buildOrganizationSchema,
+  buildWebsiteSchema,
 } from "@/lib/seo";
 
 const generalSans = localFont({
@@ -144,6 +147,7 @@ export default function RootLayout({
         )}
       </head>
       <body suppressHydrationWarning>
+        <JsonLd data={[buildWebsiteSchema(), buildOrganizationSchema()]} />
         <Container>
           <Header />
           {children}

@@ -10,6 +10,7 @@ import {
   DEFAULT_TWITTER_IMAGE_PATH,
   SITE_LOCALE,
   SITE_NAME,
+  SITE_WEBSITE_ID,
   absoluteUrl,
   buildBreadcrumbSchema,
 } from "@/lib/seo";
@@ -89,9 +90,7 @@ export default async function AuthorsPage() {
       description: "Meet the dedicated team behind L.A.P - Docs.",
       url: pageUrl,
       isPartOf: {
-        "@type": "WebSite",
-        name: SITE_NAME,
-        url: absoluteUrl("/"),
+        "@id": SITE_WEBSITE_ID,
       },
     },
     buildBreadcrumbSchema([

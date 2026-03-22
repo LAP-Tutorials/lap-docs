@@ -10,6 +10,7 @@ import {
   SITE_LOCALE,
   SITE_NAME,
   SITE_URL,
+  SITE_WEBSITE_ID,
   absoluteUrl,
   buildBreadcrumbSchema,
   buildPublisherSchema,
@@ -288,9 +289,7 @@ export default async function Page({
         })),
       },
       isPartOf: {
-        "@type": "WebSite",
-        name: SITE_NAME,
-        url: SITE_URL,
+        "@id": SITE_WEBSITE_ID,
       },
     },
     buildBreadcrumbSchema([

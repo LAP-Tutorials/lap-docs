@@ -1,5 +1,5 @@
 export const SITE_NAME = "L.A.P - Docs";
-export const SITE_ALTERNATE_NAMES = ["L.A.P Docs", "LAP Docs", "lap.onl"];
+export const SITE_ALTERNATE_NAMES = ["L.A.P Docs", "LAP Docs"];
 export const SITE_URL = "https://lap.onl";
 export const SITE_LOCALE = "en_US";
 export const SITE_LANGUAGE = "en-US";
@@ -54,6 +54,7 @@ export function buildWebsiteSchema() {
     alternateName: SITE_ALTERNATE_NAMES,
     description: SITE_DESCRIPTION,
     inLanguage: SITE_LANGUAGE,
+    publisher: { "@id": SITE_ORGANIZATION_ID },
   };
 }
 

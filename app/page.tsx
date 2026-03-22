@@ -8,7 +8,6 @@ import Subheading from "@/components/Subheading";
 import Sidebar from "@/components/Sidebar";
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import JsonLd from "@/components/JsonLd";
 import { db } from "@/lib/firebase";
 import {
   DEFAULT_OG_IMAGE_PATH,
@@ -17,8 +16,6 @@ import {
   SITE_LOCALE,
   SITE_NAME,
   SITE_URL,
-  buildOrganizationSchema,
-  buildWebsiteSchema,
 } from "@/lib/seo";
 import {
   collection,
@@ -156,11 +153,8 @@ async function getData() {
 export default async function Home() {
   const { articles, shuffledAuthors } = await getData();
 
-  const jsonLd = [buildWebsiteSchema(), buildOrganizationSchema()];
-
   return (
     <main className="flex flex-col min-h-screen max-w-[95rem] w-full mx-auto px-4 lg:pt-0 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
-      <JsonLd data={jsonLd} />
       <PageTitle
         className="sr-only"
         imgSrc="/images/titles/lap-docs.svg"
