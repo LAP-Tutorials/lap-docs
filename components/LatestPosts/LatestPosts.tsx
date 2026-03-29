@@ -17,6 +17,7 @@ type Article = {
   date: string | Timestamp;
   read: string;
   label: string;
+  topicPath: string;
   img: string;
   imgAlt: string;
   publish: boolean;
@@ -74,7 +75,7 @@ export default function LatestPosts({
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
                   <span className="flex flex-wrap">
-                    <p className="font-semibold pr-2">Author</p>
+                    <p className="font-semibold pr-2">Team</p>
                     <p>{latestArticle.authorName}</p>
                   </span>
                   <span className="flex flex-wrap">
@@ -88,9 +89,12 @@ export default function LatestPosts({
                     <p>{latestArticle.read}</p>
                   </span>
                 </div>
-                <span className="px-3 py-2 border border-white rounded-full w-fit">
+                <Link
+                  href={latestArticle.topicPath}
+                  className="px-3 py-2 border border-white rounded-full w-fit hover:bg-white hover:text-black transition"
+                >
                   <p className="uppercase">{latestArticle.label}</p>
-                </span>
+                </Link>
               </div>
             </article>
           </article>
@@ -140,7 +144,7 @@ export default function LatestPosts({
                   <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center">
                     <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
                       <span className="flex flex-wrap">
-                        <p className="font-semibold pr-2">Author</p>
+                        <p className="font-semibold pr-2">Team</p>
                         <p>{article.authorName}</p>
                       </span>
                       <span className="flex flex-wrap">
@@ -154,9 +158,12 @@ export default function LatestPosts({
                         <p>{article.read}</p>
                       </span>
                     </div>
-                    <span className="px-3 py-2 border border-white rounded-full w-fit">
+                    <Link
+                      href={article.topicPath}
+                      className="px-3 py-2 border border-white rounded-full w-fit hover:bg-white hover:text-black transition"
+                    >
                       <p className="uppercase">{article.label}</p>
-                    </span>
+                    </Link>
                   </div>
                 </article>
               </article>

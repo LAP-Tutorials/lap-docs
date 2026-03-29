@@ -8,7 +8,7 @@ import Subheading from "@/components/Subheading";
 import Sidebar from "@/components/Sidebar";
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { db } from "@/lib/firebase";
+import { getAllAuthors, getPublishedArticles } from "@/lib/content";
 import {
   DEFAULT_OG_IMAGE_PATH,
   DEFAULT_TWITTER_IMAGE_PATH,
@@ -17,14 +17,6 @@ import {
   SITE_NAME,
   SITE_URL,
 } from "@/lib/seo";
-import {
-  collection,
-  getDocs,
-  query,
-  orderBy,
-  limit,
-  Timestamp,
-} from "firebase/firestore";
 
 export const metadata: Metadata = {
   title: SITE_NAME,
@@ -62,13 +54,16 @@ type Article = {
   slug: string;
   description: string;
   authorName: string;
-  date: string | Timestamp;
+  date: string;
   read: string;
   label: string;
   img: string;
   imgAlt: string;
+  topicPath: string;
   publish: boolean;
 };
+
+export const dynamic = "force-dynamic";
 
 type AuthorType = {
   id: string;
@@ -82,64 +77,37 @@ type AuthorType = {
 
 async function getData() {
   try {
-    // Fetch latest articles
-    const articlesQuery = query(
-      collection(db, "articles"),
-      orderBy("date", "desc"),
-      limit(7),
-    );
-    const articlesSnapshot = await getDocs(articlesQuery);
+    const [latestArticles, allAuthors] = await Promise.all([
+      getPublishedArticles(7),
+      getAllAuthors(),
+    ]);
 
-    // Fetch authors for mapping names
-    const authorsSnapshot = await getDocs(collection(db, "authors"));
-    const authorsMap = new Map(
-      authorsSnapshot.docs.map((d) => [d.id, d.data().name]),
-    );
-
-    const articles: Article[] = articlesSnapshot.docs
-      .map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          title: data.title || "",
-          slug: data.slug || "",
-          description: data.description || "",
-          authorName:
-            data.authorName ||
-            authorsMap.get(data.authorUID) ||
-            "Unknown Author",
-          // Ensure date is a string. If it's a Timestamp, convert. If string, keep. Else current date.
-          date:
-            data.date instanceof Timestamp
-              ? data.date.toDate().toISOString()
-              : typeof data.date === "string"
-                ? data.date
-                : new Date().toISOString(),
-          read: data.read || "",
-          label: data.label || "",
-          img: data.img || "",
-          imgAlt: data.imgAlt || "",
-          publish: data.publish || false,
-        } as Article;
-      })
-      .filter((a) => a.publish === true);
-
-    // Fetch all authors for the authors section - explicitly pick fields
-    const allAuthors = authorsSnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        slug: data.slug || "",
-        name: data.name || "",
-        avatar: data.avatar || "",
-        imgAlt: data.imgAlt || "",
-        job: data.job || "",
-        city: data.city || "",
-      };
-    });
+    const articles: Article[] = latestArticles.map((article) => ({
+      id: article.id,
+      title: article.title,
+      slug: article.slug,
+      description: article.description,
+      authorName: article.authorName,
+      date: article.date.toISOString(),
+      read: article.read,
+      label: article.label,
+      img: article.img,
+      imgAlt: article.imgAlt,
+      topicPath: article.topicPath,
+      publish: article.publish,
+    }));
 
     // Shuffle authors
     const shuffledAuthors = [...allAuthors]
+      .map((author) => ({
+        id: author.docId,
+        slug: author.slug,
+        name: author.name,
+        avatar: author.avatar,
+        imgAlt: author.imgAlt,
+        job: author.job,
+        city: author.city,
+      }))
       .sort(() => 0.5 - Math.random())
       .slice(0, 4);
 
@@ -158,7 +126,10 @@ export default async function Home() {
       <PageTitle
         className="sr-only"
         imgSrc="/images/titles/lap-docs.svg"
-        imgAlt="The words 'L.A.P - Docs' in bold uppercase lettering"
+        imageWidth={1520}
+        imageHeight={216}
+        priority
+        decorative
       >
         L.A.P - Docs
       </PageTitle>
@@ -180,4 +151,3 @@ export default async function Home() {
   );
 }
 
-export const revalidate = 60;

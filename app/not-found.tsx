@@ -18,7 +18,9 @@ export default function NotFound() {
         <PageTitle
           className="sr-only"
           imgSrc="/images/titles/NotFound.svg"
-          imgAlt="The words 'Not Found' in bold uppercase lettering"
+          imageWidth={754}
+          imageHeight={96}
+          decorative
         >
          404 - Page Not Found
         </PageTitle>

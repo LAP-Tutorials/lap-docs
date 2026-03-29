@@ -54,7 +54,7 @@ export default function PopularArticles({
             id: doc.id,
             title: data.title || "",
             slug: data.slug || "",
-            authorName: data.authorName || "Unknown Author",
+            authorName: data.authorName || "Unknown Team Member",
             popularity: data.popularity || false,
             publish: data.publish || false,
             date:
@@ -92,7 +92,7 @@ export default function PopularArticles({
                 <Link href={`/posts/${article.slug}`}>{article.title}</Link>
               </h3>
               <span className="flex gap-2">
-                <p className="font-semibold">Author:</p>
+                <p className="font-semibold">Team:</p>
                 <p>{article.authorName}</p>
               </span>
             </article>

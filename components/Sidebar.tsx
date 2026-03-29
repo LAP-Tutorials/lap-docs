@@ -47,8 +47,10 @@ async function getPopularArticles(): Promise<PopularArticle[]> {
         id: doc.id,
         title: data.title || "",
         slug: data.slug || "",
-        authorName:
-          data.authorName || authorsMap.get(data.authorUID) || "Unknown Author",
+          authorName:
+            data.authorName ||
+            authorsMap.get(data.authorUID) ||
+            "Unknown Team Member",
         popularity: data.popularity || false,
         publish: data.publish || false,
         date:

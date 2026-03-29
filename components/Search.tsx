@@ -76,6 +76,10 @@ export default function Search({
                 src={article.img}
                 alt={article.imgAlt}
                 className="w-14 h-10 object-cover"
+                width={56}
+                height={40}
+                loading="lazy"
+                decoding="async"
               />
               <Link
                 href={`/posts/${article.slug}`}

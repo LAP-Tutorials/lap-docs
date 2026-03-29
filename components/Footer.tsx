@@ -13,8 +13,8 @@ export default function Footer() {
           <Image
             src="/logos/lap-logo-white.png"
             alt={`${SITE_NAME} logo`}
-            width={100}
-            height={50}
+            width={120}
+            height={30}
           />
 
           <div className="flex flex-col md:flex-row gap-8 lg:flex-row max-w-[63.125rem] w-full">
@@ -85,7 +85,9 @@ export default function Footer() {
             <FooterSocialLinks />
           </div>
           <div className="flex flex-col md:flex-row items-center md:items-start gap-4 text-gray-400 md:text-white font-regular text-sm md:order-1">
-            <p>Copyright {new Date().getFullYear()} L.A.P. All rights reserved.</p>
+            <p>
+              Copyright © {new Date().getFullYear()} L.A.P. All rights reserved.
+            </p>
           </div>
         </div>
       </div>

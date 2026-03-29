@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "../ui/button";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -17,43 +16,36 @@ interface Article {
   read: string;
   authorUID: string;
   authorName?: string;
+  topicPath: string;
   publish: boolean;
 }
 
-interface Author {
-  uid: string;
-  name: string;
+interface TopicLink {
+  label: string;
+  slug: string;
+  path: string;
+  count: number;
 }
 
 interface ArticlesProps {
   initialArticles: Article[];
+  topics: TopicLink[];
+  activeTopicSlug?: string;
 }
 
-export default function Articles({ initialArticles }: ArticlesProps) {
-  const [labels, setLabels] = useState<string[]>([]);
-  const [selectedLabel, setSelectedLabel] = useState("All");
+export default function Articles({
+  initialArticles,
+  topics,
+  activeTopicSlug,
+}: ArticlesProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  // Determine loading state: if initialArticles is empty, we might assume loading or empty state.
-  // Actually, for SSR, we can assume data is ready.
-  // Unless we want a suspense boundary higher up.
-  // Let's just use initialArticles directly.
 
-  // Extract unique labels
-  useState(() => {
-    const uniqueLabels = Array.from(
-      new Set(initialArticles.map((a) => a.label)),
-    );
-    setLabels(["All", ...uniqueLabels]);
-  });
-
-  // First filter by label, then by search term (title OR description)
-  const filtered = initialArticles
-    .filter((a) => (selectedLabel === "All" ? true : a.label === selectedLabel))
-    .filter(
-      (a) =>
-        a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.description.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
+  const filtered = initialArticles.filter(
+    (article) =>
+      article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      article.description.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+  const isAllTopics = !activeTopicSlug;
 
   return (
     <div className="max-w-[95rem] w-full mx-auto">
@@ -72,21 +64,34 @@ export default function Articles({ initialArticles }: ArticlesProps) {
       <div className="flex flex-wrap justify-between items-center gap-2 md:gap-0 mb-6">
         <p className="font-semibold uppercase">Categories</p>
         <div className="flex flex-wrap gap-2">
-          {labels.map((label, i) => (
-            <Button
-              key={i}
-              onClick={() => setSelectedLabel(label)}
+          <Link
+            href="/posts"
+            className={`
+              px-3 py-2 border rounded-full transition ease-in-out duration-300
+              ${
+                isAllTopics
+                  ? "bg-white text-black border-white"
+                  : "bg-transparent text-white border-white hover:bg-white hover:text-black"
+              }
+            `}
+          >
+            All
+          </Link>
+          {topics.map((topic) => (
+            <Link
+              key={topic.slug}
+              href={topic.path}
               className={`
                 px-3 py-2 border rounded-full transition ease-in-out duration-300
                 ${
-                  label === selectedLabel
+                  topic.slug === activeTopicSlug
                     ? "bg-white text-black"
                     : "bg-transparent text-white border-white hover:bg-white hover:text-black"
                 }
               `}
             >
-              {label}
-            </Button>
+              {topic.label}
+            </Link>
           ))}
         </div>
       </div>
@@ -96,10 +101,19 @@ export default function Articles({ initialArticles }: ArticlesProps) {
         {filtered.map((article) => (
           <article className="border border-white p-8" key={article.id}>
             <div className="flex items-center justify-between">
-              <time dateTime={article.date}>{article.date}</time>
-              <span className="px-3 py-2 border border-white rounded-full uppercase">
+              <time dateTime={article.date}>
+                {new Date(article.date).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </time>
+              <Link
+                href={article.topicPath}
+                className="px-3 py-2 border border-white rounded-full uppercase hover:bg-white hover:text-black transition"
+              >
                 {article.label}
-              </span>
+              </Link>
             </div>
             <Link href={`/posts/${article.slug}`}>
               <Image
@@ -116,7 +130,7 @@ export default function Articles({ initialArticles }: ArticlesProps) {
             <p className="mt-3 mb-12">{article.description}</p>
             <div className="flex flex-wrap gap-4">
               <span className="flex">
-                <p className="font-semibold pr-2">Author</p>
+                <p className="font-semibold pr-2">Team</p>
                 <p>{article.authorName}</p>
               </span>
               <span className="flex">

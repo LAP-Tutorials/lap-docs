@@ -1,6 +1,7 @@
 export const SITE_NAME = "L.A.P - Docs";
 export const SITE_ALTERNATE_NAMES = ["L.A.P Docs", "LAP Docs"];
 export const SITE_URL = "https://lap.onl";
+export const SITE_HOST = new URL(SITE_URL).host;
 export const SITE_LOCALE = "en_US";
 export const SITE_LANGUAGE = "en-US";
 export const SITE_DESCRIPTION =
@@ -8,6 +9,7 @@ export const SITE_DESCRIPTION =
 export const SITE_LOGO_PATH = "/logos/LAP-Logo-Color.png";
 export const DEFAULT_OG_IMAGE_PATH = "/og-image.png";
 export const DEFAULT_TWITTER_IMAGE_PATH = "/twitter-image.png";
+export const INDEXNOW_KEY = "ad84aef5c8d54425ab34d1d4f36a8d79";
 export const SITE_ORGANIZATION_ID = `${SITE_URL}/#organization`;
 export const SITE_WEBSITE_ID = `${SITE_URL}/#website`;
 export const SITE_SOCIAL_PROFILES = [
@@ -23,12 +25,25 @@ type BreadcrumbItem = {
   path: string;
 };
 
+export function slugifySegment(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export function absoluteUrl(path = "/") {
   if (/^https?:\/\//i.test(path)) {
     return path;
   }
 
   return new URL(path.startsWith("/") ? path : `/${path}`, SITE_URL).toString();
+}
+
+export function buildTopicPath(label: string) {
+  return `/topics/${slugifySegment(label)}`;
 }
 
 export function buildBreadcrumbSchema(items: BreadcrumbItem[]) {
@@ -73,6 +88,14 @@ export function buildOrganizationSchema() {
     image: absoluteUrl(SITE_LOGO_PATH),
     sameAs: SITE_SOCIAL_PROFILES,
     email: "mailto:contact@lap.onl",
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        email: "contact@lap.onl",
+        contactType: "customer support",
+        url: absoluteUrl("/privacy-policy"),
+      },
+    ],
   };
 }
 

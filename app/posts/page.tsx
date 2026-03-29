@@ -4,7 +4,7 @@ import PageTitle from "@/components/PageTitle";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import JsonLd from "@/components/JsonLd";
-import { db } from "@/lib/firebase";
+import { buildTopicSummaries, getPublishedArticles } from "@/lib/content";
 import {
   DEFAULT_OG_IMAGE_PATH,
   DEFAULT_TWITTER_IMAGE_PATH,
@@ -14,14 +14,12 @@ import {
   absoluteUrl,
   buildBreadcrumbSchema,
 } from "@/lib/seo";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
 
 export const metadata: Metadata = {
-  title: "Posts",
+  title: "Tutorial Posts",
   description: "Browse the latest L.A.P - Docs articles, tutorials, and guides.",
-  keywords: ["Articles", "Tutorials", "Guides", "Tech Blog", "L.A.P Posts"],
   openGraph: {
-    title: `Posts | ${SITE_NAME}`,
+    title: `Tutorial Posts | ${SITE_NAME}`,
     description: "Browse the latest L.A.P - Docs articles, tutorials, and guides.",
     url: absoluteUrl("/posts"),
     siteName: SITE_NAME,
@@ -38,7 +36,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `Posts | ${SITE_NAME}`,
+    title: `Tutorial Posts | ${SITE_NAME}`,
     description: "Browse the latest L.A.P - Docs articles, tutorials, and guides.",
     images: [DEFAULT_TWITTER_IMAGE_PATH],
   },
@@ -46,6 +44,8 @@ export const metadata: Metadata = {
     canonical: absoluteUrl("/posts"),
   },
 };
+
+export const dynamic = "force-dynamic";
 
 interface Article {
   id: string;
@@ -59,83 +59,46 @@ interface Article {
   read: string;
   authorUID: string;
   authorName?: string;
+  topicPath: string;
   publish: boolean;
 }
 
 async function getArticles() {
   try {
-    // Fetch articles, ordered by date descending
-    const articlesQuery = query(
-      collection(db, "articles"),
-      orderBy("date", "desc"),
-    );
-    const articlesSnapshot = await getDocs(articlesQuery);
-
-    // Fetch authors
-    const authorsSnapshot = await getDocs(collection(db, "authors"));
-    // Create a map for faster lookup
-    const authorsMap = new Map(
-      authorsSnapshot.docs.map((doc) => [doc.id, doc.data().name]),
-    );
-
-    const withAuthors = articlesSnapshot.docs
-      .map((doc) => {
-        const data = doc.data();
-        let dateResult = "No date";
-
-        if (data.date) {
-          if (data.date.toDate) {
-            dateResult = data.date.toDate().toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            });
-          } else if (
-            typeof data.date === "string" ||
-            data.date instanceof Date
-          ) {
-            dateResult = new Date(data.date).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            });
-          }
-        }
-
-        return {
-          id: doc.id,
-          title: data.title || "",
-          label: data.label || "",
-          date: dateResult,
-          img: data.img || "",
-          imgAlt: data.imgAlt || "",
-          slug: data.slug || "",
-          description: data.description || "",
-          read: data.read || "",
-          authorUID: data.authorUID || "",
-          authorName: authorsMap.get(data.authorUID) || "Unknown Author",
-          publish: data.publish || false,
-        } as Article;
-      })
-      // Filter out unpublished
-      .filter((article) => article.publish === true);
-
-    return withAuthors;
+    const articles = await getPublishedArticles();
+    return {
+      articles: articles.map((article) => ({
+        id: article.id,
+        title: article.title,
+        label: article.label,
+        date: article.date.toISOString(),
+        img: article.img,
+        imgAlt: article.imgAlt,
+        slug: article.slug,
+        description: article.description,
+        read: article.read,
+        authorUID: article.authorUID,
+        authorName: article.authorName,
+        topicPath: article.topicPath,
+        publish: article.publish,
+      })),
+      topics: buildTopicSummaries(articles),
+    };
   } catch (error) {
     console.error("Error fetching data:", error);
-    return [];
+    return { articles: [], topics: [] };
   }
 }
 
 export default async function MagazinePage() {
-  const articles = await getArticles();
+  const { articles, topics } = await getArticles();
 
   const pageUrl = absoluteUrl("/posts");
   const jsonLd = [
     {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      name: "Posts",
+      name: "Tutorial Posts",
       description: "Browse the latest L.A.P - Docs articles, tutorials, and guides.",
       url: pageUrl,
       isPartOf: {
@@ -154,15 +117,16 @@ export default async function MagazinePage() {
       <PageTitle
         className="sr-only"
         imgSrc="/images/titles/Magazine.svg"
-        imgAlt="The word 'Magazine' in bold, uppercase lettering"
+        imageWidth={1520}
+        imageHeight={215}
+        decorative
       >
-        Posts
+        Tutorial Posts
       </PageTitle>
       <Suspense fallback={<Loading />}>
-        <Articles initialArticles={articles} />
+        <Articles initialArticles={articles} topics={topics} />
       </Suspense>
     </main>
   );
 }
 
-export const revalidate = 60;

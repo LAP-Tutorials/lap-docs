@@ -1,168 +1,53 @@
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import JsonLd from "@/components/JsonLd";
 import PostNavigation from "@/components/PostNavigation";
 import SocialSharing from "@/components/SocialSharing";
-import Link from "next/link";
-import JsonLd from "@/components/JsonLd";
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import {
+  getAuthorBySlug,
+  getPublishedArticles,
+  getPublishedArticlesForAuthor,
+} from "@/lib/content";
 import {
   SITE_LOCALE,
   SITE_NAME,
-  SITE_URL,
   SITE_WEBSITE_ID,
   absoluteUrl,
   buildBreadcrumbSchema,
   buildPublisherSchema,
 } from "@/lib/seo";
 import {
+  RiDiscordFill,
+  RiFacebookFill,
+  RiGithubFill,
   RiInstagramLine,
+  RiLink,
+  RiLinkedinFill,
+  RiPatreonFill,
+  RiTiktokFill,
   RiTwitterFill,
   RiYoutubeFill,
-  RiGithubFill,
-  RiTiktokFill,
-  RiPatreonFill,
-  RiFacebookFill,
-  RiLinkedinFill,
-  RiDiscordFill,
-  RiLink,
 } from "react-icons/ri";
 
-type AuthorData = {
-  uid: string;
-  name: string;
-  job: string;
-  city: string;
-  avatar: string;
-  imgAlt: string;
-  slug: string;
-  biography: { summary: string; body: string };
-  socials?: { [key: string]: string }; // Social media map
+type RouteParams = {
+  author: string;
 };
 
-type ArticleData = {
-  uid: string;
-  title: string;
-  img: string;
-  date: Date;
-  read: string;
-  label: string;
-  slug: string;
-  authorUID: string;
-  publish: boolean; // Added publish field
-};
+export const dynamic = "force-dynamic";
 
-function buildAuthorSummary(author: AuthorData) {
-  const role = author.job || "team member";
-  const city = author.city ? ` based in ${author.city}` : "";
-  return `${author.name} is a ${role} on the ${SITE_NAME} team${city}.`;
+function buildAuthorSummary(name: string, job: string, city: string) {
+  const role = job || "team member";
+  const cityText = city ? ` based in ${city}` : "";
+  return `${name} is a ${role} on the ${SITE_NAME} team${cityText}.`;
 }
 
-function buildAuthorBody(author: AuthorData) {
-  const city = author.city ? ` Based in ${author.city},` : "";
-  return `${city} ${author.name} contributes to ${SITE_NAME} by supporting tutorials, documentation, and the broader learning experience for the community.`.trim();
+function buildAuthorBody(name: string, city: string) {
+  const cityText = city ? ` Based in ${city},` : "";
+  return `${cityText} ${name} contributes to ${SITE_NAME} by supporting tutorials, documentation, and the broader learning experience for the community.`.trim();
 }
 
-async function getLatestPublishedArticles(count = 4) {
-  const latestSnapshot = await getDocs(
-    query(
-      collection(db, "articles"),
-      where("publish", "==", true),
-      orderBy("date", "desc"),
-      limit(count),
-    ),
-  );
-
-  return latestSnapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      uid: doc.id,
-      title: data.title || "Untitled",
-      img: data.img || "/default-image.png",
-      date: data.date?.toDate?.() || new Date(),
-      read: data.read || "Unknown",
-      label: data.label || "No Label",
-      slug: data.slug || "",
-      authorUID: data.authorUID || "",
-      publish: data.publish ?? false,
-    } as ArticleData;
-  });
-}
-
-// Function to fetch author data
-async function getAuthorData(slug: string) {
-  try {
-    const decodedAuthor = decodeURIComponent(slug);
-    const authorsRef = collection(db, "authors");
-    const q = query(authorsRef, where("slug", "==", decodedAuthor));
-    const authorSnapshot = await getDocs(q);
-
-    if (authorSnapshot.empty) return null;
-
-    const authorDoc = authorSnapshot.docs[0];
-    const authorRaw = authorDoc.data();
-    const authorData = {
-      ...authorRaw,
-      uid: authorRaw.uid || authorDoc.id,
-    } as AuthorData;
-
-    // Approach 1: Try with composite index (if you've created it in Firebase console)
-    try {
-      const articlesQuery = query(
-        collection(db, "articles"),
-        where("authorUID", "==", authorData.uid),
-        where("publish", "==", true),
-        orderBy("date", "desc"),
-      );
-      const articlesSnapshot = await getDocs(articlesQuery);
-
-      const articles = articlesSnapshot.docs.map((doc) => ({
-        uid: doc.id,
-        ...doc.data(),
-        date: doc.data().date?.toDate() || new Date(),
-      })) as ArticleData[];
-
-      return { author: authorData, articles };
-    } catch (error) {
-      // Fallback approach if composite index isn't available
-      console.log("Using fallback approach for querying articles:", error);
-
-      // First get all articles by this author
-      const articlesQuery = query(
-        collection(db, "articles"),
-        where("authorUID", "==", authorData.uid),
-        orderBy("date", "desc"),
-      );
-      const articlesSnapshot = await getDocs(articlesQuery);
-
-      // Then filter for published articles client-side
-      const articles = articlesSnapshot.docs
-        .map((doc) => {
-          const data = doc.data();
-          return {
-            uid: doc.id,
-            ...data,
-            date:
-              data.date && typeof data.date.toDate === "function"
-                ? data.date.toDate()
-                : data.date instanceof Date
-                  ? data.date
-                  : new Date(),
-            publish: data.publish ?? false,
-          } as ArticleData;
-        })
-        .filter((article) => article.publish === true);
-
-      return { author: authorData, articles };
-    }
-  } catch (error) {
-    console.error("Error fetching author details:", error);
-    return null;
-  }
-}
-
-// **Dynamically Map Social Links to Icons**
-const SOCIAL_ICONS: { [key: string]: any } = {
+const SOCIAL_ICONS: Record<string, any> = {
   youtube: RiYoutubeFill,
   github: RiGithubFill,
   instagram: RiInstagramLine,
@@ -178,15 +63,15 @@ const SOCIAL_ICONS: { [key: string]: any } = {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ author: string }>;
+  params: Promise<RouteParams>;
 }): Promise<Metadata> {
   const { author } = await params;
-  const data = await getAuthorData(author);
+  const authorData = await getAuthorBySlug(author);
 
-  if (!data) {
+  if (!authorData) {
     return {
-      title: `Author Not Found | ${SITE_NAME}`,
-      description: "The requested author could not be found.",
+      title: `Team Member Not Found | ${SITE_NAME}`,
+      description: "The requested team member could not be found.",
       robots: {
         index: false,
         follow: false,
@@ -194,26 +79,26 @@ export async function generateMetadata({
     };
   }
 
-  const { author: authorData } = data;
   const authorUrl = absoluteUrl(`/team/${authorData.slug}`);
-  const authorImage = authorData.avatar
-    ? absoluteUrl(authorData.avatar)
-    : absoluteUrl("/default-avatar.png");
   const authorDescription =
-    authorData.biography?.summary?.trim() || buildAuthorSummary(authorData);
+    authorData.biography.summary ||
+    buildAuthorSummary(authorData.name, authorData.job, authorData.city);
 
   return {
-    title: `${authorData.name}`,
+    title: authorData.name,
     description: authorDescription,
+    alternates: {
+      canonical: authorUrl,
+    },
     openGraph: {
-      title: `${authorData.name}`,
+      title: authorData.name,
       description: authorDescription,
       url: authorUrl,
       siteName: SITE_NAME,
       locale: SITE_LOCALE,
       images: [
         {
-          url: authorImage,
+          url: absoluteUrl(authorData.avatar),
           alt: authorData.imgAlt || authorData.name,
         },
       ],
@@ -221,69 +106,66 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: `${authorData.name}`,
+      title: authorData.name,
       description: authorDescription,
-      images: [authorImage],
-    },
-    alternates: {
-      canonical: authorUrl,
+      images: [absoluteUrl(authorData.avatar)],
     },
   };
 }
 
-// **Async page component**
-export default async function Page({
+export default async function AuthorPage({
   params,
 }: {
-  params: Promise<{ author: string }>;
+  params: Promise<RouteParams>;
 }) {
-  const { author } = await params; // Await the params object
-  const data = await getAuthorData(author);
+  const { author } = await params;
+  const authorData = await getAuthorBySlug(author);
 
-  if (!data) {
+  if (!authorData) {
     notFound();
   }
 
-  const { author: authorData, articles } = data;
-  const authoredArticles = articles;
+  const authoredArticles = await getPublishedArticlesForAuthor(authorData.uid);
   const fallbackArticles =
-    authoredArticles.length === 0 ? await getLatestPublishedArticles() : [];
+    authoredArticles.length === 0 ? await getPublishedArticles(4) : [];
   const displayArticles =
     authoredArticles.length > 0 ? authoredArticles : fallbackArticles;
   const authorSummary =
-    authorData.biography?.summary?.trim() || buildAuthorSummary(authorData);
+    authorData.biography.summary ||
+    buildAuthorSummary(authorData.name, authorData.job, authorData.city);
   const authorBody =
-    authorData.biography?.body?.trim() || buildAuthorBody(authorData);
+    authorData.biography.body ||
+    buildAuthorBody(authorData.name, authorData.city);
 
-  // **Dynamically Generate Social Media Links**
-  const socialLinks = authorData.socials
-    ? Object.entries(authorData.socials)
-        .filter(([platform, url]) => url) // Remove empty links
-        .map(([platform, url]) => ({
-          href: url,
-          ariaLabel: `Visit ${authorData.name}'s ${platform} page`,
-          Icon: SOCIAL_ICONS[platform.toLowerCase()] || RiGithubFill,
-        }))
-    : [];
+  const socialLinks = Object.entries(authorData.socials)
+    .filter(([, url]) => url)
+    .map(([platform, url]) => ({
+      href: url,
+      ariaLabel: `Visit ${authorData.name}'s ${platform} page`,
+      Icon: SOCIAL_ICONS[platform.toLowerCase()] || RiGithubFill,
+    }));
 
   const authorUrl = absoluteUrl(`/team/${authorData.slug}`);
+  const latestModified =
+    authoredArticles[0]?.updatedAt || authorData.updatedAt || new Date();
   const jsonLd = [
     {
       "@context": "https://schema.org",
       "@type": "ProfilePage",
       url: authorUrl,
+      dateModified: latestModified.toISOString(),
       mainEntity: {
         "@type": "Person",
         "@id": `${authorUrl}#person`,
         name: authorData.name,
         jobTitle: authorData.job,
-        image: authorData.avatar ? absoluteUrl(authorData.avatar) : undefined,
+        image: absoluteUrl(authorData.avatar),
         description: authorSummary,
         url: authorUrl,
         sameAs: socialLinks.map((link) => link.href),
         worksFor: buildPublisherSchema(),
         hasPart: authoredArticles.map((article) => ({
-          "@type": "Article",
+          "@type": "BlogPosting",
           headline: article.title,
           url: absoluteUrl(`/posts/${article.slug}`),
         })),
@@ -302,15 +184,18 @@ export default async function Page({
   return (
     <main className="max-w-[95rem] w-full mx-auto px-4 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
       <JsonLd data={jsonLd} />
-      <PostNavigation href="/team">Author</PostNavigation>
+      <PostNavigation href="/team">TEAM</PostNavigation>
 
       <article className="max-w-[75rem] w-full mx-auto grid lg:grid-cols-[300px_680px] gap-8 md:gap-6 justify-around">
-        {/* **Author Profile Section** */}
         <div className="w-fit">
           <img
             src={authorData.avatar || "/default-avatar.png"}
             alt={authorData.imgAlt || authorData.name}
             className="w-full max-w-[300px] h-auto rounded-full"
+            width={300}
+            height={300}
+            loading="eager"
+            decoding="async"
           />
           {socialLinks.length > 0 && (
             <div className="flex justify-between border-t border-white mt-12 pt-6">
@@ -320,63 +205,63 @@ export default async function Page({
           )}
         </div>
 
-        {/* **Author Biography** */}
         <article>
           <h1 className="text-subheading pb-2">{authorData.name}</h1>
-          <p className="text-blog-summary pb-12 text-white/50">
-            {authorData.job}
-          </p>
+          <p className="text-blog-summary pb-12 text-white/50">{authorData.job}</p>
           <p className="text-blog-summary pb-12">{authorSummary}</p>
           <p className="text-blog-body">{authorBody}</p>
         </article>
       </article>
 
-      {/* **Author Articles** */}
       <div className="pb-12 md:pb-48">
         <h2 className="text-blog-subheading mt-[9.5rem] pt-12 pb-12 md:pb-24">
           {authoredArticles.length > 0
             ? `Posts by ${authorData.name}`
             : `Latest Posts on ${SITE_NAME}`}
         </h2>
-        {authoredArticles.length === 0 && (
+        {authoredArticles.length === 0 ? (
           <p className="pb-8 text-white/70">
             {authorData.name} does not have published posts on the site yet, so
             we are showing the latest docs below.
           </p>
-        )}
+        ) : null}
         <AuthorArticles articles={displayArticles} />
       </div>
     </main>
   );
 }
 
-// **Component to Render Author's Articles**
-function AuthorArticles({ articles }: { articles: ArticleData[] }) {
+function AuthorArticles({
+  articles,
+}: {
+  articles: Awaited<ReturnType<typeof getPublishedArticles>>;
+}) {
   if (articles.length === 0) {
     return (
       <div className="p-8 text-center">
-        <p className="font-medium">No Posts found for this author</p>
+        <p className="font-medium">No posts found for this team member</p>
       </div>
     );
   }
 
-  // Create a copy of the articles array and shuffle it randomly
-  const shuffledArticles = [...articles].sort(() => Math.random() - 0.5);
-  // Then slice out only the first 4 posts
-  const postsToShow = shuffledArticles.slice(0, 4);
+  const postsToShow = articles.slice(0, 4);
 
   return (
     <div className="grid md:grid-cols-2">
       {postsToShow.map((article) => (
         <article
           className="flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-12 p-8 border border-white"
-          key={article.uid}
+          key={article.id}
         >
           <Link href={`/posts/${article.slug}`} className="flex-shrink-0">
             <img
               className="h-[100%] w-[100%] sm:h-[150px] sm:w-[100%] object-cover hover:scale-105 transition-transform"
               src={article.img}
-              alt={article.title}
+              alt={article.imgAlt}
+              width={320}
+              height={180}
+              loading="lazy"
+              decoding="async"
             />
           </Link>
           <div>
@@ -391,10 +276,7 @@ function AuthorArticles({ articles }: { articles: ArticleData[] }) {
             <div className="flex flex-wrap gap-2 sm:gap-4">
               <div className="flex items-center">
                 <p className="font-semibold pr-2">Date:</p>
-                <time
-                  dateTime={article.date.toISOString()}
-                  className="text-white"
-                >
+                <time dateTime={article.date.toISOString()} className="text-white">
                   {article.date.toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "long",
@@ -402,10 +284,13 @@ function AuthorArticles({ articles }: { articles: ArticleData[] }) {
                   })}
                 </time>
               </div>
-              <div className="flex items-center">
+              <Link
+                href={article.topicPath}
+                className="flex items-center hover:text-white/80 transition-colors"
+              >
                 <p className="font-semibold pr-2">Category:</p>
                 <span className="text-white">{article.label}</span>
-              </div>
+              </Link>
             </div>
           </div>
         </article>
@@ -413,5 +298,3 @@ function AuthorArticles({ articles }: { articles: ArticleData[] }) {
     </div>
   );
 }
-
-export const revalidate = 60;

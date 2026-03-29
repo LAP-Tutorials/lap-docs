@@ -139,7 +139,7 @@ export default function Header() {
                     Icon: RiTiktokFill,
                   },
                   {
-                    href: "http://patreon.com/lap_mgmt",
+                    href: "https://patreon.com/lap_mgmt",
                     ariaLabel: "Visit our Patreon page",
                     Icon: RiPatreonFill,
                   },
@@ -199,7 +199,7 @@ export default function Header() {
                 Icon: RiTiktokFill,
               },
               {
-                href: "http://patreon.com/lap_mgmt",
+                href: "https://patreon.com/lap_mgmt",
                 ariaLabel: "Visit our Patreon page",
                 Icon: RiPatreonFill,
               },

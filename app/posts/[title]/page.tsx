@@ -1,22 +1,13 @@
-import { db } from "@/lib/firebase";
-import { safeTimestampToDate } from "@/lib/utils";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  orderBy,
-  limit,
-} from "firebase/firestore";
-import PostNavigation from "@/components/PostNavigation";
-import Subheading from "@/components/Subheading";
+import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import ArticleContent from "@/components/ArticleContent";
 import AuthorCard from "@/components/AuthorCard";
 import JsonLd from "@/components/JsonLd";
-import type { Metadata } from "next";
-import Image from "next/image";
-
+import PostNavigation from "@/components/PostNavigation";
+import Subheading from "@/components/Subheading";
+import { getPublishedArticleBySlug, getPublishedArticles } from "@/lib/content";
 import { processMarkdown } from "@/lib/markdown";
 import {
   SITE_LOCALE,
@@ -26,310 +17,229 @@ import {
   buildPublisherSchema,
 } from "@/lib/seo";
 
-interface Article {
-  id: string;
+type RouteParams = {
   title: string;
-  slug: string;
-  content: string;
-  date: Date;
-  read: string;
-  publish: boolean;
-  label: string;
-  img: string;
-  imgAlt: string;
-  description: string;
-  authorUID: string;
-  authorName?: string;
-  authorAvatar?: string;
+};
+
+export const dynamic = "force-dynamic";
+
+function buildKeywords(articleTitle: string, articleDescription: string, label: string) {
+  const stopWords = new Set([
+    "a",
+    "an",
+    "the",
+    "and",
+    "or",
+    "but",
+    "is",
+    "are",
+    "of",
+    "to",
+    "in",
+    "on",
+    "for",
+    "with",
+    "at",
+    "by",
+    "from",
+    "up",
+    "about",
+    "into",
+    "over",
+    "after",
+  ]);
+
+  const extractKeywords = (text: string) =>
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, "")
+      .split(/\s+/)
+      .filter((word) => word.length > 2 && !stopWords.has(word));
+
+  return Array.from(
+    new Set([
+      label,
+      "Technology",
+      "Tutorials",
+      SITE_NAME,
+      ...extractKeywords(articleTitle),
+      ...extractKeywords(articleDescription),
+    ]),
+  );
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ title: string }>;
+  params: Promise<RouteParams>;
 }): Promise<Metadata> {
   const { title } = await params;
-  try {
-    const articlesRef = collection(db, "articles");
-    const q = query(articlesRef, where("slug", "==", title));
-    const snapshot = await getDocs(q);
+  const article = await getPublishedArticleBySlug(title);
 
-    if (snapshot.empty) {
-      return {
-        title: "Article Not Found",
-        description: "The requested article could not be found.",
-        robots: {
-          index: false,
-          follow: false,
-        },
-      };
-    }
-
-    const articleData = snapshot.docs[0].data();
-    const articleTitle = articleData.title || "Untitled Article";
-    const articleDescription =
-      articleData.description || `Read this article on ${SITE_NAME}.`;
-    const articleSlug = articleData.slug || title;
-    const articleUrl = absoluteUrl(`/posts/${articleSlug}`);
-    const articleImage = articleData.img
-      ? absoluteUrl(articleData.img)
-      : absoluteUrl(`/posts/${articleSlug}/opengraph-image`);
-    const generatedOgImage = absoluteUrl(`/posts/${articleSlug}/opengraph-image`);
-    // Safe date conversion
-    const articleDate = safeTimestampToDate(articleData.date).toISOString();
-
-    // Fetch author name if available
-    let authorName = "L.A.P Team";
-    if (articleData.authorUID) {
-      const authorSnapshot = await getDocs(
-        query(
-          collection(db, "authors"),
-          where("uid", "==", articleData.authorUID),
-        ),
-      );
-      if (!authorSnapshot.empty) {
-        authorName = authorSnapshot.docs[0].data().name || authorName;
-      }
-    }
-
-    // Generate keywords from Title and Description
-    const stopWords = new Set([
-      "a",
-      "an",
-      "the",
-      "and",
-      "or",
-      "but",
-      "is",
-      "are",
-      "of",
-      "to",
-      "in",
-      "on",
-      "for",
-      "with",
-      "at",
-      "by",
-      "from",
-      "up",
-      "about",
-      "into",
-      "over",
-      "after",
-    ]);
-
-    const extractKeywords = (text: string) => {
-      return text
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, "") // Remove bad chars
-        .split(/\s+/)
-        .filter((word) => word.length > 2 && !stopWords.has(word));
-    };
-
-    const titleKeywords = extractKeywords(articleTitle);
-    const descKeywords = extractKeywords(articleDescription);
-    const uniqueKeywords = Array.from(
-      new Set([
-        articleData.label,
-        "Technology",
-        "Tutorials",
-        SITE_NAME,
-        ...titleKeywords,
-        ...descKeywords,
-      ]),
-    );
-
+  if (!article) {
     return {
-      title: articleTitle,
-      description: articleDescription,
-      keywords: uniqueKeywords,
-      authors: [{ name: authorName }],
-      creator: authorName,
-      publisher: SITE_NAME,
-      category: articleData.label || "Tutorials",
-      alternates: {
-        canonical: articleUrl,
+      title: "Article Not Found",
+      description: "The requested article could not be found.",
+      robots: {
+        index: false,
+        follow: false,
       },
-      openGraph: {
-        title: articleTitle,
-        description: articleDescription,
-        url: articleUrl,
-        siteName: SITE_NAME,
-        locale: SITE_LOCALE,
-        type: "article",
-        publishedTime: articleDate,
-        authors: [authorName],
-        images: [
-          {
-            url: articleImage,
-            alt: articleData.imgAlt || articleTitle,
-          },
-          {
-            url: generatedOgImage,
-            width: 1200,
-            height: 630,
-            alt: `${articleTitle} on ${SITE_NAME}`,
-          },
-        ],
-      },
-      twitter: {
-        card: "summary_large_image",
-        title: articleTitle,
-        description: articleDescription,
-        images: [articleImage],
-      },
-    };
-  } catch (error) {
-    console.error("Error generating metadata:", error);
-    return {
-      title: "Error Loading Article",
     };
   }
+
+  const articleUrl = absoluteUrl(`/posts/${article.slug}`);
+  const articleImage = absoluteUrl(article.img);
+  const generatedOgImage = absoluteUrl(`/posts/${article.slug}/opengraph-image`);
+  const authorUrl = article.author?.slug
+    ? absoluteUrl(`/team/${article.author.slug}`)
+    : undefined;
+
+  return {
+    title: article.title,
+    description: article.description || `Read this article on ${SITE_NAME}.`,
+    authors: [{ name: article.authorName, url: authorUrl }],
+    creator: article.authorName,
+    publisher: SITE_NAME,
+    category: article.label || "Tutorials",
+    alternates: {
+      canonical: articleUrl,
+    },
+    openGraph: {
+      title: article.title,
+      description: article.description,
+      url: articleUrl,
+      siteName: SITE_NAME,
+      locale: SITE_LOCALE,
+      type: "article",
+      publishedTime: article.date.toISOString(),
+      modifiedTime: article.updatedAt.toISOString(),
+      authors: [article.authorName],
+      images: [
+        {
+          url: articleImage,
+          alt: article.imgAlt || article.title,
+        },
+        {
+          url: generatedOgImage,
+          width: 1200,
+          height: 630,
+          alt: `${article.title} on ${SITE_NAME}`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description: article.description,
+      images: [articleImage],
+    },
+  };
 }
 
 export default async function ArticleDetails({
   params,
 }: {
-  params: Promise<{ title: string }>;
+  params: Promise<RouteParams>;
 }) {
-  const { title } = await params; // Await the params object
-  try {
-    // Get main article
-    const articlesRef = collection(db, "articles");
-    const articleQuery = query(articlesRef, where("slug", "==", title));
-    const articleSnapshot = await getDocs(articleQuery);
+  const { title } = await params;
+  const article = await getPublishedArticleBySlug(title);
 
-    if (articleSnapshot.empty) {
-      return (
-        <main className="max-w-[95rem] w-full mx-auto px-4 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
-          <p>Article not found</p>
-        </main>
-      );
-    }
+  if (!article) {
+    notFound();
+  }
 
-    const articleDoc = articleSnapshot.docs[0];
-    const articleData = articleDoc.data();
+  const processedHtml = await processMarkdown(article.content || "");
+  const articleUrl = absoluteUrl(`/posts/${article.slug}`);
+  const articleImages = Array.from(
+    new Set(
+      [
+        article.img ? absoluteUrl(article.img) : null,
+        absoluteUrl(`/posts/${article.slug}/opengraph-image`),
+      ].filter((value): value is string => Boolean(value)),
+    ),
+  );
+  const latestArticles = (await getPublishedArticles())
+    .filter((entry) => entry.id !== article.id)
+    .slice(0, 3);
 
-    // Get author data
-    const authorSnapshot = await getDocs(
-      query(
-        collection(db, "authors"),
-        where("uid", "==", articleData.authorUID),
-      ),
-    );
-
-    const authorData = authorSnapshot.docs[0]?.data() || {};
-
-    // Process article content
-    const processedArticle: Article = {
-      id: articleDoc.id,
-      title: articleData.title || "Untitled",
-      slug: articleData.slug || "",
-      content: articleData.content || "",
-      date: safeTimestampToDate(articleData.date),
-      read: articleData.read || "Unknown",
-      label: articleData.label || "",
-      img: articleData.img || "/default-image.png",
-      imgAlt: articleData.imgAlt || articleData.title || "Article image",
-      description: articleData.description || "",
-      authorUID: articleData.authorUID || "",
-      authorName: authorData.name || "Unknown Author",
-      authorAvatar: authorData.avatar || "/default-avatar.png",
-      publish: false,
-    };
-
-    const processedHtml = await processMarkdown(articleData.content || "");
-    const articleUrl = absoluteUrl(`/posts/${processedArticle.slug}`);
-    const articleImages = Array.from(
-      new Set(
-        [
-          processedArticle.img ? absoluteUrl(processedArticle.img) : null,
-          absoluteUrl(`/posts/${processedArticle.slug}/opengraph-image`),
-        ].filter((value): value is string => Boolean(value)),
-      ),
-    );
-
-    // Get latest articles (excluding current)
-    const latestSnapshot = await getDocs(
-      query(
-        collection(db, "articles"),
-        where("publish", "==", true),
-        orderBy("date", "desc"),
-        limit(4),
-      ),
-    );
-
-    const latestArticles = latestSnapshot.docs
-      .map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          date: safeTimestampToDate(data.date),
-          authorName: data.authorName || "Unknown Author",
-          label: data.label || "No Label",
-          slug: data.slug,
-          img: data.img || "/default-image.png",
-          imgAlt: data.imgAlt || "Article image",
-          title: data.title || "Untitled",
-          description: data.description || "No description available",
-          read: data.read || "Unknown",
-        };
-      })
-      .filter((article) => article.id !== processedArticle.id)
-      .slice(0, 3);
-
-    const jsonLd = [
-      {
-        "@context": "https://schema.org",
-        "@type": "Article",
-        headline: processedArticle.title,
-        description: processedArticle.description,
-        image: articleImages,
-        datePublished: processedArticle.date.toISOString(),
-        dateModified: processedArticle.date.toISOString(),
-        articleSection: processedArticle.label || undefined,
-        inLanguage: "en-US",
-        author: {
-          "@type": "Person",
-          name: processedArticle.authorName,
-          url: authorData.slug
-            ? absoluteUrl(`/team/${authorData.slug}`)
-            : undefined,
-        },
-        publisher: buildPublisherSchema(),
-        mainEntityOfPage: {
-          "@type": "WebPage",
-          "@id": articleUrl,
-        },
+  const jsonLd: Array<Record<string, unknown>> = [
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: article.title,
+      description: article.description,
+      image: articleImages,
+      datePublished: article.date.toISOString(),
+      dateModified: article.updatedAt.toISOString(),
+      articleSection: article.label || undefined,
+      keywords: buildKeywords(article.title, article.description, article.label),
+      inLanguage: "en-US",
+      author: {
+        "@type": "Person",
+        "@id": article.author?.slug
+          ? `${absoluteUrl(`/team/${article.author.slug}`)}#person`
+          : `${articleUrl}#author`,
+        name: article.authorName,
+        url: article.author?.slug
+          ? absoluteUrl(`/team/${article.author.slug}`)
+          : undefined,
       },
-      buildBreadcrumbSchema([
-        { name: "Home", path: "/" },
-        { name: "Posts", path: "/posts" },
-        { name: processedArticle.title, path: `/posts/${processedArticle.slug}` },
-      ]),
-    ];
+      publisher: buildPublisherSchema(),
+      mainEntityOfPage: {
+        "@type": "WebPage",
+        "@id": articleUrl,
+      },
+    },
+    buildBreadcrumbSchema([
+      { name: "Home", path: "/" },
+      { name: "Posts", path: "/posts" },
+      { name: article.title, path: `/posts/${article.slug}` },
+    ]),
+  ];
 
-    return (
-      <main className="max-w-[95rem] w-full mx-auto px-4 md:pt-8 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
-        <JsonLd data={jsonLd} />
-        <PostNavigation href="/posts">POSTS</PostNavigation>
+  if (article.video) {
+    jsonLd.push({
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      name: article.title,
+      description: article.description,
+      thumbnailUrl: [article.video.thumbnailUrl || absoluteUrl(article.img)],
+      uploadDate: article.date.toISOString(),
+      contentUrl: article.video.url,
+      embedUrl: article.video.embedUrl,
+      potentialAction: {
+        "@type": "WatchAction",
+        target: article.video.url,
+      },
+    });
+  }
 
-        <article className="grid md:grid-cols-2 gap-6 md:gap-6 pb-6 md:pb-24">
-          <h1 className="text-subtitle">{processedArticle.title}</h1>
-          <p>{processedArticle.description}</p>
-        </article>
+  return (
+    <main className="max-w-[95rem] w-full mx-auto px-4 md:pt-8 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
+      <JsonLd data={jsonLd} />
+      <PostNavigation href="/posts">POSTS</PostNavigation>
 
-        <div className="flex flex-col md:flex-row justify-between gap-6 md:gap-0 mb-8">
+      <article className="grid md:grid-cols-2 gap-6 md:gap-6 pb-6 md:pb-24">
+        <div>
+          <h1 className="text-subtitle">{article.title}</h1>
+          <p className="mt-4">{article.description}</p>
+        </div>
+        <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row md:items-center gap-2 sm:gap-6">
             <span className="flex flex-wrap">
-              <p className="font-semibold pr-2">Author:</p>
-              <p>{processedArticle.authorName}</p>
+              <p className="font-semibold pr-2">Team:</p>
+              {article.author?.slug ? (
+                <Link href={`/team/${article.author.slug}`} className="hover:underline">
+                  {article.authorName}
+                </Link>
+              ) : (
+                <p>{article.authorName}</p>
+              )}
             </span>
             <span className="flex flex-wrap">
-              <p className="font-semibold pr-2">Date:</p>
-              <time dateTime={processedArticle.date.toISOString()}>
-                {processedArticle.date.toLocaleDateString("en-US", {
+              <p className="font-semibold pr-2">Published:</p>
+              <time dateTime={article.date.toISOString()}>
+                {article.date.toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
@@ -337,101 +247,118 @@ export default async function ArticleDetails({
               </time>
             </span>
             <span className="flex flex-wrap">
-              <p className="font-semibold pr-2">Read:</p>
-              <p>{processedArticle.read}</p>
+              <p className="font-semibold pr-2">Updated:</p>
+              <time dateTime={article.updatedAt.toISOString()}>
+                {article.updatedAt.toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </time>
             </span>
           </div>
-          <span className="px-3 py-2 border border-white rounded-full w-fit h-fit">
-            <p className="uppercase">{processedArticle.label}</p>
-          </span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <span className="flex flex-wrap">
+              <p className="font-semibold pr-2">Read:</p>
+              <p>{article.read}</p>
+            </span>
+            <Link
+              href={article.topicPath}
+              className="px-3 py-2 border border-white rounded-full w-fit h-fit hover:bg-white hover:text-black transition"
+            >
+              <span className="uppercase">{article.label}</span>
+            </Link>
+            {article.video ? (
+              <a
+                href={article.video.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-2 border border-white rounded-full w-fit h-fit hover:bg-white hover:text-black transition"
+              >
+                Watch Source Video
+              </a>
+            ) : null}
+          </div>
         </div>
+      </article>
 
-        <div className="relative w-full h-auto aspect-[16/9]">
-          <Image
-            src={processedArticle.img}
-            alt={processedArticle.imgAlt}
-            fill
-            sizes="(min-width: 768px) 768px, 100vw"
-            className="object-cover w-full h-auto"
-          />
-        </div>
+      <div className="relative w-full h-auto aspect-[16/9]">
+        <Image
+          src={article.img}
+          alt={article.imgAlt}
+          fill
+          sizes="(min-width: 768px) 768px, 100vw"
+          className="object-cover w-full h-auto"
+        />
+      </div>
 
-        <div className="w-full">
-          <ArticleContent htmlContent={processedHtml} />
-        </div>
+      <div className="w-full">
+        <ArticleContent htmlContent={processedHtml} />
+      </div>
 
+      {article.author ? (
         <div className="pt-10 pb-20">
           <Subheading
             className="text-subheading"
-            url={`/team/${authorData.slug}`}
+            url={`/team/${article.author.slug}`}
             linkText="Check out"
           >
-            Author
+            Team
           </Subheading>
-          <AuthorCard authorData={authorData} />
+          <AuthorCard authorData={article.author} />
         </div>
+      ) : null}
 
-        <div>
-          <Subheading
-            className="text-subheading"
-            url="/posts"
-            linkText="See all"
-          >
-            Latest Posts
-          </Subheading>
+      <div>
+        <Subheading className="text-subheading" url="/posts" linkText="See all">
+          Latest Posts
+        </Subheading>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3  mb-12 md:mb-48">
-            {latestArticles.map((article) => (
-              <article className="border border-white p-8" key={article.id}>
-                <div className="flex items-center justify-between">
-                  <time dateTime={article.date.toISOString()}>
-                    {article.date.toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </time>
-                  <span className="px-3 py-2 border border-white rounded-full">
-                    <p className="uppercase">{article.label}</p>
-                  </span>
-                </div>
-                <Link href={`/posts/${article.slug}`}>
-                  <Image
-                    className="w-full my-8 hover:scale-105 transition-transform"
-                    src={article.img}
-                    alt={article.imgAlt}
-                    width={800}
-                    height={450}
-                  />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3  mb-12 md:mb-48">
+          {latestArticles.map((entry) => (
+            <article className="border border-white p-8" key={entry.id}>
+              <div className="flex items-center justify-between gap-4">
+                <time dateTime={entry.date.toISOString()}>
+                  {entry.date.toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </time>
+                <Link
+                  href={entry.topicPath}
+                  className="px-3 py-2 border border-white rounded-full hover:bg-white hover:text-black transition"
+                >
+                  <span className="uppercase">{entry.label}</span>
                 </Link>
-                <h2 className="heading3-title mb-3">
-                  <Link href={`/posts/${article.slug}`}>{article.title}</Link>
-                </h2>
-                <p className="mt-3 mb-12">{article.description}</p>
-                <div className="flex flex-wrap gap-4">
-                  <span className="flex">
-                    <p className="font-semibold pr-2">Author</p>
-                    <p>{article.authorName}</p>
-                  </span>
-                  <span className="flex">
-                    <p className="font-semibold pr-2">Duration</p>
-                    <p>{article.read}</p>
-                  </span>
-                </div>
-              </article>
-            ))}
-          </div>
+              </div>
+              <Link href={`/posts/${entry.slug}`}>
+                <Image
+                  className="w-full my-8 hover:scale-105 transition-transform"
+                  src={entry.img}
+                  alt={entry.imgAlt}
+                  width={800}
+                  height={450}
+                />
+              </Link>
+              <h2 className="heading3-title mb-3">
+                <Link href={`/posts/${entry.slug}`}>{entry.title}</Link>
+              </h2>
+              <p className="mt-3 mb-12">{entry.description}</p>
+              <div className="flex flex-wrap gap-4">
+                <span className="flex">
+                  <p className="font-semibold pr-2">Team</p>
+                  <p>{entry.authorName}</p>
+                </span>
+                <span className="flex">
+                  <p className="font-semibold pr-2">Duration</p>
+                  <p>{entry.read}</p>
+                </span>
+              </div>
+            </article>
+          ))}
         </div>
-      </main>
-    );
-  } catch (error) {
-    console.error("Error fetching article details:", error);
-    return (
-      <main className="max-w-[95rem] w-full mx-auto px-4 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
-        <p>Error loading article details. Please try again later.</p>
-      </main>
-    );
-  }
+      </div>
+    </main>
+  );
 }
-
-export const revalidate = 60;

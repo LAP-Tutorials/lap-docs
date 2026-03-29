@@ -1,9 +1,9 @@
 import { ImageResponse } from "next/og";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { getPublishedArticleBySlug } from "@/lib/content";
 import { SITE_NAME } from "@/lib/seo";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export const alt = `${SITE_NAME} article preview`;
 export const size = {
@@ -19,32 +19,11 @@ export default async function Image({
   params: Promise<{ title: string }>;
 }) {
   const { title } = await params;
+  const article = await getPublishedArticleBySlug(title);
 
-  // Default values
-  let articleTitle = SITE_NAME;
-  let authorName = "L.A.P Team";
-
-  try {
-    const articlesRef = collection(db, "articles");
-    const q = query(articlesRef, where("slug", "==", title));
-    const snapshot = await getDocs(q);
-
-    if (!snapshot.empty) {
-      const data = snapshot.docs[0].data();
-      articleTitle = data.title || articleTitle;
-      
-       if (data.authorUID) {
-          const authorSnapshot = await getDocs(
-            query(collection(db, "authors"), where("uid", "==", data.authorUID))
-          );
-          if (!authorSnapshot.empty) {
-            authorName = authorSnapshot.docs[0].data().name || authorName;
-          }
-        }
-    }
-  } catch (error) {
-    console.error("Error fetching OG data:", error);
-  }
+  const articleTitle = article?.title || SITE_NAME;
+  const authorName = article?.authorName || "L.A.P Team";
+  const categoryName = article?.label || "Docs";
 
   return new ImageResponse(
     (
@@ -57,77 +36,101 @@ export default async function Image({
           flexDirection: "column",
           fontFamily: "sans-serif",
           position: "relative",
+          padding: "56px 72px",
+          color: "white",
         }}
       >
-        {/* Fake Navbar */}
-        <div style={{ 
-            width: "100%", 
-            height: "80px", 
-            display: "flex", 
-            alignItems: "center", 
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
             justifyContent: "space-between",
-            padding: "0 60px",
-            borderBottom: "1px solid #222"
-        }}>
-           <div style={{
-               width: "40px",
-               height: "40px",
-               background: "#9D4EDD",
-               display: "flex"
-           }} />
-
-           <div style={{ display: "flex", gap: "20px", color: "#ccc", fontSize: 18, fontWeight: 600 }}>
-             <span style={{ color: "#9D4EDD" }}>Posts</span>
-             <span>Team</span>
-             <span>YouTube</span>
-           </div>
+            borderBottom: "1px solid #222",
+            paddingBottom: "20px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <div
+              style={{
+                width: "42px",
+                height: "42px",
+                borderRadius: "999px",
+                background: "#8a2be2",
+                display: "flex",
+              }}
+            />
+            <div style={{ fontSize: 28, fontWeight: 700 }}>{SITE_NAME}</div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: "14px",
+              fontSize: 20,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              color: "#d6d6d6",
+            }}
+          >
+            <span>{categoryName}</span>
+          </div>
         </div>
 
-        {/* Hero Section / Content */}
-        <div style={{ 
-            flex: 1, 
-            display: "flex", 
-            flexDirection: "column", 
-            alignItems: "flex-start", 
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
             justifyContent: "center",
-            padding: "0 80px"
-        }}>
-           <div style={{ 
-               color: "#9D4EDD", 
-               fontSize: 24, 
-               fontWeight: "bold",
-               marginBottom: "20px",
-               textTransform: "uppercase"
-           }}>
-             AUTHOR: {authorName}
-           </div>
+          }}
+        >
+          <div
+            style={{
+              color: "#8a2be2",
+              fontSize: 24,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              marginBottom: "24px",
+              letterSpacing: "0.08em",
+            }}
+          >
+            By {authorName}
+          </div>
 
-           <div style={{ 
-               fontSize: 80, 
-               fontWeight: 900, 
-               lineHeight: 1.1, 
-               color: "white", 
-               textTransform: "uppercase",
-               marginBottom: "40px"
-           }}>
+          <div
+            style={{
+              fontSize: 74,
+              fontWeight: 900,
+              lineHeight: 1.05,
+              marginBottom: "36px",
+            }}
+          >
             {articleTitle}
           </div>
 
-          <div style={{ 
+          <div
+            style={{
               display: "flex",
+              gap: "18px",
               alignItems: "center",
-              gap: "20px"
-          }}>
-              <div style={{ padding: "10px 20px", background: "#333", borderRadius: "50px", color: "white", fontSize: 20 }}>
-                 Read Article
-              </div>
+            }}
+          >
+            <div
+              style={{
+                padding: "10px 22px",
+                borderRadius: "999px",
+                border: "1px solid #8a2be2",
+                color: "white",
+                fontSize: 22,
+              }}
+            >
+              Read Article
+            </div>
           </div>
         </div>
       </div>
     ),
     {
       ...size,
-    }
+    },
   );
 }
-

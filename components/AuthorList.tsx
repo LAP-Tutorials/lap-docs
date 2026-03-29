@@ -27,7 +27,7 @@ export default function AuthorsList({ initialAuthors }: AuthorsListProps) {
           <article className="flex flex-col md:flex-row justify-between md:items-center gap-4 ml-5">
             <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-16">
               {/* Ensure image has a transparent background */}
-              <Link href={`team/${author.slug}`}>
+              <Link href={`/team/${author.slug}`}>
                 <Image
                   className="h-[9.375rem] w-[9.375rem] object-cover rounded-full bg-transparent"
                   src={author.avatar || "/default-avatar.png"}
@@ -36,7 +36,7 @@ export default function AuthorsList({ initialAuthors }: AuthorsListProps) {
                   height={150}
                 />
               </Link>
-              <Link href={`team/${author.slug}`}>
+              <Link href={`/team/${author.slug}`}>
                 <h2 className="text-2xl font-semibold">{author.name}</h2>
               </Link>
             </div>
@@ -51,7 +51,7 @@ export default function AuthorsList({ initialAuthors }: AuthorsListProps) {
               </div>
               <Link
                 className="flex items-center gap-2 text-white hover:text-[#8a2be2] transition ease-in-out duration-300"
-                href={`team/${author.slug}`}
+                href={`/team/${author.slug}`}
               >
                 <span className="uppercase font-semibold">About</span>
                 <RiArrowRightLine className="text-2xl" />

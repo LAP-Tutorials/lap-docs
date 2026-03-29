@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import Loading from "./loading";
 import type { Metadata } from "next";
 import JsonLd from "@/components/JsonLd";
-import { db } from "@/lib/firebase";
+import { getAllAuthors } from "@/lib/content";
 import {
   DEFAULT_OG_IMAGE_PATH,
   DEFAULT_TWITTER_IMAGE_PATH,
@@ -14,14 +14,13 @@ import {
   absoluteUrl,
   buildBreadcrumbSchema,
 } from "@/lib/seo";
-import { collection, getDocs } from "firebase/firestore";
 
 export const metadata: Metadata = {
   title: "Team",
-  description: "Meet the dedicated team behind L.A.P - Docs.",
+  description: "Meet the team behind L.A.P - Docs.",
   openGraph: {
     title: `Team | ${SITE_NAME}`,
-    description: "Meet the dedicated team behind L.A.P - Docs.",
+    description: "Meet the team behind L.A.P - Docs.",
     url: absoluteUrl("/team"),
     siteName: SITE_NAME,
     type: "website",
@@ -38,13 +37,15 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: `Team | ${SITE_NAME}`,
-    description: "Meet the dedicated team behind L.A.P - Docs.",
+    description: "Meet the team behind L.A.P - Docs.",
     images: [DEFAULT_TWITTER_IMAGE_PATH],
   },
   alternates: {
     canonical: absoluteUrl("/team"),
   },
 };
+
+export const dynamic = "force-dynamic";
 
 type AuthorType = {
   uid: string;
@@ -58,20 +59,16 @@ type AuthorType = {
 
 async function getAuthors() {
   try {
-    const querySnapshot = await getDocs(collection(db, "authors"));
-    const fetchedAuthors = querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        uid: doc.id,
-        name: data.name || "",
-        job: data.job || "",
-        city: data.city || "",
-        avatar: data.avatar || "",
-        imgAlt: data.imgAlt || "",
-        slug: data.slug || "",
-      };
-    });
-    return fetchedAuthors;
+    const authors = await getAllAuthors();
+    return authors.map((author) => ({
+      uid: author.uid,
+      name: author.name,
+      job: author.job,
+      city: author.city,
+      avatar: author.avatar,
+      imgAlt: author.imgAlt,
+      slug: author.slug,
+    }));
   } catch (error) {
     console.error("Error fetching authors:", error);
     return [];
@@ -87,7 +84,7 @@ export default async function AuthorsPage() {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
       name: "Team",
-      description: "Meet the dedicated team behind L.A.P - Docs.",
+      description: "Meet the team behind L.A.P - Docs.",
       url: pageUrl,
       isPartOf: {
         "@id": SITE_WEBSITE_ID,
@@ -105,9 +102,11 @@ export default async function AuthorsPage() {
       <PageTitle
         className="sr-only"
         imgSrc="/images/titles/Authors.svg"
-        imgAlt="The word 'Author' in uppercase, bold lettering"
+        imageWidth={1520}
+        imageHeight={231}
+        decorative
       >
-        Authors
+        Team
       </PageTitle>
       <Suspense fallback={<Loading />}>
         <AuthorsList initialAuthors={authors} />
@@ -115,5 +114,3 @@ export default async function AuthorsPage() {
     </main>
   );
 }
-
-export const revalidate = 60;

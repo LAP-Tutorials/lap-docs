@@ -1,12 +1,10 @@
 import { MetadataRoute } from "next";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { safeTimestampToDate } from "@/lib/utils";
+import { buildTopicSummaries, getAllAuthors, getPublishedArticles } from "@/lib/content";
 import { absoluteUrl } from "@/lib/seo";
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const lastModified = new Date();
+export const dynamic = "force-dynamic";
 
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static routes
   const routes = [
     "",
@@ -16,45 +14,51 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/terms-of-service",
   ].map((route) => ({
     url: absoluteUrl(route || "/"),
-    lastModified,
     changeFrequency: route === "" ? ("daily" as const) : ("weekly" as const),
     priority: route === "" ? 1 : 0.7,
   }));
 
   try {
-    // Fetch all published articles
-    const articlesRef = collection(db, "articles");
-    const q = query(articlesRef, where("publish", "==", true));
-    const querySnapshot = await getDocs(q);
+    const [articles, authors] = await Promise.all([
+      getPublishedArticles(),
+      getAllAuthors(),
+    ]);
 
-    const matchRoutes = querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        url: absoluteUrl(`/posts/${data.slug}`),
-        lastModified: safeTimestampToDate(data.date),
-        changeFrequency: "weekly" as const,
-        priority: 0.8,
-      };
-    });
+    const articleRoutes = articles.map((article) => ({
+      url: absoluteUrl(`/posts/${article.slug}`),
+      lastModified: article.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    }));
 
-    // Fetch all team members (authors)
-    const authorsRef = collection(db, "authors");
-    const authorsSnapshot = await getDocs(authorsRef);
+    const topicRoutes = buildTopicSummaries(articles).map((topic) => ({
+      url: absoluteUrl(topic.path),
+      lastModified: topic.lastModified,
+      changeFrequency: "weekly" as const,
+      priority: 0.75,
+    }));
 
-    const authorRoutes = authorsSnapshot.docs
-      .map((doc) => {
-        const data = doc.data();
-        if (!data.slug) return null;
-        return {
-          url: absoluteUrl(`/team/${data.slug}`),
-          lastModified,
-          changeFrequency: "monthly" as const,
-          priority: 0.6,
-        };
-      })
-      .filter((route): route is NonNullable<typeof route> => route !== null);
+    const articleDatesByAuthor = new Map<string, Date>();
+    for (const article of articles) {
+      if (!article.author?.slug) continue;
 
-    return [...routes, ...matchRoutes, ...authorRoutes];
+      const current = articleDatesByAuthor.get(article.author.slug);
+      if (!current || article.updatedAt.getTime() > current.getTime()) {
+        articleDatesByAuthor.set(article.author.slug, article.updatedAt);
+      }
+    }
+
+    const authorRoutes = authors
+      .filter((author) => author.slug)
+      .map((author) => ({
+        url: absoluteUrl(`/team/${author.slug}`),
+        lastModified:
+          author.updatedAt || articleDatesByAuthor.get(author.slug) || undefined,
+        changeFrequency: "monthly" as const,
+        priority: 0.6,
+      }));
+
+    return [...routes, ...topicRoutes, ...articleRoutes, ...authorRoutes];
   } catch (error) {
     console.error("Error generating sitemap:", error);
     return routes;
