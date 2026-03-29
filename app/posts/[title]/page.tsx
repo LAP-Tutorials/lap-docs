@@ -23,7 +23,11 @@ type RouteParams = {
 
 export const dynamic = "force-dynamic";
 
-function buildKeywords(articleTitle: string, articleDescription: string, label: string) {
+function buildKeywords(
+  articleTitle: string,
+  articleDescription: string,
+  label: string,
+) {
   const stopWords = new Set([
     "a",
     "an",
@@ -89,7 +93,9 @@ export async function generateMetadata({
 
   const articleUrl = absoluteUrl(`/posts/${article.slug}`);
   const articleImage = absoluteUrl(article.img);
-  const generatedOgImage = absoluteUrl(`/posts/${article.slug}/opengraph-image`);
+  const generatedOgImage = absoluteUrl(
+    `/posts/${article.slug}/opengraph-image`,
+  );
   const authorUrl = article.author?.slug
     ? absoluteUrl(`/team/${article.author.slug}`)
     : undefined;
@@ -172,7 +178,11 @@ export default async function ArticleDetails({
       datePublished: article.date.toISOString(),
       dateModified: article.updatedAt.toISOString(),
       articleSection: article.label || undefined,
-      keywords: buildKeywords(article.title, article.description, article.label),
+      keywords: buildKeywords(
+        article.title,
+        article.description,
+        article.label,
+      ),
       inLanguage: "en-US",
       author: {
         "@type": "Person",
@@ -219,17 +229,27 @@ export default async function ArticleDetails({
       <JsonLd data={jsonLd} />
       <PostNavigation href="/posts">POSTS</PostNavigation>
 
-      <article className="grid md:grid-cols-2 gap-6 md:gap-6 pb-6 md:pb-24">
+      <article className="grid md:grid-cols-2 gap-6 md:gap-10 pb-6 md:pb-24 items-start">
         <div>
           <h1 className="text-subtitle">{article.title}</h1>
-          <p className="mt-4">{article.description}</p>
         </div>
-        <div className="flex flex-col gap-4">
+
+        <div className="flex flex-col gap-6 md:gap-8">
+          <Link
+            href={article.topicPath}
+            className="px-3 py-2 border border-white rounded-full w-fit h-fit hover:bg-white hover:text-black transition ml-auto"
+          >
+            <span className="uppercase">{article.label}</span>
+          </Link>
+          <p>{article.description}</p>
           <div className="flex flex-col sm:flex-row md:items-center gap-2 sm:gap-6">
             <span className="flex flex-wrap">
-              <p className="font-semibold pr-2">Team:</p>
+              <p className="font-semibold pr-2">Author:</p>
               {article.author?.slug ? (
-                <Link href={`/team/${article.author.slug}`} className="hover:underline">
+                <Link
+                  href={`/team/${article.author.slug}`}
+                  className="hover:underline"
+                >
                   {article.authorName}
                 </Link>
               ) : (
@@ -246,28 +266,11 @@ export default async function ArticleDetails({
                 })}
               </time>
             </span>
-            <span className="flex flex-wrap">
-              <p className="font-semibold pr-2">Updated:</p>
-              <time dateTime={article.updatedAt.toISOString()}>
-                {article.updatedAt.toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </time>
-            </span>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-            <span className="flex flex-wrap">
+
+            <span className="flex flex-wrap items-center">
               <p className="font-semibold pr-2">Read:</p>
               <p>{article.read}</p>
             </span>
-            <Link
-              href={article.topicPath}
-              className="px-3 py-2 border border-white rounded-full w-fit h-fit hover:bg-white hover:text-black transition"
-            >
-              <span className="uppercase">{article.label}</span>
-            </Link>
             {article.video ? (
               <a
                 href={article.video.url}
@@ -303,7 +306,7 @@ export default async function ArticleDetails({
             url={`/team/${article.author.slug}`}
             linkText="Check out"
           >
-            Team
+            Author
           </Subheading>
           <AuthorCard authorData={article.author} />
         </div>
@@ -347,7 +350,7 @@ export default async function ArticleDetails({
               <p className="mt-3 mb-12">{entry.description}</p>
               <div className="flex flex-wrap gap-4">
                 <span className="flex">
-                  <p className="font-semibold pr-2">Team</p>
+                  <p className="font-semibold pr-2">Author</p>
                   <p>{entry.authorName}</p>
                 </span>
                 <span className="flex">

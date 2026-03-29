@@ -130,7 +130,7 @@ export default function Articles({
             <p className="mt-3 mb-12">{article.description}</p>
             <div className="flex flex-wrap gap-4">
               <span className="flex">
-                <p className="font-semibold pr-2">Team</p>
+                <p className="font-semibold pr-2">Author</p>
                 <p>{article.authorName}</p>
               </span>
               <span className="flex">

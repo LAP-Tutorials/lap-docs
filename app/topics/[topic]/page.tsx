@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import Articles from "@/components/Articles/Articles";
 import Loading from "@/components/Articles/loading";
 import JsonLd from "@/components/JsonLd";
+import PageTitle from "@/components/PageTitle";
 import {
   type ArticleRecord,
   getPublishedTopicBySlug,
@@ -145,11 +146,15 @@ export default async function TopicPage({
   return (
     <main className="flex flex-col min-h-screen max-w-[95rem] w-full mx-auto px-4 lg:pt-0 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
       <JsonLd data={jsonLd} />
-      <header className="py-6 md:py-12">
-        <p className="uppercase tracking-[0.2em] text-white/60">Topic</p>
-        <h1 className="text-subtitle mt-4">{data.topic.label}</h1>
-        <p className="mt-4 max-w-3xl text-white/70">{description}</p>
-      </header>
+      <PageTitle
+        className="sr-only"
+        imgSrc="/images/titles/Magazine.svg"
+        imageWidth={1520}
+        imageHeight={215}
+        decorative
+      >
+        Tutorial Posts
+      </PageTitle>
       <Suspense fallback={<Loading />}>
         <Articles
           initialArticles={mapTopicArticles(data.articles)}
