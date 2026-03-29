@@ -75,7 +75,7 @@ export default function LatestPosts({
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
                   <span className="flex flex-wrap">
-                    <p className="font-semibold pr-2">Team</p>
+                    <p className="font-semibold pr-2">Author</p>
                     <p>{latestArticle.authorName}</p>
                   </span>
                   <span className="flex flex-wrap">
@@ -144,7 +144,7 @@ export default function LatestPosts({
                   <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center">
                     <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
                       <span className="flex flex-wrap">
-                        <p className="font-semibold pr-2">Team</p>
+                        <p className="font-semibold pr-2">Author</p>
                         <p>{article.authorName}</p>
                       </span>
                       <span className="flex flex-wrap">

@@ -92,7 +92,7 @@ export default function PopularArticles({
                 <Link href={`/posts/${article.slug}`}>{article.title}</Link>
               </h3>
               <span className="flex gap-2">
-                <p className="font-semibold">Team:</p>
+                <p className="font-semibold">Author:</p>
                 <p>{article.authorName}</p>
               </span>
             </article>
