@@ -214,14 +214,14 @@ function extractYouTubeId(rawValue: string): string | undefined {
 
   try {
     const url = new URL(value);
-    const hostname = url.hostname.replace(/^www\./, "").toLowerCase();
+    const hostname = url.hostname.toLowerCase();
 
     if (hostname === "youtu.be") {
       const id = url.pathname.replace(/\//g, "").trim();
       return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : undefined;
     }
 
-    if (hostname.endsWith("youtube.com")) {
+    if (hostname === "youtube.com" || hostname.endsWith(".youtube.com")) {
       const searchId = url.searchParams.get("v");
       if (searchId && /^[a-zA-Z0-9_-]{11}$/.test(searchId)) {
         return searchId;
