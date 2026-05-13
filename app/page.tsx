@@ -13,9 +13,9 @@ import {
   DEFAULT_OG_IMAGE_PATH,
   DEFAULT_TWITTER_IMAGE_PATH,
   SITE_DESCRIPTION,
+  SITE_HOME_URL,
   SITE_LOCALE,
   SITE_NAME,
-  SITE_URL,
 } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    url: SITE_URL,
+    url: SITE_HOME_URL,
     siteName: SITE_NAME,
     type: "website",
     locale: SITE_LOCALE,
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     images: [DEFAULT_TWITTER_IMAGE_PATH],
   },
   alternates: {
-    canonical: SITE_URL,
+    canonical: SITE_HOME_URL,
   },
 };
 
@@ -126,10 +126,10 @@ export default async function Home() {
       <PageTitle
         className="sr-only"
         imgSrc="/images/titles/lap-docs.svg"
+        imgAlt={SITE_NAME}
         imageWidth={1520}
         imageHeight={216}
         priority
-        decorative
       >
         L.A.P - Docs
       </PageTitle>

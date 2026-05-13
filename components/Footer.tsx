@@ -86,7 +86,7 @@ export default function Footer() {
           </div>
           <div className="flex flex-col md:flex-row items-center md:items-start gap-4 text-gray-400 md:text-white font-regular text-sm md:order-1">
             <p>
-              Copyright © {new Date().getFullYear()} L.A.P. All rights reserved.
+              Copyright (c) {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
             </p>
           </div>
         </div>

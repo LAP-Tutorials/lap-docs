@@ -4,6 +4,7 @@ import PopularArticles from "./PopularArticles";
 import { Button } from "./ui/button";
 import magazineCover from "@/public/logos/LAP-Logo-Color.png";
 import { db } from "@/lib/firebase";
+import { SITE_NAME } from "@/lib/seo";
 import {
   collection,
   getDocs,
@@ -76,11 +77,11 @@ export default async function Sidebar() {
   return (
     <aside>
       <h3 className="uppercase font-semibold mb-2">Subscribe To</h3>
-      <p className="text-4xl font-semibold">L.A.P - Tutorials</p>
+      <p className="text-4xl font-semibold">{SITE_NAME}</p>
       <Image
         className="w-[20rem] pt-8 pb-4"
         src={magazineCover}
-        alt="A cool and simple logo of L.A.P - Tutorials"
+        alt={`${SITE_NAME} logo`}
       />
       <Button
         asChild

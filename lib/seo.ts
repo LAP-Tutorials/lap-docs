@@ -1,6 +1,7 @@
 export const SITE_NAME = "L.A.P - Docs";
 export const SITE_ALTERNATE_NAMES = ["L.A.P Docs", "LAP Docs"];
 export const SITE_URL = "https://lap.onl";
+export const SITE_HOME_URL = `${SITE_URL}/`;
 export const SITE_HOST = new URL(SITE_URL).host;
 export const SITE_LOCALE = "en_US";
 export const SITE_LANGUAGE = "en-US";
@@ -64,7 +65,7 @@ export function buildWebsiteSchema() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "@id": SITE_WEBSITE_ID,
-    url: SITE_URL,
+    url: SITE_HOME_URL,
     name: SITE_NAME,
     alternateName: SITE_ALTERNATE_NAMES,
     description: SITE_DESCRIPTION,
@@ -80,7 +81,7 @@ export function buildOrganizationSchema() {
     "@id": SITE_ORGANIZATION_ID,
     name: SITE_NAME,
     alternateName: SITE_ALTERNATE_NAMES,
-    url: SITE_URL,
+    url: SITE_HOME_URL,
     logo: {
       "@type": "ImageObject",
       url: absoluteUrl(SITE_LOGO_PATH),

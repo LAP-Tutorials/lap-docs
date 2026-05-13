@@ -11,6 +11,7 @@ import {
   DEFAULT_OG_IMAGE_PATH,
   DEFAULT_TWITTER_IMAGE_PATH,
   SITE_DESCRIPTION,
+  SITE_HOME_URL,
   SITE_LOCALE,
   SITE_NAME,
   SITE_URL,
@@ -77,7 +78,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    url: SITE_URL,
+    url: SITE_HOME_URL,
     siteName: SITE_NAME,
     locale: SITE_LOCALE,
     type: "website",

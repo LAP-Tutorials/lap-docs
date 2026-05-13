@@ -4,3 +4,54 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+[[redirects]]
+  from = "https://www.lap.onl/*"
+  to = "https://lap.onl/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/magazine"
+  to = "/posts"
+  status = 301
+
+[[redirects]]
+  from = "/magazine/*"
+  to = "/posts/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/articles"
+  to = "/posts"
+  status = 301
+
+[[redirects]]
+  from = "/articles/*"
+  to = "/posts/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/article/*"
+  to = "/posts/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/authors"
+  to = "/team"
+  status = 301
+
+[[redirects]]
+  from = "/authors/*"
+  to = "/team/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/category/*"
+  to = "/topics/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/categories/*"
+  to = "/topics/:splat"
+  status = 301
