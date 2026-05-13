@@ -1,16 +1,5 @@
 import "server-only";
 
-import { db } from "@/lib/firebase";
-import {
-  collection,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  where,
-  type DocumentData,
-  type QueryDocumentSnapshot,
-} from "firebase/firestore";
 import {
   DEFAULT_OG_IMAGE_PATH,
   SITE_NAME,
@@ -57,6 +46,37 @@ const VIDEO_URL_FIELDS = [
 ] as const;
 
 type SocialMap = Record<string, string>;
+
+type FirestoreValue = {
+  stringValue?: string;
+  booleanValue?: boolean;
+  integerValue?: string;
+  doubleValue?: number;
+  timestampValue?: string;
+  mapValue?: {
+    fields?: Record<string, FirestoreValue>;
+  };
+  arrayValue?: {
+    values?: FirestoreValue[];
+  };
+  referenceValue?: string;
+  nullValue?: null;
+};
+
+type FirestoreDocument = {
+  name: string;
+  fields?: Record<string, FirestoreValue>;
+};
+
+type FirestoreListResponse = {
+  documents?: FirestoreDocument[];
+  nextPageToken?: string;
+};
+
+type ContentDocument = {
+  id: string;
+  data: Record<string, unknown>;
+};
 
 export type AuthorRecord = {
   docId: string;
@@ -256,10 +276,97 @@ function buildVideoRecord(
   };
 }
 
-function normalizeAuthorDoc(
-  doc: QueryDocumentSnapshot<DocumentData>,
-): AuthorRecord {
-  const data = doc.data() as Record<string, unknown>;
+function getRequiredFirebaseConfig() {
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
+  if (!apiKey || !projectId) {
+    throw new Error("Missing Firebase public API key or project ID.");
+  }
+
+  return { apiKey, projectId };
+}
+
+function decodeFirestoreValue(value: FirestoreValue): unknown {
+  if ("stringValue" in value) return value.stringValue || "";
+  if ("booleanValue" in value) return Boolean(value.booleanValue);
+  if ("integerValue" in value) return Number(value.integerValue || 0);
+  if ("doubleValue" in value) return Number(value.doubleValue || 0);
+  if ("timestampValue" in value) return value.timestampValue || "";
+  if ("referenceValue" in value) return value.referenceValue || "";
+  if ("arrayValue" in value) {
+    return (value.arrayValue?.values || []).map((entry) =>
+      decodeFirestoreValue(entry),
+    );
+  }
+  if ("mapValue" in value) {
+    return decodeFirestoreFields(value.mapValue?.fields || {});
+  }
+
+  return null;
+}
+
+function decodeFirestoreFields(fields: Record<string, FirestoreValue>) {
+  return Object.entries(fields).reduce<Record<string, unknown>>(
+    (acc, [key, value]) => {
+      acc[key] = decodeFirestoreValue(value);
+      return acc;
+    },
+    {},
+  );
+}
+
+function getDocumentId(documentName: string) {
+  return documentName.split("/").pop() || documentName;
+}
+
+async function getCollectionDocuments(
+  collectionId: "articles" | "authors",
+): Promise<ContentDocument[]> {
+  const { apiKey, projectId } = getRequiredFirebaseConfig();
+  const documents: ContentDocument[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const params = new URLSearchParams({
+      key: apiKey,
+      pageSize: "100",
+    });
+
+    if (pageToken) {
+      params.set("pageToken", pageToken);
+    }
+
+    const response = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(
+        projectId,
+      )}/databases/(default)/documents/${collectionId}?${params.toString()}`,
+      {
+        next: { revalidate: 300 },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Firestore REST request failed for ${collectionId}: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    const payload = (await response.json()) as FirestoreListResponse;
+    documents.push(
+      ...(payload.documents || []).map((document) => ({
+        id: getDocumentId(document.name),
+        data: decodeFirestoreFields(document.fields || {}),
+      })),
+    );
+    pageToken = payload.nextPageToken;
+  } while (pageToken);
+
+  return documents;
+}
+
+function normalizeAuthorDoc(doc: ContentDocument): AuthorRecord {
+  const data = doc.data;
   const name = pickString(data, ["name"]) || "Unknown Author";
 
   return {
@@ -289,10 +396,10 @@ function createAuthorLookup(authors: AuthorRecord[]) {
 }
 
 function normalizeArticleDoc(
-  doc: QueryDocumentSnapshot<DocumentData>,
+  doc: ContentDocument,
   authorLookup: Map<string, AuthorRecord>,
 ): ArticleRecord {
-  const data = doc.data() as Record<string, unknown>;
+  const data = doc.data;
   const authorUID =
     pickString(data, ["authorUID", "authorUid", "authorId"]) || "";
   const author = authorLookup.get(authorUID);
@@ -364,19 +471,19 @@ export function buildTopicSummaries(articles: ArticleRecord[]): TopicSummary[] {
 }
 
 export async function getAllAuthors() {
-  const snapshot = await getDocs(collection(db, "authors"));
-  return snapshot.docs
-    .map((doc) => normalizeAuthorDoc(doc))
+  const documents = await getCollectionDocuments("authors");
+  return documents
+    .map((document) => normalizeAuthorDoc(document))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function getPublishedArticles(limitCount?: number) {
   const authors = await getAllAuthors();
   const authorLookup = createAuthorLookup(authors);
-  const snapshot = await getDocs(query(collection(db, "articles"), orderBy("date", "desc")));
+  const documents = await getCollectionDocuments("articles");
 
-  const articles = snapshot.docs
-    .map((doc) => normalizeArticleDoc(doc, authorLookup))
+  const articles = documents
+    .map((document) => normalizeArticleDoc(document, authorLookup))
     .filter((article) => article.publish);
 
   const sorted = sortArticlesDescending(articles);
@@ -386,15 +493,12 @@ export async function getPublishedArticles(limitCount?: number) {
 export async function getPublishedArticleBySlug(slug: string) {
   const authors = await getAllAuthors();
   const authorLookup = createAuthorLookup(authors);
-  const snapshot = await getDocs(
-    query(collection(db, "articles"), where("slug", "==", slug), limit(1)),
-  );
+  const documents = await getCollectionDocuments("articles");
+  const document = documents.find((entry) => entry.data.slug === slug);
 
-  if (snapshot.empty) {
-    return null;
-  }
+  if (!document) return null;
 
-  const article = normalizeArticleDoc(snapshot.docs[0], authorLookup);
+  const article = normalizeArticleDoc(document, authorLookup);
   return article.publish ? article : null;
 }
 
@@ -404,15 +508,10 @@ export async function getPublishedArticlesForAuthor(authorUID: string) {
 }
 
 export async function getAuthorBySlug(slug: string) {
-  const snapshot = await getDocs(
-    query(collection(db, "authors"), where("slug", "==", slug), limit(1)),
-  );
+  const documents = await getCollectionDocuments("authors");
+  const document = documents.find((entry) => entry.data.slug === slug);
 
-  if (snapshot.empty) {
-    return null;
-  }
-
-  return normalizeAuthorDoc(snapshot.docs[0]);
+  return document ? normalizeAuthorDoc(document) : null;
 }
 
 export async function getPublishedTopicBySlug(topicSlug: string) {

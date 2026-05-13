@@ -3,16 +3,8 @@ import Image from "next/image";
 import PopularArticles from "./PopularArticles";
 import { Button } from "./ui/button";
 import magazineCover from "@/public/logos/LAP-Logo-Color.png";
-import { db } from "@/lib/firebase";
+import { getPublishedArticles } from "@/lib/content";
 import { SITE_NAME } from "@/lib/seo";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  Timestamp,
-} from "firebase/firestore";
 
 type PopularArticle = {
   id: string;
@@ -27,41 +19,26 @@ type PopularArticle = {
 
 async function getPopularArticles(): Promise<PopularArticle[]> {
   try {
-    // Fetch authors for mapping names
-    const authorsSnapshot = await getDocs(collection(db, "authors"));
-    const authorsMap = new Map(
-      authorsSnapshot.docs.map((d) => [d.id, d.data().name]),
-    );
+    const articles = await getPublishedArticles();
 
-    const articlesQuery = query(
-      collection(db, "articles"),
-      where("popularity", "==", true),
-      where("publish", "==", true),
-      orderBy("popularityRank", "asc"),
-    );
-
-    const snapshot = await getDocs(articlesQuery);
-
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        title: data.title || "",
-        slug: data.slug || "",
-          authorName:
-            data.authorName ||
-            authorsMap.get(data.authorUID) ||
-            "Unknown Team Member",
-        popularity: data.popularity || false,
-        publish: data.publish || false,
-        date:
-          data.date instanceof Timestamp
-            ? data.date.toDate().toISOString()
-            : typeof data.date === "string"
-              ? data.date
-              : new Date().toISOString(),
-      };
-    });
+    return articles
+      .filter((article) => article.popularity)
+      .sort(
+        (a, b) =>
+          (a.popularityRank ?? Number.MAX_SAFE_INTEGER) -
+            (b.popularityRank ?? Number.MAX_SAFE_INTEGER) ||
+          b.date.getTime() - a.date.getTime(),
+      )
+      .map((article) => ({
+        id: article.id,
+        title: article.title,
+        slug: article.slug,
+        authorName: article.authorName || "Unknown Team Member",
+        popularity: article.popularity,
+        publish: article.publish,
+        date: article.date.toISOString(),
+        popularityRank: article.popularityRank,
+      }));
   } catch (error) {
     console.error("Error fetching popular articles:", error);
     return [];
