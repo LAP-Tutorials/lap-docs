@@ -11,11 +11,6 @@ const nextConfig = {
         destination: "/",
         permanent: true,
       },
-      {
-        source: "/posts/:title/opengraph-image",
-        destination: "/og-image.png",
-        permanent: true,
-      },
     ];
   },
   images: {

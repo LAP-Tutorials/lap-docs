@@ -12,12 +12,6 @@
   force = true
 
 [[redirects]]
-  from = "/posts/*/opengraph-image"
-  to = "/og-image.png"
-  status = 301
-  force = true
-
-[[redirects]]
   from = "https://www.lap.onl/*"
   to = "https://lap.onl/:splat"
   status = 301
