@@ -4,6 +4,20 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  async redirects() {
+    return [
+      {
+        source: "/&",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/posts/:title/opengraph-image",
+        destination: "/og-image.png",
+        permanent: true,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
   {

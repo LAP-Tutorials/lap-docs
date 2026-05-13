@@ -93,9 +93,6 @@ export async function generateMetadata({
 
   const articleUrl = absoluteUrl(`/posts/${article.slug}`);
   const articleImage = absoluteUrl(article.img);
-  const generatedOgImage = absoluteUrl(
-    `/posts/${article.slug}/opengraph-image`,
-  );
   const authorUrl = article.author?.slug
     ? absoluteUrl(`/team/${article.author.slug}`)
     : undefined;
@@ -125,12 +122,6 @@ export async function generateMetadata({
           url: articleImage,
           alt: article.imgAlt || article.title,
         },
-        {
-          url: generatedOgImage,
-          width: 1200,
-          height: 630,
-          alt: `${article.title} on ${SITE_NAME}`,
-        },
       ],
     },
     twitter: {
@@ -158,10 +149,9 @@ export default async function ArticleDetails({
   const articleUrl = absoluteUrl(`/posts/${article.slug}`);
   const articleImages = Array.from(
     new Set(
-      [
-        article.img ? absoluteUrl(article.img) : null,
-        absoluteUrl(`/posts/${article.slug}/opengraph-image`),
-      ].filter((value): value is string => Boolean(value)),
+      [article.img ? absoluteUrl(article.img) : null].filter(
+        (value): value is string => Boolean(value),
+      ),
     ),
   );
   const latestArticles = (await getPublishedArticles())
