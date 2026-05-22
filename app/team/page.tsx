@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type AuthorType = {
   uid: string;

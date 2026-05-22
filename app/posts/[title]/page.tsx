@@ -21,7 +21,14 @@ type RouteParams = {
   title: string;
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  const articles = await getPublishedArticles();
+  return articles.map((article) => ({
+    title: article.slug,
+  }));
+}
 
 function buildKeywords(
   articleTitle: string,

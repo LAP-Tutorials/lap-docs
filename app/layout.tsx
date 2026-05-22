@@ -1,6 +1,6 @@
 import Container from "@/components/ui/container";
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CookieBanner from "@/components/CookieBanner";
@@ -99,6 +99,10 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#050505",
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -114,11 +118,11 @@ export default function RootLayout({
           <>
             <Script
               src={`https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`}
-              strategy="afterInteractive"
+              strategy="lazyOnload"
             />
             <Script
               id="google-analytics"
-              strategy="afterInteractive"
+              strategy="lazyOnload"
               dangerouslySetInnerHTML={{
                 __html: `
                   window.dataLayer = window.dataLayer || [];
@@ -135,6 +139,24 @@ export default function RootLayout({
             />
           </>
         )}
+        {/* Service Worker Registration */}
+        <Script
+          id="register-sw"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    console.log('SW registered:', reg.scope);
+                  }).catch(function(err) {
+                    console.warn('SW registration failed:', err);
+                  });
+                });
+              }
+            `
+          }}
+        />
       </head>
       <body suppressHydrationWarning>
         <JsonLd data={[buildWebsiteSchema(), buildOrganizationSchema()]} />

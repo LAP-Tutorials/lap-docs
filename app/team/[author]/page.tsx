@@ -5,6 +5,7 @@ import JsonLd from "@/components/JsonLd";
 import PostNavigation from "@/components/PostNavigation";
 import SocialSharing from "@/components/SocialSharing";
 import {
+  getAllAuthors,
   getAuthorBySlug,
   getPublishedArticles,
   getPublishedArticlesForAuthor,
@@ -34,7 +35,14 @@ type RouteParams = {
   author: string;
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  const authors = await getAllAuthors();
+  return authors.map((author) => ({
+    author: author.slug,
+  }));
+}
 
 function buildAuthorSummary(name: string, job: string, city: string) {
   const role = job || "team member";

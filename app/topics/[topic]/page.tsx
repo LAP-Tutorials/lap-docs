@@ -7,6 +7,8 @@ import JsonLd from "@/components/JsonLd";
 import PageTitle from "@/components/PageTitle";
 import {
   type ArticleRecord,
+  buildTopicSummaries,
+  getPublishedArticles,
   getPublishedTopicBySlug,
   type TopicSummary,
 } from "@/lib/content";
@@ -24,7 +26,15 @@ type RouteParams = {
   topic: string;
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  const articles = await getPublishedArticles();
+  const topics = buildTopicSummaries(articles);
+  return topics.map((topic) => ({
+    topic: topic.slug,
+  }));
+}
 
 function buildTopicDescription(label: string) {
   return `Browse all ${label} tutorials, guides, and docs on ${SITE_NAME}.`;

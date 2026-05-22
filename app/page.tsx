@@ -63,7 +63,7 @@ type Article = {
   publish: boolean;
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type AuthorType = {
   id: string;
