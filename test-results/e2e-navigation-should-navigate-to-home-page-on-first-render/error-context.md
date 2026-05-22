@@ -1,0 +1,433 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "L.A.P - Docs home" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "L.A.P - Docs logo" [ref=e7]
+          - generic [ref=e8]: L.A.P - Docs
+        - button "Menu"
+        - navigation [ref=e9]:
+          - textbox "Search..." [ref=e11]
+          - link "Posts" [ref=e12] [cursor=pointer]:
+            - /url: /posts
+          - link "Team" [ref=e13] [cursor=pointer]:
+            - /url: /team
+          - img [ref=e14]
+          - generic [ref=e16]:
+            - link "Visit our YouTube channel" [ref=e17] [cursor=pointer]:
+              - /url: https://www.youtube.com/@lap-tutorials
+              - img [ref=e18]
+            - link "Visit our GitHub page" [ref=e20] [cursor=pointer]:
+              - /url: https://github.com/LAP-Tutorials
+              - img [ref=e21]
+            - link "Visit our Instagram page" [ref=e23] [cursor=pointer]:
+              - /url: https://www.instagram.com/lap.mgmt.team/
+              - img [ref=e24]
+            - link "Visit our TikTok page" [ref=e26] [cursor=pointer]:
+              - /url: https://www.tiktok.com/@lap_mgmt
+              - img [ref=e27]
+            - link "Visit our Patreon page" [ref=e29] [cursor=pointer]:
+              - /url: https://patreon.com/lap_mgmt
+              - img [ref=e30]
+      - separator [ref=e32]
+    - main [ref=e33]:
+      - generic [ref=e34]:
+        - heading "L.A.P - Docs" [level=1] [ref=e35]
+        - img "L.A.P - Docs" [ref=e36]
+      - generic [ref=e37]:
+        - paragraph [ref=e40]: "MISSION:"
+        - generic [ref=e42]:
+          - paragraph [ref=e44]: Welcome to L.A.P - Docs. Our mission is to provide clear tutorials that are easy to understand, follow, and put into practice. +++
+          - paragraph [ref=e46]: "Our Motto: Simplicity in Tech +++"
+          - paragraph [ref=e48]: "Our Goal: Simplifying tech for everyone +++"
+          - paragraph [ref=e50]: Welcome to L.A.P - Docs. Our mission is to provide clear tutorials that are easy to understand, follow, and put into practice. +++
+          - paragraph [ref=e52]: "Our Motto: Simplicity in Tech +++"
+          - paragraph [ref=e54]: "Our Goal: Simplifying tech for everyone +++"
+      - article [ref=e56]:
+        - article [ref=e57]:
+          - heading "Installing and setting up git and GitHub on android" [level=2] [ref=e58]:
+            - link "Installing and setting up git and GitHub on android" [ref=e59] [cursor=pointer]:
+              - /url: /posts/installing-and-setting-up-git-and-github-on-android
+          - article [ref=e60]:
+            - paragraph [ref=e61]: A quick tutorial on turning an Android phone into a portable coding terminal using Termux, Git, and the GitHub CLI to securely manage code and review pull requests on the go.
+            - generic [ref=e62]:
+              - generic [ref=e63]:
+                - generic [ref=e64]:
+                  - paragraph [ref=e65]: Author
+                  - paragraph [ref=e66]: Llewellyn Paintsil
+                - generic [ref=e67]:
+                  - paragraph [ref=e68]: Date
+                  - time [ref=e69]: March 30, 2026
+                - generic [ref=e70]:
+                  - paragraph [ref=e71]: Read
+                  - paragraph [ref=e72]: 3 mins
+              - link "Termux" [ref=e73] [cursor=pointer]:
+                - /url: /topics/termux
+                - paragraph [ref=e74]: Termux
+        - img "Installing and setting up git and GitHub on android thumbnail" [ref=e76]
+      - generic [ref=e77]:
+        - generic [ref=e78]:
+          - article [ref=e79]:
+            - article [ref=e80]:
+              - link "Compress Videos using 8mb thumbnail" [ref=e81] [cursor=pointer]:
+                - /url: /posts/compress-videos-using-8mb
+                - img "Compress Videos using 8mb thumbnail" [ref=e82]
+              - article [ref=e83]:
+                - generic [ref=e84]:
+                  - heading "Compress Videos using 8mb" [level=3] [ref=e85]:
+                    - link "Compress Videos using 8mb" [ref=e86] [cursor=pointer]:
+                      - /url: /posts/compress-videos-using-8mb
+                  - paragraph [ref=e87]: Getting errors when trying to send videos? Don't use sketchy online converters. This guide explains how to self-host 8mb.local to compress high-quality clips privately using your own GPU.
+                - generic [ref=e88]:
+                  - generic [ref=e89]:
+                    - generic [ref=e90]:
+                      - paragraph [ref=e91]: Author
+                      - paragraph [ref=e92]: Llewellyn Paintsil
+                    - generic [ref=e93]:
+                      - paragraph [ref=e94]: Date
+                      - time [ref=e95]: February 27, 2026
+                    - generic [ref=e96]:
+                      - paragraph [ref=e97]: Read
+                      - paragraph [ref=e98]: 2 mins
+                  - link "Tutorial" [ref=e99] [cursor=pointer]:
+                    - /url: /topics/tutorial
+                    - paragraph [ref=e100]: Tutorial
+            - separator [ref=e101]
+          - article [ref=e102]:
+            - article [ref=e103]:
+              - link "How to Fix Corrupted Video Files thumbnail" [ref=e104] [cursor=pointer]:
+                - /url: /posts/how-to-fix-corrupted-video-files
+                - img "How to Fix Corrupted Video Files thumbnail" [ref=e105]
+              - article [ref=e106]:
+                - generic [ref=e107]:
+                  - heading "How to Fix Corrupted Video Files" [level=3] [ref=e108]:
+                    - link "How to Fix Corrupted Video Files" [ref=e109] [cursor=pointer]:
+                      - /url: /posts/how-to-fix-corrupted-video-files
+                  - paragraph [ref=e110]: Did your PC crash mid recording? Don't delete that corrupted file. This guide explains exactly how to restore broken recordings and fix audio sync issues using free tools like Untrunc and FFmpeg.
+                - generic [ref=e111]:
+                  - generic [ref=e112]:
+                    - generic [ref=e113]:
+                      - paragraph [ref=e114]: Author
+                      - paragraph [ref=e115]: Llewellyn Paintsil
+                    - generic [ref=e116]:
+                      - paragraph [ref=e117]: Date
+                      - time [ref=e118]: January 30, 2026
+                    - generic [ref=e119]:
+                      - paragraph [ref=e120]: Read
+                      - paragraph [ref=e121]: 5 mins
+                  - link "Tutorial" [ref=e122] [cursor=pointer]:
+                    - /url: /topics/tutorial
+                    - paragraph [ref=e123]: Tutorial
+            - separator [ref=e124]
+          - article [ref=e125]:
+            - article [ref=e126]:
+              - link "Read Every Manga (For Free) with Komikku thumbnail" [ref=e127] [cursor=pointer]:
+                - /url: /posts/read-every-manga-for-free-with-komikku
+                - img "Read Every Manga (For Free) with Komikku thumbnail" [ref=e128]
+              - article [ref=e129]:
+                - generic [ref=e130]:
+                  - heading "Read Every Manga (For Free) with Komikku" [level=3] [ref=e131]:
+                    - link "Read Every Manga (For Free) with Komikku" [ref=e132] [cursor=pointer]:
+                      - /url: /posts/read-every-manga-for-free-with-komikku
+                  - paragraph [ref=e133]: "Tired of reading manga on websites that drain your battery and spam you with ads? There’s a better way. Meet Komikku: the clean, ad-free, and open-source alternative that every manga fan needs. Here is exactly how to set it up and start reading in minutes."
+                - generic [ref=e134]:
+                  - generic [ref=e135]:
+                    - generic [ref=e136]:
+                      - paragraph [ref=e137]: Author
+                      - paragraph [ref=e138]: Llewellyn Paintsil
+                    - generic [ref=e139]:
+                      - paragraph [ref=e140]: Date
+                      - time [ref=e141]: January 19, 2026
+                    - generic [ref=e142]:
+                      - paragraph [ref=e143]: Read
+                      - paragraph [ref=e144]: 6 mins
+                  - link "Tutorial" [ref=e145] [cursor=pointer]:
+                    - /url: /topics/tutorial
+                    - paragraph [ref=e146]: Tutorial
+            - separator [ref=e147]
+          - article [ref=e148]:
+            - article [ref=e149]:
+              - link "Turn Your Phone Into a Magic Wand thumbnail" [ref=e150] [cursor=pointer]:
+                - /url: /posts/turn-your-phone-into-a-magic-wand
+                - img "Turn Your Phone Into a Magic Wand thumbnail" [ref=e151]
+              - article [ref=e152]:
+                - generic [ref=e153]:
+                  - heading "Turn Your Phone Into a Magic Wand" [level=3] [ref=e154]:
+                    - link "Turn Your Phone Into a Magic Wand" [ref=e155] [cursor=pointer]:
+                      - /url: /posts/turn-your-phone-into-a-magic-wand
+                  - paragraph [ref=e156]: Too lazy to reach for the mouse? Discover how to use your phone's gyroscope to control your computer from a distance in this quick, beginner-friendly guide.
+                - generic [ref=e157]:
+                  - generic [ref=e158]:
+                    - generic [ref=e159]:
+                      - paragraph [ref=e160]: Author
+                      - paragraph [ref=e161]: Llewellyn Paintsil
+                    - generic [ref=e162]:
+                      - paragraph [ref=e163]: Date
+                      - time [ref=e164]: January 12, 2026
+                    - generic [ref=e165]:
+                      - paragraph [ref=e166]: Read
+                      - paragraph [ref=e167]: 5 min
+                  - link "Tutorial" [ref=e168] [cursor=pointer]:
+                    - /url: /topics/tutorial
+                    - paragraph [ref=e169]: Tutorial
+            - separator [ref=e170]
+          - article [ref=e171]:
+            - article [ref=e172]:
+              - link "how-to-watch-movies-and-series-in-terminal-lobster-thumbnail" [ref=e173] [cursor=pointer]:
+                - /url: /posts/how-to-watch-movies-and-series-in-terminal-lobster
+                - img "how-to-watch-movies-and-series-in-terminal-lobster-thumbnail" [ref=e174]
+              - article [ref=e175]:
+                - generic [ref=e176]:
+                  - heading "Watch Movies and Series in Terminal" [level=3] [ref=e177]:
+                    - link "Watch Movies and Series in Terminal" [ref=e178] [cursor=pointer]:
+                      - /url: /posts/how-to-watch-movies-and-series-in-terminal-lobster
+                  - paragraph [ref=e179]: Ever wanted to watch a movie without leaving the comfort of your command line? Meet Lobster, the surprising tool that makes it possible. Learn how to turn your terminal into a media player in our latest guide.
+                - generic [ref=e180]:
+                  - generic [ref=e181]:
+                    - generic [ref=e182]:
+                      - paragraph [ref=e183]: Author
+                      - paragraph [ref=e184]: Llewellyn Paintsil
+                    - generic [ref=e185]:
+                      - paragraph [ref=e186]: Date
+                      - time [ref=e187]: January 3, 2026
+                    - generic [ref=e188]:
+                      - paragraph [ref=e189]: Read
+                      - paragraph [ref=e190]: 5 mins
+                  - link "Scripts" [ref=e191] [cursor=pointer]:
+                    - /url: /topics/scripts
+                    - paragraph [ref=e192]: Scripts
+            - separator [ref=e193]
+          - article [ref=e194]:
+            - article [ref=e195]:
+              - link "large text in snapchat" [ref=e196] [cursor=pointer]:
+                - /url: /posts/how-to-enlarge-or-decrease-text-in-snapchat
+                - img "large text in snapchat" [ref=e197]
+              - article [ref=e198]:
+                - generic [ref=e199]:
+                  - heading "How To Enlarge or Decrease Text In Snapchat" [level=3] [ref=e200]:
+                    - link "How To Enlarge or Decrease Text In Snapchat" [ref=e201] [cursor=pointer]:
+                      - /url: /posts/how-to-enlarge-or-decrease-text-in-snapchat
+                  - paragraph [ref=e202]: This article is a step by step tutorial on how to enlarge and decrease text on Snapchat.
+                - generic [ref=e203]:
+                  - generic [ref=e204]:
+                    - generic [ref=e205]:
+                      - paragraph [ref=e206]: Author
+                      - paragraph [ref=e207]: Vida Gem Opoku
+                    - generic [ref=e208]:
+                      - paragraph [ref=e209]: Date
+                      - time [ref=e210]: September 13, 2025
+                    - generic [ref=e211]:
+                      - paragraph [ref=e212]: Read
+                      - paragraph [ref=e213]: 1 min
+                  - link "Tutorial" [ref=e214] [cursor=pointer]:
+                    - /url: /topics/tutorial
+                    - paragraph [ref=e215]: Tutorial
+        - complementary [ref=e217]:
+          - heading "Subscribe To" [level=3] [ref=e218]
+          - paragraph [ref=e219]: L.A.P - Docs
+          - img "L.A.P - Docs logo" [ref=e220]
+          - link "Subscribe on YouTube" [ref=e221] [cursor=pointer]:
+            - /url: https://www.youtube.com/@lap-tutorials?sub_confirmation=1
+          - article [ref=e222]:
+            - heading "Most Popular" [level=2] [ref=e223]
+            - article [ref=e224]:
+              - generic [ref=e225]:
+                - paragraph [ref=e226]: "01"
+                - article [ref=e227]:
+                  - heading "Compress Videos using 8mb" [level=3] [ref=e228]:
+                    - link "Compress Videos using 8mb" [ref=e229] [cursor=pointer]:
+                      - /url: /posts/compress-videos-using-8mb
+                  - generic [ref=e230]:
+                    - paragraph [ref=e231]: "Author:"
+                    - paragraph [ref=e232]: Llewellyn Paintsil
+              - separator [ref=e233]
+            - article [ref=e234]:
+              - generic [ref=e235]:
+                - paragraph [ref=e236]: "02"
+                - article [ref=e237]:
+                  - heading "Watch Movies and Series in Terminal" [level=3] [ref=e238]:
+                    - link "Watch Movies and Series in Terminal" [ref=e239] [cursor=pointer]:
+                      - /url: /posts/how-to-watch-movies-and-series-in-terminal-lobster
+                  - generic [ref=e240]:
+                    - paragraph [ref=e241]: "Author:"
+                    - paragraph [ref=e242]: Llewellyn Paintsil
+              - separator [ref=e243]
+            - article [ref=e244]:
+              - generic [ref=e245]:
+                - paragraph [ref=e246]: "03"
+                - article [ref=e247]:
+                  - heading "Turn Your Phone Into a Magic Wand" [level=3] [ref=e248]:
+                    - link "Turn Your Phone Into a Magic Wand" [ref=e249] [cursor=pointer]:
+                      - /url: /posts/turn-your-phone-into-a-magic-wand
+                  - generic [ref=e250]:
+                    - paragraph [ref=e251]: "Author:"
+                    - paragraph [ref=e252]: Llewellyn Paintsil
+              - separator [ref=e253]
+            - article [ref=e254]:
+              - generic [ref=e255]:
+                - paragraph [ref=e256]: "04"
+                - article [ref=e257]:
+                  - heading "Watch And Download Anime For Free in 2025" [level=3] [ref=e258]:
+                    - link "Watch And Download Anime For Free in 2025" [ref=e259] [cursor=pointer]:
+                      - /url: /posts/websites-to-watch-and-download-anime-for-free-in-2025
+                  - generic [ref=e260]:
+                    - paragraph [ref=e261]: "Author:"
+                    - paragraph [ref=e262]: Llewellyn Paintsil
+              - separator [ref=e263]
+            - article [ref=e264]:
+              - generic [ref=e265]:
+                - paragraph [ref=e266]: "05"
+                - article [ref=e267]:
+                  - heading "How To Watch And Download Anime" [level=3] [ref=e268]:
+                    - link "How To Watch And Download Anime" [ref=e269] [cursor=pointer]:
+                      - /url: /posts/how-to-watch-and-download-anime
+                  - generic [ref=e270]:
+                    - paragraph [ref=e271]: "Author:"
+                    - paragraph [ref=e272]: Llewellyn Paintsil
+      - generic [ref=e273]:
+        - heading "Team" [level=2] [ref=e274]
+        - link "Full Team" [ref=e275] [cursor=pointer]:
+          - /url: /team
+          - paragraph [ref=e276]: Full Team
+          - img [ref=e277]
+      - generic [ref=e279]:
+        - article [ref=e280]:
+          - link "Anna Ablordeppey profile pic, a member of L.A.P" [ref=e281] [cursor=pointer]:
+            - /url: /team/anna-ablordeppey
+            - img "Anna Ablordeppey profile pic, a member of L.A.P" [ref=e282]
+          - article [ref=e283]:
+            - paragraph [ref=e284]:
+              - link "Anna Ablordeppey" [ref=e285] [cursor=pointer]:
+                - /url: /team/anna-ablordeppey
+            - generic [ref=e286]:
+              - generic [ref=e287]:
+                - paragraph [ref=e288]: "Job:"
+                - paragraph [ref=e289]: QA Specialist
+              - generic [ref=e290]:
+                - paragraph [ref=e291]: "Country:"
+                - paragraph [ref=e292]: Ghana
+        - article [ref=e293]:
+          - link "Japhet Adjei profile pic, a member of L.A.P" [ref=e294] [cursor=pointer]:
+            - /url: /team/japhet-adjei
+            - img "Japhet Adjei profile pic, a member of L.A.P" [ref=e295]
+          - article [ref=e296]:
+            - paragraph [ref=e297]:
+              - link "Japhet Adofo-Adjei" [ref=e298] [cursor=pointer]:
+                - /url: /team/japhet-adjei
+            - generic [ref=e299]:
+              - generic [ref=e300]:
+                - paragraph [ref=e301]: "Job:"
+                - paragraph [ref=e302]: Developer
+              - generic [ref=e303]:
+                - paragraph [ref=e304]: "Country:"
+                - paragraph [ref=e305]: Ghana
+        - article [ref=e306]:
+          - link "Llewellyn Paintsil profile pic, a member of L.A.P" [ref=e307] [cursor=pointer]:
+            - /url: /team/llewellyn-paintsil
+            - img "Llewellyn Paintsil profile pic, a member of L.A.P" [ref=e308]
+          - article [ref=e309]:
+            - paragraph [ref=e310]:
+              - link "Llewellyn Paintsil" [ref=e311] [cursor=pointer]:
+                - /url: /team/llewellyn-paintsil
+            - generic [ref=e312]:
+              - generic [ref=e313]:
+                - paragraph [ref=e314]: "Job:"
+                - paragraph [ref=e315]: Founder
+              - generic [ref=e316]:
+                - paragraph [ref=e317]: "Country:"
+                - paragraph [ref=e318]: Ghana
+        - article [ref=e319]:
+          - link "Vida Gem Opoku profile pic, a member of L.A.P" [ref=e320] [cursor=pointer]:
+            - /url: /team/gem-opoku
+            - img "Vida Gem Opoku profile pic, a member of L.A.P" [ref=e321]
+          - article [ref=e322]:
+            - paragraph [ref=e323]:
+              - link "Vida Gem Opoku" [ref=e324] [cursor=pointer]:
+                - /url: /team/gem-opoku
+            - generic [ref=e325]:
+              - generic [ref=e326]:
+                - paragraph [ref=e327]: "Job:"
+                - paragraph [ref=e328]: Social Media Manager
+              - generic [ref=e329]:
+                - paragraph [ref=e330]: "Country:"
+                - paragraph [ref=e331]: Ghana
+    - contentinfo [ref=e332]:
+      - generic [ref=e333]:
+        - generic [ref=e334]:
+          - img "L.A.P - Docs logo" [ref=e335]
+          - generic [ref=e336]:
+            - navigation "left-footer-links" [ref=e337]:
+              - list [ref=e338]:
+                - listitem [ref=e339]:
+                  - link "Posts" [ref=e340] [cursor=pointer]:
+                    - /url: /posts
+                - listitem [ref=e341]:
+                  - link "Team" [ref=e342] [cursor=pointer]:
+                    - /url: /team
+                - listitem [ref=e343]:
+                  - link "Youtube" [ref=e344] [cursor=pointer]:
+                    - /url: https://www.youtube.com/@lap-tutorials
+            - navigation "middle-footer-links" [ref=e345]:
+              - list [ref=e346]:
+                - listitem [ref=e347]:
+                  - link "GitHub" [ref=e348] [cursor=pointer]:
+                    - /url: https://github.com/LAP-Tutorials
+                - listitem [ref=e349]:
+                  - link "Patreon" [ref=e350] [cursor=pointer]:
+                    - /url: https://www.patreon.com/lap_mgmt
+                - listitem [ref=e351]:
+                  - link "Tiktok" [ref=e352] [cursor=pointer]:
+                    - /url: https://www.tiktok.com/@lap_mgmt
+                - listitem [ref=e353]:
+                  - link "Instagram" [ref=e354] [cursor=pointer]:
+                    - /url: https://www.instagram.com/lap.mgmt.team/
+            - navigation "right-footer-links" [ref=e355]:
+              - list [ref=e356]:
+                - listitem [ref=e357]:
+                  - link "Privacy Policy" [ref=e358] [cursor=pointer]:
+                    - /url: /privacy-policy
+                - listitem [ref=e359]:
+                  - link "Terms of Service" [ref=e360] [cursor=pointer]:
+                    - /url: /terms-of-service
+                - listitem [ref=e361]:
+                  - link "Contact Support" [ref=e362] [cursor=pointer]:
+                    - /url: mailto:contact@lap.onl?subject=Contact%20from%20L.A.P%20-%20Docs
+        - generic [ref=e363]:
+          - generic [ref=e366]:
+            - link "Visit our YouTube channel" [ref=e367] [cursor=pointer]:
+              - /url: https://www.youtube.com/@lap-tutorials
+              - img [ref=e368]
+            - link "Visit our GitHub page" [ref=e370] [cursor=pointer]:
+              - /url: https://github.com/LAP-Tutorials
+              - img [ref=e371]
+            - link "Visit our Instagram page" [ref=e373] [cursor=pointer]:
+              - /url: https://www.instagram.com/lap.mgmt.team/
+              - img [ref=e374]
+            - link "Visit our TikTok page" [ref=e376] [cursor=pointer]:
+              - /url: https://www.tiktok.com/@lap_mgmt
+              - img [ref=e377]
+            - link "Visit our Patreon page" [ref=e379] [cursor=pointer]:
+              - /url: http://patreon.com/lap_mgmt
+              - img [ref=e380]
+          - paragraph [ref=e383]: Copyright (c) 2026 L.A.P - Docs. All rights reserved.
+    - generic [ref=e385]:
+      - generic [ref=e387]:
+        - heading "We value your privacy" [level=3] [ref=e388]
+        - paragraph [ref=e389]:
+          - text: We use cookies to analyze our traffic. By clicking "Accept All", you consent to our use of cookies. Read more in our
+          - link "Privacy Policy" [ref=e390] [cursor=pointer]:
+            - /url: /privacy-policy
+          - text: .
+      - generic [ref=e391]:
+        - button "Decline" [ref=e392] [cursor=pointer]
+        - button "Accept All" [ref=e393] [cursor=pointer]
+      - button "Close banner" [ref=e394] [cursor=pointer]:
+        - img [ref=e395]
+  - button "Open Next.js Dev Tools" [ref=e403] [cursor=pointer]:
+    - img [ref=e404]
+  - alert [ref=e407]
+```

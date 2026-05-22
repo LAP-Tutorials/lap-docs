@@ -18,6 +18,18 @@
   force = true
 
 [[redirects]]
+  from = "http://lap.onl/*"
+  to = "https://lap.onl/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://www.lap.onl/*"
+  to = "https://lap.onl/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
   from = "/magazine"
   to = "/posts"
   status = 301
