@@ -56,7 +56,9 @@ export async function processMarkdown(content: string): Promise<string> {
         seenIds.set(baseId, nextCount);
         const id = nextCount === 1 ? baseId : `${baseId}-${nextCount}`;
 
-        return `<h${depth} id="${id}">${title}</h${depth}>`;
+        const htmlDepth = Math.min(depth + 1, 6);
+
+        return `<h${htmlDepth} id="${id}">${title}</h${htmlDepth}>`;
       },
       code({ text, lang }) {
         const languageClass = lang ? `language-${lang}` : "";
