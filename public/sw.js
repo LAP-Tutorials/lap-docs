@@ -1,6 +1,5 @@
-const CACHE_NAME = 'lap-docs-cache-v1';
+const CACHE_NAME = 'lap-docs-cache-v2';
 const ASSETS = [
-  '/',
   '/icons/favicon-32x32.png',
   '/icons/favicon-16x16.png',
   '/icons/android-chrome-192x192.png',
@@ -39,6 +38,18 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
+  // Never cache HTML/documents — Next.js chunk hashes change every deploy.
+  // Cache-first HTML is what caused ChunkLoadError / MIME text/html 404s.
+  const isDocument =
+    event.request.mode === 'navigate' ||
+    event.request.destination === 'document' ||
+    (event.request.headers.get('accept') || '').includes('text/html');
+
+  if (isDocument || url.pathname.startsWith('/_next/') || url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -52,14 +63,10 @@ self.addEventListener('fetch', (event) => {
 
         const responseToCache = response.clone();
         caches.open(CACHE_NAME).then((cache) => {
-          if (!url.pathname.startsWith('/api/') && !url.pathname.startsWith('/_next/')) {
-            cache.put(event.request, responseToCache);
-          }
+          cache.put(event.request, responseToCache);
         });
 
         return response;
-      }).catch(() => {
-        return caches.match('/');
       });
     })
   );
