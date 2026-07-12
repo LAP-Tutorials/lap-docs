@@ -17,6 +17,15 @@ function slugifyHeading(text: string) {
     .replace(/-+$/, ""); // Trim - from end of text
 }
 
+function escapeHtml(text: string) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export async function processMarkdown(content: string): Promise<string> {
   if (!content) return "";
 
@@ -61,9 +70,12 @@ export async function processMarkdown(content: string): Promise<string> {
         return `<h${htmlDepth} id="${id}">${title}</h${htmlDepth}>`;
       },
       code({ text, lang }) {
-        const languageClass = lang ? `language-${lang}` : "";
-        // Encode text for data attribute
-        const safeCode = text.replace(/"/g, "&quot;");
+        const languageClass = lang
+          ? `language-${escapeHtml(lang)}`
+          : "";
+        // Escape before sanitize-html runs — otherwise placeholders like
+        // <IP-address> are treated as tags and stripped from <code>.
+        const safeCode = escapeHtml(text);
 
         return `
       <div data-copy-wrapper="true">
@@ -76,7 +88,7 @@ export async function processMarkdown(content: string): Promise<string> {
         >
           ${copySvg}
         </button>
-        <pre><code class="${languageClass}">${text}</code></pre>
+        <pre><code class="${languageClass}">${safeCode}</code></pre>
       </div>
     `;
       },
