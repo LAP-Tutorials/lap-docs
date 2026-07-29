@@ -7,6 +7,7 @@ import {
   slugifySegment,
 } from "@/lib/seo";
 import { safeTimestampToDate } from "@/lib/utils";
+import { extractYouTubeEmbedId, extractYouTubeId } from "@/lib/video";
 
 const ARTICLE_UPDATED_FIELDS = [
   "updatedAt",
@@ -205,57 +206,21 @@ function extractBiography(source: unknown, name: string) {
   return { summary: fallback, body: fallback };
 }
 
-function extractYouTubeId(rawValue: string): string | undefined {
-  const value = rawValue.trim();
-
-  if (/^[a-zA-Z0-9_-]{11}$/.test(value)) {
-    return value;
-  }
-
-  try {
-    const url = new URL(value);
-    const hostname = url.hostname.toLowerCase();
-
-    if (hostname === "youtu.be") {
-      const id = url.pathname.replace(/\//g, "").trim();
-      return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : undefined;
-    }
-
-    if (hostname === "youtube.com" || hostname.endsWith(".youtube.com")) {
-      const searchId = url.searchParams.get("v");
-      if (searchId && /^[a-zA-Z0-9_-]{11}$/.test(searchId)) {
-        return searchId;
-      }
-
-      const pathSegments = url.pathname.split("/").filter(Boolean);
-      const embeddedId = pathSegments[pathSegments.length - 1];
-      if (embeddedId && /^[a-zA-Z0-9_-]{11}$/.test(embeddedId)) {
-        return embeddedId;
-      }
-    }
-  } catch {
-    return undefined;
-  }
-
-  return undefined;
-}
-
 function buildVideoRecord(
   source: Record<string, unknown>,
 ): ArticleVideoRecord | undefined {
   const directUrl = pickString(source, VIDEO_URL_FIELDS);
   const sourceUrl = pickString(source, ["sourceUrl", "source_url"]);
+  const content = pickString(source, ["content"]);
   const candidate =
     directUrl ||
     (sourceUrl && /(youtu\.be|youtube\.com|vimeo\.com)/i.test(sourceUrl)
       ? sourceUrl
       : undefined);
 
-  if (!candidate) {
-    return undefined;
-  }
-
-  const videoId = extractYouTubeId(candidate);
+  const videoId = candidate
+    ? extractYouTubeId(candidate)
+    : extractYouTubeEmbedId(content || "");
   if (videoId) {
     return {
       platform: "youtube",
@@ -266,7 +231,7 @@ function buildVideoRecord(
     };
   }
 
-  if (!/^https?:\/\//i.test(candidate)) {
+  if (!candidate || !/^https?:\/\//i.test(candidate)) {
     return undefined;
   }
 

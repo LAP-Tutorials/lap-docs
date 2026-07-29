@@ -16,6 +16,7 @@ import {
   buildBreadcrumbSchema,
   buildPublisherSchema,
 } from "@/lib/seo";
+import { removeYouTubeIframe } from "@/lib/video";
 
 type RouteParams = {
   title: string;
@@ -153,6 +154,9 @@ export default async function ArticleDetails({
   }
 
   const processedHtml = await processMarkdown(article.content || "");
+  const articleHtml = article.video?.videoId
+    ? removeYouTubeIframe(processedHtml, article.video.videoId)
+    : processedHtml;
   const articleUrl = absoluteUrl(`/posts/${article.slug}`);
   const articleImages = Array.from(
     new Set(
@@ -203,23 +207,6 @@ export default async function ArticleDetails({
       { name: article.title, path: `/posts/${article.slug}` },
     ]),
   ];
-
-  if (article.video) {
-    jsonLd.push({
-      "@context": "https://schema.org",
-      "@type": "VideoObject",
-      name: article.title,
-      description: article.description,
-      thumbnailUrl: [article.video.thumbnailUrl || absoluteUrl(article.img)],
-      uploadDate: article.date.toISOString(),
-      contentUrl: article.video.url,
-      embedUrl: article.video.embedUrl,
-      potentialAction: {
-        "@type": "WatchAction",
-        target: article.video.url,
-      },
-    });
-  }
 
   return (
     <main className="max-w-[95rem] w-full mx-auto px-4 md:pt-8 sm:pt-4 xs:pt-2 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
@@ -282,18 +269,28 @@ export default async function ArticleDetails({
         </div>
       </article>
 
-      <div className="relative w-full h-auto aspect-[16/9]">
-        <Image
-          src={article.img}
-          alt={article.imgAlt}
-          fill
-          sizes="(min-width: 768px) 768px, 100vw"
-          className="object-cover w-full h-auto"
+      {article.video?.embedUrl ? (
+        <iframe
+          src={article.video.embedUrl}
+          title={`${article.title} video`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          className="block w-full !h-auto !my-0 aspect-video"
         />
-      </div>
+      ) : (
+        <div className="relative w-full h-auto aspect-[16/9]">
+          <Image
+            src={article.img}
+            alt={article.imgAlt}
+            fill
+            sizes="(min-width: 768px) 768px, 100vw"
+            className="object-cover w-full h-auto"
+          />
+        </div>
+      )}
 
       <div className="w-full">
-        <ArticleContent htmlContent={processedHtml} />
+        <ArticleContent htmlContent={articleHtml} />
       </div>
 
       {article.author ? (
