@@ -27,6 +27,12 @@
   force = true
 
 [[redirects]]
+  from = "https://lap-docs.netlify.app/*"
+  to = "https://lap.onl/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
   from = "https://www.lap.onl/*"
   to = "https://lap.onl/:splat"
   status = 301
