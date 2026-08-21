@@ -170,6 +170,16 @@
   border-radius: 20px;
 }
 
+/* Keep browser autofill inside the reader account's dark editorial palette. */
+.reader-auth-field:-webkit-autofill,
+.reader-auth-field:-webkit-autofill:hover,
+.reader-auth-field:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff;
+  caret-color: #ffffff;
+  box-shadow: 0 0 0 1000px #121212 inset;
+  transition: background-color 9999s ease-out 0s;
+}
+
 /* Markdown Styles */
 .markdown-body {
   color: #fff !important;
@@ -346,6 +356,7 @@
   font-weight: 500;
   text-decoration: none;
   border-bottom: #fff 1px solid;
+  overflow-wrap: anywhere;
   transition: all 0.3s;
 }
 

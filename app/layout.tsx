@@ -7,6 +7,7 @@ import CookieBanner from "@/components/CookieBanner";
 import JsonLd from "@/components/JsonLd";
 import Script from "next/script";
 import localFont from "next/font/local";
+import { PublicAuthProvider } from "@/lib/public-auth-context";
 import {
   DEFAULT_OG_IMAGE_PATH,
   DEFAULT_TWITTER_IMAGE_PATH,
@@ -159,13 +160,15 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning>
-        <JsonLd data={[buildWebsiteSchema(), buildOrganizationSchema()]} />
-        <Container>
-          <Header />
-          {children}
-          <Footer />
-          <CookieBanner />
-        </Container>
+        <PublicAuthProvider>
+          <JsonLd data={[buildWebsiteSchema(), buildOrganizationSchema()]} />
+          <Container>
+            <Header />
+            {children}
+            <Footer />
+            <CookieBanner />
+          </Container>
+        </PublicAuthProvider>
       </body>
     </html>
   );

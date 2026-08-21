@@ -17,6 +17,7 @@ import {
   buildPublisherSchema,
 } from "@/lib/seo";
 import { removeYouTubeIframe } from "@/lib/video";
+import CommentsSection from "@/components/CommentsSection";
 
 type RouteParams = {
   title: string;
@@ -292,6 +293,12 @@ export default async function ArticleDetails({
       <div className="w-full">
         <ArticleContent htmlContent={articleHtml} />
       </div>
+
+      <CommentsSection
+        articleId={article.id}
+        articleSlug={article.slug}
+        articleTitle={article.title}
+      />
 
       {article.author ? (
         <div className="pt-10 pb-20">

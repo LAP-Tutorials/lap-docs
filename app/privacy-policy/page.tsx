@@ -90,6 +90,11 @@ export default function PrivacyPolicy() {
         </p>
         <ul className="list-disc pl-6 mb-4 text-gray-300 space-y-2">
           <li>
+            <strong>Reader Account Data:</strong> If you create an account to
+            comment, we store your email address, display name, public handle,
+            profile picture, and authentication provider.
+          </li>
+          <li>
             <strong>Usage Data & Analytics:</strong> We use Google Analytics
             solely to collect anonymized information about how you interact with
             our website. This includes your browser type, operating system,
@@ -98,8 +103,8 @@ export default function PrivacyPolicy() {
           </li>
         </ul>
         <p className="mb-4 text-gray-300 leading-relaxed">
-          We do not require you to create an account to use our website, and we
-          do not collect sensitive personal data.
+          You can read all published content without an account. An account is
+          only required to post or manage your own comments.
         </p>
       </section>
 
@@ -111,6 +116,10 @@ export default function PrivacyPolicy() {
           We use the minimal information we collect for the following purposes:
         </p>
         <ul className="list-disc pl-6 mb-4 text-gray-300 space-y-2">
+          <li>
+            <strong>To provide comments:</strong> We use reader account data to
+            identify comment authors and let them manage their own comments.
+          </li>
           <li>
             <strong>To improve our website:</strong> We use analytics data to
             understand how users interact with our site, which helps us improve
