@@ -58,9 +58,16 @@ export function extractYouTubeEmbedId(html: string): string | undefined {
 }
 
 export function removeYouTubeIframe(html: string, videoId: string) {
-  return html.replace(
-    YOUTUBE_IFRAME_PATTERN,
-    (iframe, _quote: string, sourceUrl: string) =>
-      extractYouTubeId(sourceUrl) === videoId ? "" : iframe,
-  );
+  let result = "";
+  let lastIndex = 0;
+
+  for (const match of html.matchAll(YOUTUBE_IFRAME_PATTERN)) {
+    if (extractYouTubeId(match[2]) !== videoId) continue;
+
+    const matchIndex = match.index ?? 0;
+    result += html.slice(lastIndex, matchIndex);
+    lastIndex = matchIndex + match[0].length;
+  }
+
+  return result + html.slice(lastIndex);
 }
