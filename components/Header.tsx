@@ -15,7 +15,7 @@ import {
 } from "react-icons/ri";
 
 import { useState, useEffect } from "react";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { SITE_NAME } from "@/lib/seo";
 
@@ -26,11 +26,17 @@ export default function Header() {
   useEffect(() => {
     (async () => {
       try {
-        const q = query(collection(db, "articles"), orderBy("date", "desc"));
+        const q = query(
+          collection(db, "articles"),
+          where("publish", "==", true),
+        );
         const snap = await getDocs(q);
-        const items = snap.docs
-          // only published
-          .filter((d) => (d.data() as any).publish === true)
+        const items = [...snap.docs]
+          .sort(
+            (a, b) =>
+              (b.get("date")?.toMillis?.() || 0) -
+              (a.get("date")?.toMillis?.() || 0),
+          )
           .map((d) => {
             const data = d.data() as any;
             return {

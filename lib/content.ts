@@ -74,6 +74,10 @@ type FirestoreListResponse = {
   nextPageToken?: string;
 };
 
+type FirestoreRunQueryResponse = {
+  document?: FirestoreDocument;
+};
+
 type ContentDocument = {
   id: string;
   data: Record<string, unknown>;
@@ -286,7 +290,7 @@ function getDocumentId(documentName: string) {
 }
 
 async function getCollectionDocuments(
-  collectionId: "articles" | "authors",
+  collectionId: "authors",
 ): Promise<ContentDocument[]> {
   const { apiKey, projectId } = getRequiredFirebaseConfig();
   const documents: ContentDocument[] = [];
@@ -328,6 +332,52 @@ async function getCollectionDocuments(
   } while (pageToken);
 
   return documents;
+}
+
+async function getPublishedArticleDocuments(): Promise<ContentDocument[]> {
+  const { apiKey, projectId } = getRequiredFirebaseConfig();
+  const params = new URLSearchParams({ key: apiKey });
+  const response = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(
+      projectId,
+    )}/databases/(default)/documents:runQuery?${params.toString()}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId: "articles" }],
+          where: {
+            fieldFilter: {
+              field: { fieldPath: "publish" },
+              op: "EQUAL",
+              value: { booleanValue: true },
+            },
+          },
+        },
+      }),
+      next: { revalidate: 300 },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Firestore published articles query failed: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  const payload = (await response.json()) as FirestoreRunQueryResponse[];
+  return payload.flatMap((result) => {
+    const document = result.document;
+    return document
+      ? [
+          {
+            id: getDocumentId(document.name),
+            data: decodeFirestoreFields(document.fields || {}),
+          },
+        ]
+      : [];
+  });
 }
 
 function normalizeAuthorDoc(doc: ContentDocument): AuthorRecord {
@@ -445,7 +495,7 @@ export async function getAllAuthors() {
 export async function getPublishedArticles(limitCount?: number) {
   const authors = await getAllAuthors();
   const authorLookup = createAuthorLookup(authors);
-  const documents = await getCollectionDocuments("articles");
+  const documents = await getPublishedArticleDocuments();
 
   const articles = documents
     .map((document) => normalizeArticleDoc(document, authorLookup))
@@ -458,7 +508,7 @@ export async function getPublishedArticles(limitCount?: number) {
 export async function getPublishedArticleBySlug(slug: string) {
   const authors = await getAllAuthors();
   const authorLookup = createAuthorLookup(authors);
-  const documents = await getCollectionDocuments("articles");
+  const documents = await getPublishedArticleDocuments();
   const document = documents.find((entry) => entry.data.slug === slug);
 
   if (!document) return null;
