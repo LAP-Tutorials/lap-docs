@@ -7,7 +7,7 @@ import FooterSocialLinks from "./FooterSocialsLinks";
 
 export default function Footer() {
   return (
-    <footer className="overflow-hidden border-t-4 border-[#8a2be2]">
+    <footer className="overflow-hidden border-t-4 border-[#8a2ae3]">
       <div className="max-w-[95rem] mx-auto px-6 mt-11">
         <div className="flex flex-col md:flex-row flex-wrap lg:justify-between gap-6 max-w-[95rem] w-full">
           <Image

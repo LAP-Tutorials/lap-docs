@@ -46,7 +46,7 @@ export default function CookieBanner() {
       <div className="max-w-4xl mx-auto pointer-events-auto">
         <div className="bg-[#111111] border border-[#333333] shadow-2xl rounded-lg p-5 md:p-6 flex flex-col md:flex-row items-center justify-between gap-5 md:gap-6 relative overflow-hidden">
           {/* Subtle accent border on top */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-[#8a2be2]"></div>
+          <div className="absolute top-0 left-0 right-0 h-1 bg-[#8a2ae3]"></div>
 
           <div className="flex-1 pr-6 md:pr-4">
             <h3 className="text-white font-semibold text-lg mb-2">
@@ -57,7 +57,7 @@ export default function CookieBanner() {
               All&quot;, you consent to our use of cookies. Read more in our{" "}
               <Link
                 href="/privacy-policy"
-                className="text-[#8a2be2] hover:underline"
+                className="text-[#8a2ae3] hover:underline"
               >
                 Privacy Policy
               </Link>
@@ -74,7 +74,7 @@ export default function CookieBanner() {
             </button>
             <button
               onClick={acceptCookies}
-              className="px-5 py-2.5 rounded-md text-sm font-medium text-white bg-[#8a2be2] hover:bg-[#7a1fd1] transition-colors shadow-[0_0_15px_rgba(138,43,226,0.5)]"
+              className="px-5 py-2.5 rounded-md text-sm font-medium text-white bg-[#8a2ae3] hover:bg-[#8a2ae3] transition-colors shadow-[0_0_15px_rgba(138,42,227,0.5)]"
             >
               Accept All
             </button>

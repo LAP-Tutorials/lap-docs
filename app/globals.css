@@ -142,18 +142,18 @@
 
 /* Text selection */
 ::selection {
-  background: #892be280;
+  background: #8a2ae380;
   color: white;
 }
 
 ::-moz-selection {
-  background: #8a2be280;
+  background: #8a2ae380;
   color: white;
 }
 
 * {
   scrollbar-width: 4px;
-  scrollbar-color: #8a2be2 #121212;
+  scrollbar-color: #8a2ae3 #121212;
 }
 
 /* WebKit Scrollbar Support (Chrome, Safari, iOS, Edge) */
@@ -166,7 +166,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #8a2be2;
+  background-color: #8a2ae3;
   border-radius: 20px;
 }
 
@@ -361,7 +361,7 @@
 }
 
 .markdown-body a:hover {
-  color: #8a2be2;
+  color: #8a2ae3;
   text-decoration: none;
 }
 
@@ -407,7 +407,7 @@
 
 /* Highlight */
 .markdown-body mark {
-  background-color: #892be280;
+  background-color: #8a2ae380;
   color: #fff;
   padding: 0.2em;
 }

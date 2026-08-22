@@ -32,10 +32,10 @@ import {
 } from "react-icons/ri";
 
 const fieldClassName =
-  "reader-auth-field w-full border-0 border-b border-white/40 bg-transparent px-0 py-3 text-lg text-white outline-none transition-colors duration-300 placeholder:text-white/25 focus:border-[#8a2be2] focus:ring-0";
+  "reader-auth-field w-full border-0 border-b border-white/40 bg-transparent px-0 py-3 text-lg text-white outline-none transition-colors duration-300 placeholder:text-white/25 focus:border-[#8a2ae3] focus:ring-0";
 
 const primaryButtonClassName =
-  "group inline-flex min-h-16 w-full items-center justify-between bg-white px-5 font-semibold uppercase text-black transition-colors duration-300 hover:bg-[#8a2be2] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2be2] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40";
+  "group inline-flex min-h-16 w-full items-center justify-between bg-white px-5 font-semibold uppercase text-black transition-colors duration-300 hover:bg-[#8a2ae3] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40";
 const CMS_PROFILE_URL = "https://lap-cms.vercel.app/admin/profile";
 
 type HandleAvailability =
@@ -392,7 +392,7 @@ export default function AccountPage() {
   const displayName = profile?.displayName || user?.displayName || user?.email || "Reader";
   const handleStatusClassName =
     handleAvailability === "available" || handleAvailability === "current"
-      ? "text-[#8a2be2]"
+      ? "text-[#8a2ae3]"
       : handleAvailability === "taken" ||
           handleAvailability === "reserved" ||
           handleAvailability === "maintenance" ||
@@ -428,7 +428,7 @@ export default function AccountPage() {
 
       <section className="py-8">
         {message ? (
-          <p role="status" className="mb-7 border-l-2 border-[#8a2be2] py-1 pl-4 text-white/80">
+          <p role="status" className="mb-7 border-l-2 border-[#8a2ae3] py-1 pl-4 text-white/80">
             {message}
           </p>
         ) : null}
@@ -448,7 +448,7 @@ export default function AccountPage() {
                 </p>
                 <a
                   href={CMS_PROFILE_URL}
-                  className="group relative z-10 mt-5 inline-flex min-h-11 pointer-events-auto items-center gap-2 border-b border-white/40 pb-1 font-semibold uppercase transition-colors hover:border-[#8a2be2] hover:text-[#8a2be2]"
+                  className="group relative z-10 mt-5 inline-flex min-h-11 pointer-events-auto items-center gap-2 border-b border-white/40 pb-1 font-semibold uppercase transition-colors hover:border-[#8a2ae3] hover:text-[#8a2ae3]"
                 >
                   Open CMS profile
                   <RiArrowRightLine className="text-xl transition-transform group-hover:translate-x-1" />
@@ -475,7 +475,7 @@ export default function AccountPage() {
                   {profile?.handle ? `@${profile.handle}` : displayName}
                 </h2>
                 <p className="mt-1 truncate text-sm text-white/45">{user.email}</p>
-                <label className="mt-3 inline-flex cursor-pointer items-center gap-2 border-b border-white/40 pb-1 text-sm font-medium uppercase transition-colors hover:border-[#8a2be2] hover:text-[#8a2be2]">
+                <label className="mt-3 inline-flex cursor-pointer items-center gap-2 border-b border-white/40 pb-1 text-sm font-medium uppercase transition-colors hover:border-[#8a2ae3] hover:text-[#8a2ae3]">
                   <RiImageAddLine className="text-lg" />
                   {uploadingPhoto
                     ? "Uploading…"
@@ -531,7 +531,7 @@ export default function AccountPage() {
                     handleAvailability !== "available" ||
                     !photoURL
                   }
-                  className="group inline-flex items-center gap-2 font-semibold uppercase transition-colors hover:text-[#8a2be2] disabled:opacity-35"
+                  className="group inline-flex items-center gap-2 font-semibold uppercase transition-colors hover:text-[#8a2ae3] disabled:opacity-35"
                 >
                   {savingHandle ? "Saving…" : "Finish account"}
                   <RiArrowRightLine className="text-xl transition-transform group-hover:translate-x-1" />
@@ -545,7 +545,7 @@ export default function AccountPage() {
             <button
               type="button"
               onClick={() => signOut(auth)}
-              className="inline-flex items-center gap-2 border-b border-white/40 pb-1 font-medium uppercase transition-colors hover:border-[#8a2be2] hover:text-[#8a2be2]"
+              className="inline-flex items-center gap-2 border-b border-white/40 pb-1 font-medium uppercase transition-colors hover:border-[#8a2ae3] hover:text-[#8a2ae3]"
             >
               Sign out <RiArrowRightLine className="text-xl" />
             </button>
@@ -568,7 +568,7 @@ export default function AccountPage() {
                       setMessage("");
                     }}
                     className={`-mb-px border-b-2 pb-3 font-semibold uppercase transition-colors ${
-                      selected ? "border-[#8a2be2]" : "border-transparent text-white/45 hover:text-white"
+                      selected ? "border-[#8a2ae3]" : "border-transparent text-white/45 hover:text-white"
                     }`}
                   >
                     {value === "signin" ? "Sign in" : "Create account"}
@@ -581,7 +581,7 @@ export default function AccountPage() {
               type="button"
               onClick={signInWithGoogle}
               disabled={busy}
-              className="group flex min-h-16 w-full items-center justify-between border-y border-white/40 px-1 font-semibold uppercase transition-colors hover:text-[#8a2be2] disabled:opacity-40"
+              className="group flex min-h-16 w-full items-center justify-between border-y border-white/40 px-1 font-semibold uppercase transition-colors hover:text-[#8a2ae3] disabled:opacity-40"
             >
               <span className="flex items-center gap-3">
                 <RiGoogleFill className="text-xl" />
@@ -649,7 +649,7 @@ export default function AccountPage() {
                 type="button"
                 onClick={resetPassword}
                 disabled={busy}
-                className="mt-6 border-b border-white/40 pb-1 text-sm font-medium uppercase text-white/60 hover:border-[#8a2be2] hover:text-white disabled:opacity-40"
+                className="mt-6 border-b border-white/40 pb-1 text-sm font-medium uppercase text-white/60 hover:border-[#8a2ae3] hover:text-white disabled:opacity-40"
               >
                 Reset password
               </button>

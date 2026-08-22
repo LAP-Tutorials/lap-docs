@@ -132,13 +132,13 @@ const STAFF_PRESENTATION: Record<
 > = {
   super: {
     label: "Admin",
-    nameClassName: "text-[#c084fc]",
-    handleClassName: "text-[#c084fc]/70",
+    nameClassName: "text-[#8a2ae3]",
+    handleClassName: "text-[#8a2ae3]/70",
   },
   admin: {
     label: "Admin",
-    nameClassName: "text-[#c084fc]",
-    handleClassName: "text-[#c084fc]/70",
+    nameClassName: "text-[#8a2ae3]",
+    handleClassName: "text-[#8a2ae3]/70",
   },
   manager: {
     label: "Author",
@@ -209,7 +209,7 @@ function MentionText({ content }: { content: string }) {
     nodes.push(
       <span
         key={`${mentionIndex}-${mention}`}
-        className="font-medium text-[#c084fc]"
+        className="font-medium text-[#8a2ae3]"
       >
         {mention}
       </span>,
@@ -820,7 +820,7 @@ export default function CommentsSection({
               aria-pressed={sort === value}
               className={`border-b pb-1 text-xs font-semibold uppercase tracking-wide transition-colors ${
                 sort === value
-                  ? "border-[#8a2be2] text-white"
+                  ? "border-[#8a2ae3] text-white"
                   : "border-transparent text-white/45 hover:border-white/40 hover:text-white"
               }`}
             >
@@ -844,7 +844,7 @@ export default function CommentsSection({
           <p className="text-white/60">Sign in to leave a comment.</p>
           <Link
             href="/account"
-            className="group inline-flex items-center gap-3 font-semibold uppercase transition-colors duration-300 hover:text-[#8a2be2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2be2]"
+            className="group inline-flex items-center gap-3 font-semibold uppercase transition-colors duration-300 hover:text-[#8a2ae3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3]"
           >
             Sign in
             <RiArrowRightLine className="text-2xl transition-transform duration-300 group-hover:translate-x-1" />
@@ -861,7 +861,7 @@ export default function CommentsSection({
           </p>
           <Link
             href="/account"
-            className="group inline-flex items-center gap-3 font-semibold uppercase transition-colors duration-300 hover:text-[#8a2be2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2be2]"
+            className="group inline-flex items-center gap-3 font-semibold uppercase transition-colors duration-300 hover:text-[#8a2ae3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3]"
           >
             {isStaff ? "Open account" : "Set your handle"}
             <RiArrowRightLine className="text-2xl transition-transform duration-300 group-hover:translate-x-1" />
@@ -902,19 +902,19 @@ export default function CommentsSection({
               maxLength={MAX_COMMENT_LENGTH}
               rows={3}
               placeholder="Write a comment…"
-              className="mt-2 w-full resize-y border-0 border-b border-white/40 bg-transparent px-0 py-2 text-base leading-7 text-white outline-none transition-colors duration-300 placeholder:text-white/30 focus:border-[#8a2be2] focus:ring-0"
+              className="mt-2 w-full resize-y border-0 border-b border-white/40 bg-transparent px-0 py-2 text-base leading-7 text-white outline-none transition-colors duration-300 placeholder:text-white/30 focus:border-[#8a2ae3] focus:ring-0"
             />
             <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
               <span
                 className={`font-mono text-xs tabular-nums ${
-                  remaining < 100 ? "text-[#8a2be2]" : "text-white/40"
+                  remaining < 100 ? "text-[#8a2ae3]" : "text-white/40"
                 }`}
               >
                 {content.length}/{MAX_COMMENT_LENGTH}
               </span>
               <button
                 disabled={busyId === "new" || !content.trim()}
-                className="group inline-flex items-center gap-3 font-semibold uppercase transition-colors duration-300 hover:text-[#8a2be2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2be2] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-35"
+                className="group inline-flex items-center gap-3 font-semibold uppercase transition-colors duration-300 hover:text-[#8a2ae3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-35"
               >
                 {busyId === "new" ? "Posting…" : "Post comment"}
                 <RiArrowRightLine className="text-2xl transition-transform duration-300 group-hover:translate-x-1" />
@@ -992,7 +992,7 @@ export default function CommentsSection({
                           setEditingId(comment.id);
                           setEditingContent(comment.content);
                         }}
-                        className="border-b border-white/40 pb-1 transition-colors duration-300 hover:border-[#8a2be2] hover:text-[#8a2be2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2be2]"
+                        className="border-b border-white/40 pb-1 transition-colors duration-300 hover:border-[#8a2ae3] hover:text-[#8a2ae3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3]"
                       >
                         Edit
                       </button>
@@ -1015,7 +1015,7 @@ export default function CommentsSection({
                     onChange={setEditingContent}
                     maxLength={MAX_COMMENT_LENGTH}
                     rows={3}
-                    className="w-full resize-y border-0 border-b border-white/40 bg-transparent px-0 py-2 text-base leading-7 outline-none transition-colors duration-300 focus:border-[#8a2be2] focus:ring-0"
+                    className="w-full resize-y border-0 border-b border-white/40 bg-transparent px-0 py-2 text-base leading-7 outline-none transition-colors duration-300 focus:border-[#8a2ae3] focus:ring-0"
                   />
                   <div className="mt-3 flex justify-end gap-5">
                     <button
@@ -1029,7 +1029,7 @@ export default function CommentsSection({
                       type="button"
                       onClick={() => saveEdit(comment.id)}
                       disabled={busyId === comment.id || !editingContent.trim()}
-                      className="group inline-flex items-center gap-2 text-sm font-semibold uppercase transition-colors duration-300 hover:text-[#8a2be2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2be2] disabled:opacity-40"
+                      className="group inline-flex items-center gap-2 text-sm font-semibold uppercase transition-colors duration-300 hover:text-[#8a2ae3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3] disabled:opacity-40"
                     >
                       Save <RiArrowRightLine className="text-xl" />
                     </button>
@@ -1055,7 +1055,7 @@ export default function CommentsSection({
                         aria-label={`Like comment. ${comment.likeCount || 0} likes`}
                         className={`inline-flex items-center gap-2 transition-colors hover:text-white disabled:opacity-40 ${
                           reactions[comment.id] === "like"
-                            ? "text-[#c084fc]"
+                            ? "text-[#8a2ae3]"
                             : ""
                         }`}
                       >
@@ -1070,7 +1070,7 @@ export default function CommentsSection({
                         aria-label={`Dislike comment. ${comment.dislikeCount || 0} dislikes`}
                         className={`inline-flex items-center gap-2 transition-colors hover:text-white disabled:opacity-40 ${
                           reactions[comment.id] === "dislike"
-                            ? "text-[#c084fc]"
+                            ? "text-[#8a2ae3]"
                             : ""
                         }`}
                       >
@@ -1113,7 +1113,7 @@ export default function CommentsSection({
                         );
                         setReplyContent("");
                       }}
-                      className="border-b border-transparent pb-0.5 font-sans font-semibold uppercase tracking-wide transition-colors hover:border-[#8a2be2] hover:text-[#c084fc]"
+                      className="border-b border-transparent pb-0.5 font-sans font-semibold uppercase tracking-wide transition-colors hover:border-[#8a2ae3] hover:text-[#8a2ae3]"
                     >
                       Reply
                     </button>
@@ -1121,7 +1121,7 @@ export default function CommentsSection({
                 </div>
 
                 {replyingToId === comment.id ? (
-                  <div className="mt-5 border-l border-[#8a2be2] pl-4">
+                  <div className="mt-5 border-l border-[#8a2ae3] pl-4">
                     <label htmlFor={`reply-${comment.id}`} className="sr-only">
                       Reply to @{commentHandle}
                     </label>
@@ -1133,7 +1133,7 @@ export default function CommentsSection({
                       rows={2}
                       autoFocus
                       placeholder={`Reply to @${commentHandle}…`}
-                      className="w-full resize-y border-0 border-b border-white/35 bg-transparent px-0 py-2 text-sm leading-6 text-white outline-none placeholder:text-white/30 focus:border-[#8a2be2] focus:ring-0"
+                      className="w-full resize-y border-0 border-b border-white/35 bg-transparent px-0 py-2 text-sm leading-6 text-white outline-none placeholder:text-white/30 focus:border-[#8a2ae3] focus:ring-0"
                     />
                     <div className="mt-3 flex items-center justify-between gap-4">
                       <span className="font-mono text-[11px] tabular-nums text-white/35">
@@ -1156,7 +1156,7 @@ export default function CommentsSection({
                           disabled={
                             replyBusyId === comment.id || !replyContent.trim()
                           }
-                          className="text-[#c084fc] transition-colors hover:text-white disabled:opacity-35"
+                          className="text-[#8a2ae3] transition-colors hover:text-white disabled:opacity-35"
                         >
                           {replyBusyId === comment.id ? "Posting…" : "Post reply"}
                         </button>
@@ -1249,7 +1249,7 @@ export default function CommentsSection({
                                   onChange={setEditingReplyContent}
                                   maxLength={MAX_COMMENT_LENGTH}
                                   rows={2}
-                                  className="w-full resize-y border-0 border-b border-white/35 bg-transparent px-0 py-2 text-sm outline-none focus:border-[#8a2be2] focus:ring-0"
+                                  className="w-full resize-y border-0 border-b border-white/35 bg-transparent px-0 py-2 text-sm outline-none focus:border-[#8a2ae3] focus:ring-0"
                                 />
                                 <div className="mt-2 flex justify-end gap-4 text-[10px] font-semibold uppercase">
                                   <button
@@ -1268,7 +1268,7 @@ export default function CommentsSection({
                                       replyBusyId === reply.id ||
                                       !editingReplyContent.trim()
                                     }
-                                    className="text-[#c084fc] hover:text-white disabled:opacity-35"
+                                    className="text-[#8a2ae3] hover:text-white disabled:opacity-35"
                                   >
                                     Save
                                   </button>
@@ -1288,7 +1288,7 @@ export default function CommentsSection({
                         type="button"
                         onClick={() => loadReplies(comment.id, false)}
                         disabled={replyThreads[comment.id]?.loading}
-                        className="my-4 border-b border-white/30 pb-1 text-xs font-semibold uppercase text-white/55 transition-colors hover:border-[#8a2be2] hover:text-white disabled:opacity-35"
+                        className="my-4 border-b border-white/30 pb-1 text-xs font-semibold uppercase text-white/55 transition-colors hover:border-[#8a2ae3] hover:text-white disabled:opacity-35"
                       >
                         {replyThreads[comment.id]?.loading
                           ? "Loading…"
@@ -1312,7 +1312,7 @@ export default function CommentsSection({
             type="button"
             onClick={showPreviousPage}
             disabled={pageIndex === 0 || loadingMore}
-            className="border-b border-white/40 pb-1 text-sm font-semibold uppercase tracking-wide transition-colors hover:border-[#8a2be2] hover:text-[#c084fc] disabled:cursor-wait disabled:opacity-40"
+            className="border-b border-white/40 pb-1 text-sm font-semibold uppercase tracking-wide transition-colors hover:border-[#8a2ae3] hover:text-[#8a2ae3] disabled:cursor-wait disabled:opacity-40"
           >
             Previous
           </button>
@@ -1323,7 +1323,7 @@ export default function CommentsSection({
             type="button"
             onClick={showNextPage}
             disabled={!hasMoreComments || loadingMore}
-            className="border-b border-white/40 pb-1 text-sm font-semibold uppercase tracking-wide transition-colors hover:border-[#8a2be2] hover:text-[#c084fc] disabled:cursor-wait disabled:opacity-40"
+            className="border-b border-white/40 pb-1 text-sm font-semibold uppercase tracking-wide transition-colors hover:border-[#8a2ae3] hover:text-[#8a2ae3] disabled:cursor-wait disabled:opacity-40"
           >
             {loadingMore ? "Loading…" : "Next"}
           </button>

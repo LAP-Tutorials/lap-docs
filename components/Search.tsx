@@ -70,7 +70,7 @@ export default function Search({
           {suggestions.map((article) => (
             <li
               key={article.id}
-              className="flex items-center gap-2 px-3 py-2 hover:bg-[#892be250] transition"
+              className="flex items-center gap-2 px-3 py-2 hover:bg-[#8a2ae350] transition"
             >
               <img
                 src={article.img}

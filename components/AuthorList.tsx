@@ -50,7 +50,7 @@ export default function AuthorsList({ initialAuthors }: AuthorsListProps) {
                 <p>{author.city}</p>
               </div>
               <Link
-                className="flex items-center gap-2 text-white hover:text-[#8a2be2] transition ease-in-out duration-300"
+                className="flex items-center gap-2 text-white hover:text-[#8a2ae3] transition ease-in-out duration-300"
                 href={`/team/${author.slug}`}
               >
                 <span className="uppercase font-semibold">About</span>

@@ -123,7 +123,7 @@ export default function Header() {
               <Link
                 href="/account"
                 aria-label={accountLabel}
-                className="inline-flex items-center justify-center text-2xl text-white transition-colors duration-300 hover:text-[#8a2be2]"
+                className="inline-flex items-center justify-center text-2xl text-white transition-colors duration-300 hover:text-[#8a2ae3]"
               >
                 {accountPhotoURL ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -191,7 +191,7 @@ export default function Header() {
             <Link
               key={i}
               href={m.href}
-              className="hover:text-[#8a2be2] transition ease-in-out duration-300"
+              className="hover:text-[#8a2ae3] transition ease-in-out duration-300"
             >
               {m.label}
             </Link>
@@ -199,7 +199,7 @@ export default function Header() {
           <Link
             href="/account"
             aria-label={accountLabel}
-            className="inline-flex items-center justify-center text-2xl text-white transition-colors duration-300 hover:text-[#8a2be2]"
+            className="inline-flex items-center justify-center text-2xl text-white transition-colors duration-300 hover:text-[#8a2ae3]"
           >
             {accountPhotoURL ? (
               // eslint-disable-next-line @next/next/no-img-element
