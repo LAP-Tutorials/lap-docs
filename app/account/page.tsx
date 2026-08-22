@@ -14,7 +14,8 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { auth, storage } from "@/lib/firebase";
+import { httpsCallable } from "firebase/functions";
+import { auth, functions, storage } from "@/lib/firebase";
 import {
   checkPublicHandleAvailability,
   claimPublicHandle,
@@ -26,6 +27,7 @@ import {
 } from "@/lib/public-auth-context";
 import {
   RiArrowRightLine,
+  RiDeleteBinLine,
   RiGoogleFill,
   RiImageAddLine,
   RiUser3Line,
@@ -114,6 +116,7 @@ export default function AccountPage() {
   const [busy, setBusy] = useState(false);
   const [savingHandle, setSavingHandle] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [handleAvailability, setHandleAvailability] =
     useState<HandleAvailability>("idle");
 
@@ -380,6 +383,37 @@ export default function AccountPage() {
     }
   };
 
+  const removeAccount = async () => {
+    if (!user || deletingAccount) return;
+
+    const confirmation = window.prompt(
+      "This permanently deletes your account and profile. Your comments will remain as Deleted user, and your article bylines and votes will remain. Type DELETE to continue.",
+    );
+    if (confirmation === null) return;
+    if (confirmation !== "DELETE") {
+      setError("Account deletion cancelled. Type DELETE exactly to confirm.");
+      return;
+    }
+
+    setDeletingAccount(true);
+    setError("");
+    setMessage("");
+    try {
+      const deleteOwnAccount = httpsCallable<
+        { confirmation: "DELETE" },
+        { deleted: boolean }
+      >(functions, "deleteOwnAccount");
+      await deleteOwnAccount({ confirmation: "DELETE" });
+      await signOut(auth).catch(() => undefined);
+      router.push("/");
+      router.refresh();
+    } catch (nextError) {
+      setError(friendlyAuthError(nextError));
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <main className="mx-auto min-h-[65vh] w-full max-w-3xl px-4 py-14">
@@ -549,6 +583,23 @@ export default function AccountPage() {
             >
               Sign out <RiArrowRightLine className="text-xl" />
             </button>
+
+            <div className="border-t border-white/20 pt-8">
+              <h2 className="text-lg font-semibold uppercase">Delete account</h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-white/50">
+                Your profile and sign-in will be permanently removed. Articles,
+                comments, replies, and their vote totals will stay published.
+              </p>
+              <button
+                type="button"
+                onClick={removeAccount}
+                disabled={deletingAccount}
+                className="mt-5 inline-flex items-center gap-2 border-b border-red-400/60 pb-1 text-sm font-semibold uppercase text-red-300 transition-colors hover:border-red-300 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <RiDeleteBinLine className="text-lg" aria-hidden="true" />
+                {deletingAccount ? "Deleting…" : "Delete my account"}
+              </button>
+            </div>
           </div>
         ) : (
           <div>

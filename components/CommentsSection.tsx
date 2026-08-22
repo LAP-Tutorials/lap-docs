@@ -958,6 +958,7 @@ export default function CommentsSection({
       <div>
         {comments.map((comment) => {
           const isOwner = user?.uid === comment.authorId;
+          const isDeletedAuthor = comment.authorId === "deleted-user";
           const isEditing = editingId === comment.id;
           const date = comment.createdAt?.toDate();
           const staffProfile = staffProfiles[comment.authorId];
@@ -971,14 +972,22 @@ export default function CommentsSection({
               className="flex gap-4 border-b border-white/30 py-7"
             >
               <ReaderAvatar
-                name={staffProfile?.name || comment.authorName}
-                photoURL={staffProfile?.avatar || comment.authorPhotoURL}
+                name={isDeletedAuthor ? "Deleted user" : staffProfile?.name || comment.authorName}
+                photoURL={
+                  isDeletedAuthor
+                    ? "/logos/LAP-Logo-Color.png"
+                    : staffProfile?.avatar || comment.authorPhotoURL
+                }
                 className="h-10 w-10"
               />
               <div className="min-w-0 flex-1">
                 <header className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    {staffProfile ? (
+                    {isDeletedAuthor ? (
+                      <h3 className="break-words text-sm font-semibold uppercase text-white/55">
+                        Deleted user
+                      </h3>
+                    ) : staffProfile ? (
                       <StaffIdentity staff={staffProfile} handle={commentHandle} />
                     ) : (
                       <h3 className="break-words text-sm font-semibold uppercase">
@@ -1135,7 +1144,9 @@ export default function CommentsSection({
                 {replyingToId === comment.id ? (
                   <div className="mt-5 border-l border-[#8a2ae3] pl-4">
                     <label htmlFor={`reply-${comment.id}`} className="sr-only">
-                      Reply to @{commentHandle}
+                      {isDeletedAuthor
+                        ? "Reply to Deleted user"
+                        : `Reply to @${commentHandle}`}
                     </label>
                     <MentionTextarea
                       id={`reply-${comment.id}`}
@@ -1211,6 +1222,8 @@ export default function CommentsSection({
                           .replace(/[^a-z0-9_]+/g, "_");
                       const replyDate = reply.createdAt?.toDate();
                       const isReplyOwner = user?.uid === reply.authorId;
+                      const isDeletedReplyAuthor =
+                        reply.authorId === "deleted-user";
                       const isReplyEditing = editingReplyId === reply.id;
                       return (
                         <article
@@ -1218,14 +1231,26 @@ export default function CommentsSection({
                           className="flex gap-3 border-b border-white/15 py-5 last:border-b-0"
                         >
                           <ReaderAvatar
-                            name={replyStaff?.name || reply.authorName}
-                            photoURL={replyStaff?.avatar || reply.authorPhotoURL}
+                            name={
+                              isDeletedReplyAuthor
+                                ? "Deleted user"
+                                : replyStaff?.name || reply.authorName
+                            }
+                            photoURL={
+                              isDeletedReplyAuthor
+                                ? "/logos/LAP-Logo-Color.png"
+                                : replyStaff?.avatar || reply.authorPhotoURL
+                            }
                             className="h-8 w-8"
                           />
                           <div className="min-w-0 flex-1">
                             <header className="flex flex-wrap items-start justify-between gap-3">
                               <div>
-                                {replyStaff ? (
+                                {isDeletedReplyAuthor ? (
+                                  <h4 className="text-xs font-semibold uppercase text-white/55">
+                                    Deleted user
+                                  </h4>
+                                ) : replyStaff ? (
                                   <StaffIdentity
                                     staff={replyStaff}
                                     handle={replyHandle}
