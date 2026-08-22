@@ -98,7 +98,8 @@ async function getData() {
     }));
 
     // Shuffle authors
-    const shuffledAuthors = [...allAuthors]
+    const shuffledAuthors = allAuthors
+      .filter((author) => author.role !== "moderator" && author.showOnTeam)
       .map((author) => ({
         id: author.docId,
         slug: author.slug,
