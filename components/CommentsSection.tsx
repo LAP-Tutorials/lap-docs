@@ -899,6 +899,18 @@ export default function CommentsSection({
               id="new-comment"
               value={content}
               onChange={setContent}
+              onKeyDown={(event) => {
+                if (
+                  event.key === "Enter" &&
+                  !event.shiftKey &&
+                  !event.nativeEvent.isComposing
+                ) {
+                  event.preventDefault();
+                  if (busyId !== "new" && content.trim()) {
+                    event.currentTarget.form?.requestSubmit();
+                  }
+                }
+              }}
               maxLength={MAX_COMMENT_LENGTH}
               rows={3}
               placeholder="Write a comment…"
@@ -1129,6 +1141,21 @@ export default function CommentsSection({
                       id={`reply-${comment.id}`}
                       value={replyContent}
                       onChange={setReplyContent}
+                      onKeyDown={(event) => {
+                        if (
+                          event.key === "Enter" &&
+                          !event.shiftKey &&
+                          !event.nativeEvent.isComposing
+                        ) {
+                          event.preventDefault();
+                          if (
+                            replyBusyId !== comment.id &&
+                            replyContent.trim()
+                          ) {
+                            void submitReply(comment);
+                          }
+                        }
+                      }}
                       maxLength={MAX_COMMENT_LENGTH}
                       rows={2}
                       autoFocus

@@ -28,6 +28,7 @@ export default function MentionTextarea({
   value,
   onChange,
   className,
+  onKeyDown,
   ...props
 }: MentionTextareaProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -94,22 +95,32 @@ export default function MentionTextarea({
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (!suggestions.length) return
-    if (event.key === "ArrowDown") {
-      event.preventDefault()
-      setActiveIndex((current) => (current + 1) % suggestions.length)
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault()
-      setActiveIndex(
-        (current) => (current - 1 + suggestions.length) % suggestions.length,
-      )
-    } else if (event.key === "Enter" || event.key === "Tab") {
-      event.preventDefault()
-      selectSuggestion(suggestions[activeIndex])
-    } else if (event.key === "Escape") {
-      setQuery("")
-      setSuggestions([])
+    if (suggestions.length) {
+      if (event.key === "ArrowDown") {
+        event.preventDefault()
+        setActiveIndex((current) => (current + 1) % suggestions.length)
+        return
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault()
+        setActiveIndex(
+          (current) => (current - 1 + suggestions.length) % suggestions.length,
+        )
+        return
+      }
+      if (event.key === "Enter" || event.key === "Tab") {
+        event.preventDefault()
+        selectSuggestion(suggestions[activeIndex])
+        return
+      }
+      if (event.key === "Escape") {
+        setQuery("")
+        setSuggestions([])
+        return
+      }
     }
+
+    onKeyDown?.(event)
   }
 
   return (
