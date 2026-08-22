@@ -75,6 +75,26 @@ export default function NotificationBell({
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const popoverRef = useRef<HTMLDivElement>(null);
+  const [browserPermission, setBrowserPermission] = useState<NotificationPermission>("default");
+  const isInitialSnapshotRef = useRef(true);
+
+  // Check browser notification permission
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setBrowserPermission(Notification.permission);
+    }
+  }, []);
+
+  const requestBrowserPermission = async () => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      try {
+        const perm = await Notification.requestPermission();
+        setBrowserPermission(perm);
+      } catch (err) {
+        console.error("Error requesting notification permission:", err);
+      }
+    }
+  };
 
   // Subscribe to real-time user notifications
   useEffect(() => {
@@ -84,6 +104,7 @@ export default function NotificationBell({
       return;
     }
 
+    isInitialSnapshotRef.current = true;
     setLoading(true);
     const notificationsRef = collection(db, "users", user.uid, "notifications");
     const q = query(
@@ -101,6 +122,40 @@ export default function NotificationBell({
         })) as NotificationItem[];
         setNotifications(items);
         setLoading(false);
+
+        // Fire native browser pop-up notification for new incoming notifications
+        if (isInitialSnapshotRef.current) {
+          isInitialSnapshotRef.current = false;
+        } else {
+          snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+              const data = change.doc.data() as NotificationItem;
+              if (
+                !data.read &&
+                typeof window !== "undefined" &&
+                "Notification" in window &&
+                Notification.permission === "granted"
+              ) {
+                try {
+                  const popup = new Notification(data.title || "New Notification", {
+                    body: data.message || "You received a new notification on L.A.P Tutorials.",
+                    icon: "/favicon.ico",
+                    tag: change.doc.id,
+                  });
+                  popup.onclick = () => {
+                    window.focus();
+                    if (data.link) {
+                      router.push(data.link);
+                    }
+                    popup.close();
+                  };
+                } catch (popupErr) {
+                  console.error("Error displaying native notification:", popupErr);
+                }
+              }
+            }
+          });
+        }
       },
       (error) => {
         console.error("Error subscribing to notifications:", error);
@@ -109,7 +164,7 @@ export default function NotificationBell({
     );
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, router]);
 
   // Handle click outside to close
   useEffect(() => {
@@ -286,6 +341,22 @@ export default function NotificationBell({
               </button>
             </div>
           </div>
+
+          {/* Browser notification prompt banner */}
+          {browserPermission === "default" && (
+            <button
+              type="button"
+              onClick={requestBrowserPermission}
+              className="flex w-full items-center justify-between border-b border-white/10 bg-[#8a2ae3]/10 px-4 py-2 text-left text-xs text-[#8a2ae3] transition-colors hover:bg-[#8a2ae3]/20"
+            >
+              <span className="flex items-center gap-1.5 font-medium">
+                <Bell className="h-3.5 w-3.5" /> Enable browser pop-ups
+              </span>
+              <span className="font-mono text-[10px] font-bold uppercase underline">
+                Enable
+              </span>
+            </button>
+          )}
 
           {/* Filter Tabs */}
           <div className="flex border-b border-white/10 text-xs font-mono">

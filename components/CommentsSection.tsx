@@ -25,6 +25,7 @@ import {
   startAfter,
   updateDoc,
   where,
+  writeBatch,
   type DocumentData,
   type QueryConstraint,
   type QueryDocumentSnapshot,
@@ -771,14 +772,26 @@ export default function CommentsSection({
   };
 
   const removeComment = async (commentId: string) => {
-    if (!window.confirm("Delete this comment permanently?")) return;
+    if (!window.confirm("Delete this comment and all its replies permanently?")) return;
     setBusyId(commentId);
     setError("");
     try {
-      await deleteDoc(doc(db, "comments", commentId));
+      const batch = writeBatch(db);
+      batch.delete(doc(db, "comments", commentId));
+      const repliesSnap = await getDocs(
+        query(collection(db, "commentReplies"), where("parentCommentId", "==", commentId))
+      );
+      repliesSnap.forEach((r) => batch.delete(r.ref));
+      await batch.commit();
+
       updateCurrentPage((current) =>
         current.filter((comment) => comment.id !== commentId),
       );
+      setReplyThreads((current) => {
+        const next = { ...current };
+        delete next[commentId];
+        return next;
+      });
     } catch (deleteError) {
       console.error("Unable to delete comment:", deleteError);
       setError("We could not delete your comment.");
