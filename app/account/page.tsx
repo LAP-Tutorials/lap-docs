@@ -96,7 +96,7 @@ function handleAvailabilityMessage(status: HandleAvailability) {
     case "error":
       return "Could not check availability. Please try again.";
     default:
-      return "3-20 lowercase letters, numbers, or underscores.";
+      return "3-20 lowercase letters, numbers, hyphens, or underscores.";
   }
 }
 
@@ -503,7 +503,16 @@ export default function AccountPage() {
                 <input
                   id="handle"
                   value={handle}
-                  onChange={(event) => setHandle(event.target.value)}
+                  onChange={(event) =>
+                    setHandle(
+                      event.target.value
+                        .toLowerCase()
+                        .replace(/^@+/, "")
+                        .replace(/\s+/g, "_")
+                        .replace(/[^a-z0-9_-]/g, "")
+                        .slice(0, 20),
+                    )
+                  }
                   minLength={3}
                   maxLength={20}
                   autoCapitalize="none"

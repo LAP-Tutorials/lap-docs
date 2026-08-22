@@ -40,7 +40,7 @@ const PublicAuthContext = createContext<PublicAuthContextValue | undefined>(
   undefined,
 );
 
-const HANDLE_PATTERN = /^[a-z0-9_]{3,20}$/;
+const HANDLE_PATTERN = /^[a-z0-9_-]{3,20}$/;
 const PROTECTED_BRAND_PATTERN = /^(official|real|the|team|weare|my)?(lap|arclapain)/;
 
 export type PublicHandleAvailability =
@@ -75,19 +75,23 @@ function toPublicProfile(data: Record<string, unknown>, user: User): PublicProfi
 }
 
 export function normalizeHandle(value: string) {
-  return value.trim().toLowerCase().replace(/^@+/, "");
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/^@+/, "")
+    .replace(/\s+/g, "_");
 }
 
 export function validateHandle(value: string) {
   const handle = normalizeHandle(value);
   if (!HANDLE_PATTERN.test(handle)) {
-    return "Use 3–20 lowercase letters, numbers, or underscores.";
+    return "Use 3–20 lowercase letters, numbers, hyphens, or underscores.";
   }
   return "";
 }
 
 export function getHandleReservationKey(value: string) {
-  return normalizeHandle(value).replace(/[_0-9]+/g, "");
+  return normalizeHandle(value).replace(/[-_0-9]+/g, "");
 }
 
 export function isReservedLAPHandle(value: string) {
@@ -96,7 +100,7 @@ export function isReservedLAPHandle(value: string) {
     .replace(/1/g, "l")
     .replace(/4/g, "a")
     .replace(/9/g, "p")
-    .replace(/[_0-9]+/g, "");
+    .replace(/[-_0-9]+/g, "");
   return (
     PROTECTED_BRAND_PATTERN.test(getHandleReservationKey(normalized)) ||
     PROTECTED_BRAND_PATTERN.test(confusableKey)

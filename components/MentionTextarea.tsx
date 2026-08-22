@@ -40,7 +40,7 @@ export default function MentionTextarea({
 
   const updateMentionContext = (nextValue: string, caret: number) => {
     const beforeCaret = nextValue.slice(0, caret)
-    const match = beforeCaret.match(/(?:^|[^a-z0-9_.-])@([a-z0-9_]{1,20})$/i)
+    const match = beforeCaret.match(/(?:^|[^a-z0-9_.-])@([a-z0-9_-]{1,20})$/i)
     if (!match) {
       setQuery("")
       setSuggestions([])

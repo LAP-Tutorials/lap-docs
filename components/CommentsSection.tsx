@@ -194,7 +194,7 @@ function StaffIdentity({
 
 function MentionText({ content }: { content: string }) {
   const nodes: ReactNode[] = [];
-  const mentionPattern = /(^|[^a-z0-9_.-])(@[a-z0-9_]{3,20})\b/gi;
+  const mentionPattern = /(^|[^a-z0-9_.-])(@[a-z0-9_-]{3,20})(?![a-z0-9_-])/gi;
   let cursor = 0;
 
   for (const match of content.matchAll(mentionPattern)) {
