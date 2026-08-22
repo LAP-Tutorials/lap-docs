@@ -6,7 +6,6 @@ import {
   onSnapshot,
   query,
   where,
-  orderBy,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -36,34 +35,40 @@ export default function PopularArticles({
     useState<Article[]>(initialArticles);
 
   useEffect(() => {
-    // Query Firestore for articles that have popularity == true AND publish == true
-    // Then order by date descending (assuming 'date' is a valid field in the documents)
+    // Keep the live query on one indexed field, then filter and rank locally.
+    // This avoids requiring a composite index for the public sidebar.
     const articlesQuery = query(
       collection(db, "articles"),
-      where("popularity", "==", true),
       where("publish", "==", true),
-      orderBy("popularityRank", "asc"),
     );
 
     const unsubscribe = onSnapshot(
       articlesQuery,
       (snapshot) => {
-        const articles: Article[] = snapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            title: data.title || "",
-            slug: data.slug || "",
-            authorName: data.authorName || "Unknown Team Member",
-            popularity: data.popularity || false,
-            publish: data.publish || false,
-            date:
-              data.date instanceof Timestamp
-                ? data.date
-                : (data.date ?? new Date().toISOString()),
-            popularityRank: data.popularityRank,
-          } as Article;
-        });
+        const articles: Article[] = snapshot.docs
+          .map((doc) => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              title: data.title || "",
+              slug: data.slug || "",
+              authorName: data.authorName || "Unknown Team Member",
+              popularity: data.popularity || false,
+              publish: data.publish || false,
+              date:
+                data.date instanceof Timestamp
+                  ? data.date
+                  : (data.date ?? new Date().toISOString()),
+              popularityRank: data.popularityRank,
+            } as Article;
+          })
+          .filter((article) => article.popularity)
+          .sort(
+            (left, right) =>
+              (left.popularityRank ?? Number.MAX_SAFE_INTEGER) -
+                (right.popularityRank ?? Number.MAX_SAFE_INTEGER) ||
+              left.title.localeCompare(right.title),
+          );
 
         setPopularArticles(articles);
       },

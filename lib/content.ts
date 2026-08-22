@@ -97,6 +97,8 @@ export type AuthorRecord = {
     body: string;
   };
   socials: SocialMap;
+  role: string;
+  showOnTeam: boolean;
   updatedAt?: Date;
 };
 
@@ -395,6 +397,8 @@ function normalizeAuthorDoc(doc: ContentDocument): AuthorRecord {
     slug: pickString(data, ["slug"]) || "",
     biography: extractBiography(data.biography, name),
     socials: normalizeSocials(data.socials),
+    role: (pickString(data, ["role"]) || "").toLowerCase(),
+    showOnTeam: data.showOnTeam !== false,
     updatedAt: pickDate(data, AUTHOR_UPDATED_FIELDS),
   };
 }

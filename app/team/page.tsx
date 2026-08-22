@@ -59,7 +59,9 @@ type AuthorType = {
 
 async function getAuthors() {
   try {
-    const authors = await getAllAuthors();
+    const authors = (await getAllAuthors()).filter(
+      (author) => author.role !== "moderator" && author.showOnTeam,
+    );
     return authors.map((author) => ({
       uid: author.uid,
       name: author.name,
