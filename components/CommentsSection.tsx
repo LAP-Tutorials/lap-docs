@@ -776,13 +776,23 @@ export default function CommentsSection({
     setBusyId(commentId);
     setError("");
     try {
-      const batch = writeBatch(db);
-      batch.delete(doc(db, "comments", commentId));
-      const repliesSnap = await getDocs(
-        query(collection(db, "commentReplies"), where("parentCommentId", "==", commentId))
-      );
-      repliesSnap.forEach((r) => batch.delete(r.ref));
-      await batch.commit();
+      // 1. Delete the parent comment directly (always permitted for the comment author)
+      await deleteDoc(doc(db, "comments", commentId));
+
+      // 2. Cascade delete child replies immediately on the client
+      try {
+        const repliesSnap = await getDocs(
+          query(collection(db, "commentReplies"), where("parentCommentId", "==", commentId))
+        );
+        if (!repliesSnap.empty) {
+          const batch = writeBatch(db);
+          repliesSnap.forEach((r) => batch.delete(r.ref));
+          await batch.commit();
+        }
+      } catch (cascadeError) {
+        // Backend Cloud Function (removeRepliesWithComment) will clean up orphaned replies automatically
+        console.warn("Child replies cleanup handled by backend function:", cascadeError);
+      }
 
       updateCurrentPage((current) =>
         current.filter((comment) => comment.id !== commentId),
