@@ -167,7 +167,7 @@ export default function Header() {
             <Link
               key={i}
               href={m.href}
-              className="hover:text-[#8a2be2] transition ease-in-out duration-300"
+              className="hover:text-[#8a2ae3] transition ease-in-out duration-300"
             >
               {m.label}
             </Link>

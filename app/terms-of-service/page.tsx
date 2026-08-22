@@ -68,7 +68,7 @@ export default function TermsOfService() {
       </p>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-[#8a2be2]">
+        <h2 className="text-2xl font-semibold mb-4 text-[#8a2ae3]">
           1. Acceptance of Terms
         </h2>
         <p className="mb-4 text-gray-300 leading-relaxed">
@@ -81,7 +81,7 @@ export default function TermsOfService() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-[#8a2be2]">
+        <h2 className="text-2xl font-semibold mb-4 text-[#8a2ae3]">
           2. Informational Purposes Only
         </h2>
         <p className="mb-4 text-gray-300 leading-relaxed">
@@ -95,7 +95,7 @@ export default function TermsOfService() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-[#8a2be2]">
+        <h2 className="text-2xl font-semibold mb-4 text-[#8a2ae3]">
           3. License and Use of Content
         </h2>
         <p className="mb-4 text-gray-300 leading-relaxed">
@@ -124,7 +124,7 @@ export default function TermsOfService() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-[#8a2be2]">
+        <h2 className="text-2xl font-semibold mb-4 text-[#8a2ae3]">
           4. Disclaimer of Warranties
         </h2>
         <p className="mb-4 text-gray-300 leading-relaxed">
@@ -138,7 +138,7 @@ export default function TermsOfService() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-[#8a2be2]">
+        <h2 className="text-2xl font-semibold mb-4 text-[#8a2ae3]">
           5. Limitations of Liability
         </h2>
         <p className="mb-4 text-gray-300 leading-relaxed">
@@ -153,7 +153,7 @@ export default function TermsOfService() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-[#8a2be2]">
+        <h2 className="text-2xl font-semibold mb-4 text-[#8a2ae3]">
           6. Links to Third-Party Sites
         </h2>
         <p className="mb-4 text-gray-300 leading-relaxed">
@@ -166,7 +166,7 @@ export default function TermsOfService() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-[#8a2be2]">
+        <h2 className="text-2xl font-semibold mb-4 text-[#8a2ae3]">
           7. Revisions
         </h2>
         <p className="mb-4 text-gray-300 leading-relaxed">

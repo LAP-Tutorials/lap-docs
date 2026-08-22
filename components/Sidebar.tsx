@@ -62,7 +62,7 @@ export default async function Sidebar() {
       />
       <Button
         asChild
-        className="hover:bg-[#8a2be2] transition ease-in-out duration-300"
+        className="hover:bg-[#8a2ae3] transition ease-in-out duration-300"
       >
         <a href={youtubeChannelUrl} target="_blank" rel="noopener noreferrer">
           Subscribe on YouTube

@@ -7,9 +7,9 @@ const news = [
 
 export default function NewsTicker() {
   return (
-    <div className="flex bg-[#8a2be2] text-white py-5 max-w-[95rem] w-full mx-auto relative overflow-hidden">
-      <div className="bg-[#8a2be2] z-10 px-6 absolute left-0 top-0 h-full flex items-center">
-        <span className="flex gap-2 bg-[#8a2be2] font-semibold uppercase whitespace-nowrap">
+    <div className="flex bg-[#8a2ae3] text-white py-5 max-w-[95rem] w-full mx-auto relative overflow-hidden">
+      <div className="bg-[#8a2ae3] z-10 px-6 absolute left-0 top-0 h-full flex items-center">
+        <span className="flex gap-2 bg-[#8a2ae3] font-semibold uppercase whitespace-nowrap">
           <p>MISSION:</p>
         </span>
       </div>

@@ -68,7 +68,7 @@ export default function PrivacyPolicy() {
       </p>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-[#8a2be2]">
+        <h2 className="text-2xl font-semibold mb-4 text-[#8a2ae3]">
           1. Introduction
         </h2>
         <p className="mb-4 text-gray-300 leading-relaxed">
@@ -80,7 +80,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-[#8a2be2]">
+        <h2 className="text-2xl font-semibold mb-4 text-[#8a2ae3]">
           2. The Data We Collect
         </h2>
         <p className="mb-4 text-gray-300 leading-relaxed">
@@ -104,7 +104,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-[#8a2be2]">
+        <h2 className="text-2xl font-semibold mb-4 text-[#8a2ae3]">
           3. How We Use Your Data
         </h2>
         <p className="mb-4 text-gray-300 leading-relaxed">
@@ -124,7 +124,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-[#8a2be2]">
+        <h2 className="text-2xl font-semibold mb-4 text-[#8a2ae3]">
           4. Cookies and Tracking Technologies
         </h2>
         <p className="mb-4 text-gray-300 leading-relaxed">
@@ -142,7 +142,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-[#8a2be2]">
+        <h2 className="text-2xl font-semibold mb-4 text-[#8a2ae3]">
           5. Third-Party Services
         </h2>
         <p className="mb-4 text-gray-300 leading-relaxed">
@@ -155,7 +155,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-[#8a2be2]">
+        <h2 className="text-2xl font-semibold mb-4 text-[#8a2ae3]">
           6. Your Rights
         </h2>
         <p className="mb-4 text-gray-300 leading-relaxed">
@@ -167,7 +167,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-[#8a2be2]">
+        <h2 className="text-2xl font-semibold mb-4 text-[#8a2ae3]">
           7. Contact Us
         </h2>
         <p className="mb-4 text-gray-300 leading-relaxed">
@@ -175,7 +175,7 @@ export default function PrivacyPolicy() {
           via email at{" "}
           <a
             href="mailto:contact@lap.onl?subject=Privacy%20Policy%20Inquiry"
-            className="text-[#8a2be2] hover:underline"
+            className="text-[#8a2ae3] hover:underline"
           >
             contact@lap.onl
           </a>

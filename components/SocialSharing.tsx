@@ -20,7 +20,7 @@ export default function SocialSharing({ links }: SocialSharingProps) {
           aria-label={link.ariaLabel}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-white text-2xl hover:text-[#8a2be2] transition ease-in-out duration-300"
+          className="text-white text-2xl hover:text-[#8a2ae3] transition ease-in-out duration-300"
         >
           <link.Icon />
         </Link>
