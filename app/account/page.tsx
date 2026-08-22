@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
   deleteUser,
@@ -35,6 +36,7 @@ const fieldClassName =
 
 const primaryButtonClassName =
   "group inline-flex min-h-16 w-full items-center justify-between bg-white px-5 font-semibold uppercase text-black transition-colors duration-300 hover:bg-[#8a2be2] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2be2] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40";
+const CMS_PROFILE_URL = "https://lap-cms.vercel.app/admin/profile";
 
 type HandleAvailability =
   | "idle"
@@ -42,6 +44,8 @@ type HandleAvailability =
   | "checking"
   | "available"
   | "taken"
+  | "reserved"
+  | "maintenance"
   | "current"
   | "error";
 
@@ -83,6 +87,10 @@ function handleAvailabilityMessage(status: HandleAvailability) {
       return "Handle available.";
     case "taken":
       return "That handle is already taken.";
+    case "reserved":
+      return "That handle is reserved for the L.A.P team.";
+    case "maintenance":
+      return "Handle setup is temporarily unavailable. Try again soon.";
     case "current":
       return "This is your current handle.";
     case "error":
@@ -93,7 +101,8 @@ function handleAvailabilityMessage(status: HandleAvailability) {
 }
 
 export default function AccountPage() {
-  const { user, profile, isLoading, refreshProfile } = usePublicAuth();
+  const router = useRouter();
+  const { user, profile, isStaff, isLoading, refreshProfile } = usePublicAuth();
   const [mode, setMode] = useState<"signin" | "register">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -111,6 +120,13 @@ export default function AccountPage() {
   useEffect(() => {
     setHandle(profile?.handle || "");
   }, [profile?.handle]);
+
+  useEffect(() => {
+    if (!isStaff || profile?.handle) return;
+    setMessage((current) =>
+      current.includes("Finish your photo and handle") ? "" : current,
+    );
+  }, [isStaff, profile?.handle]);
 
   useEffect(() => {
     const shouldCheck = Boolean(user);
@@ -133,12 +149,12 @@ export default function AccountPage() {
     let cancelled = false;
     const timeoutId = window.setTimeout(async () => {
       try {
-        const available = await checkPublicHandleAvailability(
+        const availability = await checkPublicHandleAvailability(
           normalizedHandle,
           user?.uid,
         );
         if (!cancelled) {
-          setHandleAvailability(available ? "available" : "taken");
+          setHandleAvailability(availability);
         }
       } catch {
         if (!cancelled) setHandleAvailability("error");
@@ -271,6 +287,10 @@ export default function AccountPage() {
   const saveHandle = async (event: FormEvent) => {
     event.preventDefault();
     if (!user) return;
+    if (profile?.handle) {
+      setError("Handles cannot be changed after account setup.");
+      return;
+    }
     const normalizedHandle = normalizeHandle(handle);
     const validationError = validateHandle(normalizedHandle);
     if (validationError) {
@@ -288,13 +308,19 @@ export default function AccountPage() {
     setError("");
     setMessage("");
     try {
-      const handleIsAvailable = await checkPublicHandleAvailability(
+      const availability = await checkPublicHandleAvailability(
         normalizedHandle,
         user.uid,
       );
-      if (!handleIsAvailable) {
-        setHandleAvailability("taken");
-        throw new Error("That handle is already taken.");
+      if (availability !== "available") {
+        setHandleAvailability(availability);
+        throw new Error(
+          availability === "reserved"
+            ? "That handle is reserved for the L.A.P team."
+            : availability === "maintenance"
+              ? "Handle setup is temporarily unavailable. Please try again soon."
+              : "That handle is already taken.",
+        );
       }
 
       const savedHandle = await claimPublicHandle(user, normalizedHandle);
@@ -303,11 +329,8 @@ export default function AccountPage() {
       await refreshProfile();
       setHandle(savedHandle);
       setPendingPhotoURL("");
-      setMessage(
-        profile?.handle
-          ? `Your handle is @${savedHandle}.`
-          : `Your account is ready as @${savedHandle}.`,
-      );
+      setMessage(`Your account is ready as @${savedHandle}.`);
+      router.push("/");
     } catch (nextError) {
       setError(friendlyAuthError(nextError));
     } finally {
@@ -370,7 +393,10 @@ export default function AccountPage() {
   const handleStatusClassName =
     handleAvailability === "available" || handleAvailability === "current"
       ? "text-[#8a2be2]"
-      : handleAvailability === "taken" || handleAvailability === "error"
+      : handleAvailability === "taken" ||
+          handleAvailability === "reserved" ||
+          handleAvailability === "maintenance" ||
+          handleAvailability === "error"
         ? "text-red-300"
         : "text-white/40";
 
@@ -381,13 +407,21 @@ export default function AccountPage() {
           Reader account
         </p>
         <h1 className="mt-3 text-5xl font-semibold uppercase leading-none md:text-7xl">
-          {user ? (profile?.handle ? "Your account" : "Complete your account") : "Account"}
+          {user
+            ? profile?.handle
+              ? "Your account"
+              : isStaff
+                ? "Team account"
+                : "Complete your account"
+            : "Account"}
         </h1>
         <p className="mt-4 text-white/55">
           {user
             ? profile?.handle
-              ? "Manage how you appear in comments."
-              : "Add your profile picture and choose an available handle."
+              ? "Change your profile picture. Your handle is permanent."
+              : isStaff
+                ? "Your team profile and comment handle are managed in the CMS."
+                : "Add your profile picture and choose an available handle."
             : "Sign in to leave a comment."}
         </p>
       </header>
@@ -406,7 +440,23 @@ export default function AccountPage() {
 
         {user ? (
           <div className="space-y-9">
-            <div className="flex items-center gap-5 border-b border-white/25 pb-8">
+            {isStaff && !profile?.handle ? (
+              <div className="border-b border-white/25 pb-8">
+                <p className="text-white/65">
+                  Your comment profile will be created automatically from your
+                  CMS team profile.
+                </p>
+                <a
+                  href={CMS_PROFILE_URL}
+                  className="group relative z-10 mt-5 inline-flex min-h-11 pointer-events-auto items-center gap-2 border-b border-white/40 pb-1 font-semibold uppercase transition-colors hover:border-[#8a2be2] hover:text-[#8a2be2]"
+                >
+                  Open CMS profile
+                  <RiArrowRightLine className="text-xl transition-transform group-hover:translate-x-1" />
+                </a>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-5 border-b border-white/25 pb-8">
               <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden bg-white/10">
                 {photoURL ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -441,9 +491,10 @@ export default function AccountPage() {
                   />
                 </label>
               </div>
-            </div>
+                </div>
 
-            <form onSubmit={saveHandle}>
+                {!profile?.handle ? (
+                  <form onSubmit={saveHandle}>
               <label htmlFor="handle" className="text-sm font-medium uppercase tracking-[0.18em] text-white/55">
                 Handle
               </label>
@@ -469,20 +520,18 @@ export default function AccountPage() {
                   disabled={
                     savingHandle ||
                     handleAvailability !== "available" ||
-                    (!profile?.handle && !photoURL) ||
-                    normalizeHandle(handle) === profile?.handle
+                    !photoURL
                   }
                   className="group inline-flex items-center gap-2 font-semibold uppercase transition-colors hover:text-[#8a2be2] disabled:opacity-35"
                 >
-                  {savingHandle
-                    ? "Saving…"
-                    : profile?.handle
-                      ? "Update handle"
-                      : "Finish account"}
+                  {savingHandle ? "Saving…" : "Finish account"}
                   <RiArrowRightLine className="text-xl transition-transform group-hover:translate-x-1" />
                 </button>
               </div>
-            </form>
+                  </form>
+                ) : null}
+              </>
+            )}
 
             <button
               type="button"

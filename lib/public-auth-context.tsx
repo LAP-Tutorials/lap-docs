@@ -31,6 +31,7 @@ export type PublicProfile = {
 type PublicAuthContextValue = {
   user: User | null;
   profile: PublicProfile | null;
+  isStaff: boolean;
   isLoading: boolean;
   refreshProfile: () => Promise<PublicProfile | null>;
 };
@@ -40,6 +41,13 @@ const PublicAuthContext = createContext<PublicAuthContextValue | undefined>(
 );
 
 const HANDLE_PATTERN = /^[a-z0-9_]{3,20}$/;
+const PROTECTED_BRAND_PATTERN = /^(official|real|the|team|weare|my)?(lap|arclapain)/;
+
+export type PublicHandleAvailability =
+  | "available"
+  | "taken"
+  | "reserved"
+  | "maintenance";
 
 function getProvider(user: User) {
   return user.providerData[0]?.providerId || "password";
@@ -78,15 +86,57 @@ export function validateHandle(value: string) {
   return "";
 }
 
+export function getHandleReservationKey(value: string) {
+  return normalizeHandle(value).replace(/[_0-9]+/g, "");
+}
+
+export function isReservedLAPHandle(value: string) {
+  const normalized = normalizeHandle(value);
+  const confusableKey = normalized
+    .replace(/1/g, "l")
+    .replace(/4/g, "a")
+    .replace(/9/g, "p")
+    .replace(/[_0-9]+/g, "");
+  return (
+    PROTECTED_BRAND_PATTERN.test(getHandleReservationKey(normalized)) ||
+    PROTECTED_BRAND_PATTERN.test(confusableKey)
+  );
+}
+
 export async function checkPublicHandleAvailability(
   value: string,
   currentUserId?: string,
-) {
+): Promise<PublicHandleAvailability> {
   const handle = normalizeHandle(value);
-  if (validateHandle(handle)) return false;
+  if (validateHandle(handle)) return "taken";
+
+  const configSnapshot = currentUserId
+    ? await getDoc(doc(db, "handleConfig", "status"))
+    : null;
+  if (!configSnapshot?.exists() || configSnapshot.data().ready !== true) {
+    return "maintenance";
+  }
+
+  const reservationKey = getHandleReservationKey(handle);
+  const reservationSnapshot = currentUserId
+    ? await getDoc(doc(db, "handleReservations", reservationKey))
+    : null;
+
+  if (
+    reservationSnapshot?.exists() &&
+    reservationSnapshot.data().ownerUid !== currentUserId
+  ) {
+    return "reserved";
+  }
+
+  if (!reservationSnapshot?.exists() && isReservedLAPHandle(handle)) {
+    return "reserved";
+  }
 
   const snapshot = await getDoc(doc(db, "handles", handle));
-  return !snapshot.exists() || snapshot.data().uid === currentUserId;
+  return snapshot.exists() && snapshot.data().uid !== currentUserId
+    ? "taken"
+    : "available";
 }
 
 export async function getExistingPublicProfile(user: User) {
@@ -146,6 +196,17 @@ export async function claimPublicHandle(user: User, value: string) {
   const validationError = validateHandle(handle);
   if (validationError) throw new Error(validationError);
 
+  const availability = await checkPublicHandleAvailability(handle, user.uid);
+  if (availability === "reserved") {
+    throw new Error("That handle is reserved for the L.A.P team.");
+  }
+  if (availability === "taken") {
+    throw new Error("That handle is already taken.");
+  }
+  if (availability === "maintenance") {
+    throw new Error("Handle setup is temporarily unavailable. Please try again soon.");
+  }
+
   const userRef = doc(db, "users", user.uid);
   const handleRef = doc(db, "handles", handle);
 
@@ -157,17 +218,12 @@ export async function claimPublicHandle(user: User, value: string) {
         : "";
     const handleSnapshot = await transaction.get(handleRef);
 
-    if (handleSnapshot.exists() && handleSnapshot.data().uid !== user.uid) {
-      throw new Error("That handle is already taken.");
+    if (currentHandle && currentHandle !== handle) {
+      throw new Error("Handles cannot be changed after account setup.");
     }
 
-    let previousHandleRef: ReturnType<typeof doc> | null = null;
-    let previousHandleOwned = false;
-    if (currentHandle && currentHandle !== handle) {
-      previousHandleRef = doc(db, "handles", currentHandle);
-      const previousHandleSnapshot = await transaction.get(previousHandleRef);
-      previousHandleOwned =
-        previousHandleSnapshot.exists() && previousHandleSnapshot.data().uid === user.uid;
+    if (handleSnapshot.exists() && handleSnapshot.data().uid !== user.uid) {
+      throw new Error("That handle is already taken.");
     }
 
     if (!handleSnapshot.exists()) {
@@ -175,9 +231,6 @@ export async function claimPublicHandle(user: User, value: string) {
         uid: user.uid,
         createdAt: serverTimestamp(),
       });
-    }
-    if (previousHandleRef && previousHandleOwned) {
-      transaction.delete(previousHandleRef);
     }
     if (!userSnapshot.exists()) {
       transaction.set(userRef, {
@@ -190,10 +243,7 @@ export async function claimPublicHandle(user: User, value: string) {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-    } else if (
-      currentHandle !== handle ||
-      userSnapshot.data().displayName !== handle
-    ) {
+    } else if (!currentHandle) {
       transaction.update(userRef, {
         handle,
         displayName: handle,
@@ -208,6 +258,7 @@ export async function claimPublicHandle(user: User, value: string) {
 export function PublicAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [isStaff, setIsStaff] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshProfile = useCallback(async () => {
@@ -227,8 +278,13 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
     return onAuthStateChanged(auth, async (nextUser) => {
       setUser(nextUser);
       if (nextUser) {
+        setIsStaff(false);
         try {
-          const existingProfile = await getExistingPublicProfile(nextUser);
+          const [existingProfile, staffSnapshot] = await Promise.all([
+            getExistingPublicProfile(nextUser),
+            getDoc(doc(db, "authors", nextUser.uid)),
+          ]);
+          setIsStaff(staffSnapshot.exists());
           setProfile(existingProfile ? await syncPublicUser(nextUser) : null);
         } catch (error) {
           console.error("Unable to sync public user profile:", error);
@@ -236,14 +292,15 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
         }
       } else {
         setProfile(null);
+        setIsStaff(false);
       }
       setIsLoading(false);
     });
   }, []);
 
   const value = useMemo(
-    () => ({ user, profile, isLoading, refreshProfile }),
-    [user, profile, isLoading, refreshProfile],
+    () => ({ user, profile, isStaff, isLoading, refreshProfile }),
+    [user, profile, isStaff, isLoading, refreshProfile],
   );
 
   return (

@@ -16,7 +16,7 @@ import {
 } from "react-icons/ri";
 
 import { useState, useEffect } from "react";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { SITE_NAME } from "@/lib/seo";
 import { usePublicAuth } from "@/lib/public-auth-context";
@@ -31,11 +31,17 @@ export default function Header() {
   useEffect(() => {
     (async () => {
       try {
-        const q = query(collection(db, "articles"), orderBy("date", "desc"));
+        const q = query(
+          collection(db, "articles"),
+          where("publish", "==", true),
+        );
         const snap = await getDocs(q);
-        const items = snap.docs
-          // only published
-          .filter((d) => (d.data() as any).publish === true)
+        const items = [...snap.docs]
+          .sort(
+            (a, b) =>
+              (b.get("date")?.toMillis?.() || 0) -
+              (a.get("date")?.toMillis?.() || 0),
+          )
           .map((d) => {
             const data = d.data() as any;
             return {
@@ -54,10 +60,10 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="flex flex-col justify-between max-w-[95rem] w-full mx-auto px-4 md:pt-8 pt-4 lg:pb-4 md:pb-4 sm:pb-2 xs:pb-2">
+    <header className="relative z-40 mx-auto flex w-full max-w-[95rem] flex-col justify-between px-4 pt-4 sm:pb-2 md:pb-4 md:pt-8 lg:pb-4">
       <div className="flex">
         {/* Logo */}
-        <div className="flex flex-1 z-50 relative">
+        <div className="flex flex-1">
           <Link
             href="/"
             aria-label={`${SITE_NAME} home`}
@@ -77,13 +83,15 @@ export default function Header() {
 
         {/* Mobile menu */}
         <Sheet>
-          <SheetTrigger aria-labelledby="button-label">
+          <SheetTrigger
+            aria-labelledby="button-label"
+            className="relative z-10 md:hidden"
+          >
             <span id="button-label" hidden>
               Menu
             </span>
             <svg
               aria-hidden="true"
-              className="md:hidden"
               width="25"
               height="16"
               viewBox="0 0 25 16"
@@ -173,7 +181,7 @@ export default function Header() {
 
         {/* Desktop nav */}
         <nav
-          className="hidden md:flex flex-1 items-center justify-end gap-6"
+          className="relative z-10 hidden flex-1 items-center justify-end gap-6 md:flex"
           aria-labelledby="desktop-nav"
         >
           {/* Search box */}

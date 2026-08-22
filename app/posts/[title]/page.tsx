@@ -256,16 +256,6 @@ export default async function ArticleDetails({
               <p className="font-semibold pr-2">Read:</p>
               <p>{article.read}</p>
             </span>
-            {article.video ? (
-              <a
-                href={article.video.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-2 border border-white rounded-full w-fit h-fit hover:bg-white hover:text-black transition"
-              >
-                Watch Source Video
-              </a>
-            ) : null}
           </div>
         </div>
       </article>
