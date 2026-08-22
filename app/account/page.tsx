@@ -28,6 +28,8 @@ import {
 import {
   RiArrowRightLine,
   RiDeleteBinLine,
+  RiEyeLine,
+  RiEyeOffLine,
   RiGoogleFill,
   RiImageAddLine,
   RiUser3Line,
@@ -102,6 +104,7 @@ function handleAvailabilityMessage(status: HandleAvailability) {
   }
 }
 
+
 export default function AccountPage() {
   const router = useRouter();
   const { user, profile, isStaff, isLoading, refreshProfile } = usePublicAuth();
@@ -109,6 +112,8 @@ export default function AccountPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [handle, setHandle] = useState("");
   const [pendingPhotoURL, setPendingPhotoURL] = useState("");
   const [message, setMessage] = useState("");
@@ -270,15 +275,33 @@ export default function AccountPage() {
   };
 
   const resetPassword = async () => {
-    if (!email.trim()) {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
       setError("Enter your email first, then choose reset password.");
       return;
     }
 
     setBusy(true);
     setError("");
+    setMessage("");
+
     try {
-      await sendPasswordResetEmail(auth, email.trim());
+      const checkEligibility = httpsCallable<
+        { email: string },
+        { allowed: boolean; isStaff: boolean; message?: string }
+      >(functions, "checkPasswordResetEligibility");
+
+      const result = await checkEligibility({ email: trimmedEmail });
+
+      if (!result.data.allowed || result.data.isStaff) {
+        setError(
+          result.data.message ||
+            "Contact admin or super admin to reset your password."
+        );
+        return;
+      }
+
+      await sendPasswordResetEmail(auth, trimmedEmail);
       setMessage("Check your inbox for a password reset link.");
     } catch (nextError) {
       setError(friendlyAuthError(nextError));
@@ -658,32 +681,60 @@ export default function AccountPage() {
               </div>
               <div>
                 <label htmlFor="password" className="text-sm font-medium uppercase tracking-[0.16em] text-white/55">Password</label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                  minLength={6}
-                  autoComplete={mode === "register" ? "new-password" : "current-password"}
-                  className={fieldClassName}
-                />
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                    minLength={6}
+                    autoComplete={mode === "register" ? "new-password" : "current-password"}
+                    className={`${fieldClassName} pr-10`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-white/50 transition-colors hover:text-white focus-visible:outline-none focus-visible:text-[#8a2ae3]"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <RiEyeOffLine className="text-xl" />
+                    ) : (
+                      <RiEyeLine className="text-xl" />
+                    )}
+                  </button>
+                </div>
               </div>
               {mode === "register" ? (
                 <div>
                   <label htmlFor="confirm-password" className="text-sm font-medium uppercase tracking-[0.16em] text-white/55">
                     Retype password
                   </label>
-                  <input
-                    id="confirm-password"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    required
-                    minLength={6}
-                    autoComplete="new-password"
-                    className={fieldClassName}
-                  />
+                  <div className="relative">
+                    <input
+                      id="confirm-password"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      required
+                      minLength={6}
+                      autoComplete="new-password"
+                      className={`${fieldClassName} pr-10`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-white/50 transition-colors hover:text-white focus-visible:outline-none focus-visible:text-[#8a2ae3]"
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    >
+                      {showConfirmPassword ? (
+                        <RiEyeOffLine className="text-xl" />
+                      ) : (
+                        <RiEyeLine className="text-xl" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               ) : null}
               <button

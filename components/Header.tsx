@@ -20,6 +20,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { SITE_NAME } from "@/lib/seo";
 import { usePublicAuth } from "@/lib/public-auth-context";
+import NotificationBell from "./NotificationBell";
 
 export default function Header() {
   const [allArticles, setAllArticles] = useState<SearchItem[]>([]);
@@ -120,23 +121,26 @@ export default function Header() {
                   {m.label}
                 </Link>
               ))}
-              <Link
-                href="/account"
-                aria-label={accountLabel}
-                className="inline-flex items-center justify-center text-2xl text-white transition-colors duration-300 hover:text-[#8a2ae3]"
-              >
-                {accountPhotoURL ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={accountPhotoURL}
-                    alt="Your profile picture"
-                    className="h-5 w-5 rounded-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <RiUser3Line aria-hidden="true" />
-                )}
-              </Link>
+              <div className="flex items-center gap-4">
+                <NotificationBell />
+                <Link
+                  href="/account"
+                  aria-label={accountLabel}
+                  className="inline-flex items-center justify-center text-2xl text-white transition-colors duration-300 hover:text-[#8a2ae3]"
+                >
+                  {accountPhotoURL ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={accountPhotoURL}
+                      alt="Your profile picture"
+                      className="h-5 w-5 rounded-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <RiUser3Line aria-hidden="true" />
+                  )}
+                </Link>
+              </div>
               <svg
                 width="15"
                 height="1"
@@ -196,6 +200,7 @@ export default function Header() {
               {m.label}
             </Link>
           ))}
+          <NotificationBell />
           <Link
             href="/account"
             aria-label={accountLabel}
