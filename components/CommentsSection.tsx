@@ -1133,29 +1133,27 @@ export default function CommentsSection({
     }
   };
 
-  // Auto-translate effect when enabled
+  // Language detection & translation pipeline
   useEffect(() => {
-    if (!autoTranslate) return;
-    const toTranslate: Array<{ id: string; content: string }> = [];
-
+    const toCheck: Array<{ id: string; content: string }> = [];
     comments.forEach((c) => {
       if (c.content?.trim() && !translations[c.id] && !translatingIds.has(c.id)) {
-        toTranslate.push({ id: c.id, content: c.content });
+        toCheck.push({ id: c.id, content: c.content });
       }
     });
 
     Object.values(replyThreads).forEach((thread) => {
       thread.replies.forEach((r) => {
         if (r.content?.trim() && !translations[r.id] && !translatingIds.has(r.id)) {
-          toTranslate.push({ id: r.id, content: r.content });
+          toCheck.push({ id: r.id, content: r.content });
         }
       });
     });
 
-    if (toTranslate.length === 0) return;
+    if (toCheck.length === 0) return;
 
     void Promise.all(
-      toTranslate.slice(0, 10).map(async ({ id, content }) => {
+      toCheck.slice(0, 15).map(async ({ id, content }) => {
         try {
           const res = await translateCommentText(content, targetLang);
           setTranslations((prev) => ({
@@ -1166,7 +1164,7 @@ export default function CommentsSection({
               sourceLangName: res.sourceLangName,
               isSameLanguage: res.isSameLanguage,
               isUnrecognizedLanguage: res.isUnrecognizedLanguage,
-              showingOriginal: false,
+              showingOriginal: !autoTranslate,
             },
           }));
         } catch {}
@@ -2018,7 +2016,9 @@ export default function CommentsSection({
                                 Retry
                               </button>
                             </div>
-                          ) : translations[comment.id] && !translations[comment.id].isSameLanguage ? (
+                          ) : translations[comment.id]?.isSameLanguage ? (
+                            null
+                          ) : translations[comment.id] ? (
                             <div className="inline-flex flex-wrap items-center gap-2 text-white/50">
                               <span>
                                 Translated from <strong className="text-[#8a2ae3]">{translations[comment.id].sourceLangName}</strong>
@@ -2462,7 +2462,9 @@ export default function CommentsSection({
                                             Retry
                                           </button>
                                         </div>
-                                      ) : translations[reply.id] && !translations[reply.id].isSameLanguage ? (
+                                      ) : translations[reply.id]?.isSameLanguage ? (
+                                        null
+                                      ) : translations[reply.id] ? (
                                         <div className="inline-flex flex-wrap items-center gap-1.5 text-white/50">
                                           <span>
                                             Translated from <strong className="text-[#8a2ae3]">{translations[reply.id].sourceLangName}</strong>

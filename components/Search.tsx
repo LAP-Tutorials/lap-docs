@@ -70,17 +70,8 @@ export default function Search({
           {suggestions.map((article) => (
             <li
               key={article.id}
-              className="flex items-center gap-2 px-3 py-2 hover:bg-[#8a2ae350] transition"
+              className="hover:bg-[#8a2ae350] transition"
             >
-              <img
-                src={article.img}
-                alt={article.imgAlt}
-                className="w-14 h-10 object-cover"
-                width={56}
-                height={40}
-                loading="lazy"
-                decoding="async"
-              />
               <Link
                 href={`/posts/${article.slug}`}
                 onClick={() => {
@@ -89,9 +80,20 @@ export default function Search({
                     onSearchSelect();
                   }
                 }}
-                className="truncate text-white"
+                className="flex items-center gap-2.5 px-3 py-2 w-full text-white cursor-pointer"
               >
-                {article.title}
+                <img
+                  src={article.img}
+                  alt={article.imgAlt}
+                  className="w-14 h-10 object-cover shrink-0"
+                  width={56}
+                  height={40}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span className="truncate text-white">
+                  {article.title}
+                </span>
               </Link>
             </li>
           ))}
