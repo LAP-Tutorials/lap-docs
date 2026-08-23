@@ -43,6 +43,7 @@ export default function Authors({ initialAuthors }: AuthorsProps) {
               width={150}
               height={150}
               sizes="150px"
+              unoptimized={Boolean(author.avatar?.startsWith("http"))}
             />
           </Link>
           <article>

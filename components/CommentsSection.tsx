@@ -226,7 +226,7 @@ const STAFF_PRESENTATION: Record<
     nameClassName: "text-[#8a2ae3]",
     handleClassName: "text-[#8a2ae3]/70",
   },
-  manager: {
+  author: {
     label: "Author",
     nameClassName: "text-[#f3c969]",
     handleClassName: "text-[#f3c969]/70",
@@ -995,7 +995,7 @@ export default function CommentsSection({
           const data = authorDoc.data();
           if (
             typeof data.name === "string" &&
-            ["super", "admin", "manager", "moderator"].includes(data.role)
+            ["super", "admin", "author", "moderator"].includes(data.role)
           ) {
             nextProfiles[authorDoc.id] = {
               name: data.name,

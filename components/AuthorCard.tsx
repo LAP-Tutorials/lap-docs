@@ -50,6 +50,7 @@ function AuthorCard({ authorData }) {
             alt={authorData.imgAlt}
             width={150}
             height={150}
+            unoptimized={Boolean(authorData.avatar?.startsWith("http"))}
           />
         </div>
         <div className="content-container text-center md:text-left">

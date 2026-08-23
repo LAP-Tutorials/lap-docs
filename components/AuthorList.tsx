@@ -26,7 +26,6 @@ export default function AuthorsList({ initialAuthors }: AuthorsListProps) {
         <div key={author.uid}>
           <article className="flex flex-col md:flex-row justify-between md:items-center gap-4 ml-5">
             <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-16">
-              {/* Ensure image has a transparent background */}
               <Link href={`/team/${author.slug}`}>
                 <Image
                   className="h-[9.375rem] w-[9.375rem] object-cover rounded-full bg-transparent"
@@ -34,6 +33,7 @@ export default function AuthorsList({ initialAuthors }: AuthorsListProps) {
                   alt={author.imgAlt}
                   width={150}
                   height={150}
+                  unoptimized={Boolean(author.avatar?.startsWith("http"))}
                 />
               </Link>
               <Link href={`/team/${author.slug}`}>

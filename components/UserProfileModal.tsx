@@ -26,7 +26,7 @@ import {
 } from "react-icons/ri";
 import { db } from "@/lib/firebase";
 
-export type StaffRole = "super" | "admin" | "manager" | "moderator";
+export type StaffRole = "super" | "admin" | "author" | "moderator";
 
 export type StaffProfile = {
   name: string;
@@ -74,7 +74,7 @@ const ROLE_DISPLAY: Record<
     label: "Admin",
     badgeClass: "border-[#8a2ae3]/50 text-[#c084fc] bg-[#8a2ae3]/15",
   },
-  manager: {
+  author: {
     label: "Author",
     badgeClass: "border-[#f3c969]/50 text-[#f3c969] bg-[#f3c969]/15",
   },

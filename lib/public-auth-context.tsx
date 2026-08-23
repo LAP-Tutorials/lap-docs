@@ -28,7 +28,7 @@ export type PublicProfile = {
   handle: string;
 };
 
-export type StaffRole = "super" | "admin" | "manager" | "moderator";
+export type StaffRole = "super" | "admin" | "author" | "moderator";
 
 type PublicAuthContextValue = {
   user: User | null;
