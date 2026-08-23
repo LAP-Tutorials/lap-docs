@@ -28,10 +28,14 @@ export type PublicProfile = {
   handle: string;
 };
 
+export type StaffRole = "super" | "admin" | "manager" | "moderator";
+
 type PublicAuthContextValue = {
   user: User | null;
   profile: PublicProfile | null;
   isStaff: boolean;
+  staffRole: StaffRole | null;
+  isAdmin: boolean;
   isLoading: boolean;
   refreshProfile: () => Promise<PublicProfile | null>;
 };
@@ -263,6 +267,8 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [isStaff, setIsStaff] = useState(false);
+  const [staffRole, setStaffRole] = useState<StaffRole | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshProfile = useCallback(async () => {
@@ -283,12 +289,20 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
       setUser(nextUser);
       if (nextUser) {
         setIsStaff(false);
+        setStaffRole(null);
+        setIsAdmin(false);
         try {
           const [existingProfile, staffSnapshot] = await Promise.all([
             getExistingPublicProfile(nextUser),
             getDoc(doc(db, "authors", nextUser.uid)),
           ]);
-          setIsStaff(staffSnapshot.exists());
+          const hasStaffDoc = staffSnapshot.exists();
+          setIsStaff(hasStaffDoc);
+          if (hasStaffDoc) {
+            const role = (staffSnapshot.data()?.role as StaffRole) || null;
+            setStaffRole(role);
+            setIsAdmin(role === "admin" || role === "super");
+          }
           setProfile(existingProfile ? await syncPublicUser(nextUser) : null);
         } catch (error) {
           console.error("Unable to sync public user profile:", error);
@@ -297,14 +311,16 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfile(null);
         setIsStaff(false);
+        setStaffRole(null);
+        setIsAdmin(false);
       }
       setIsLoading(false);
     });
   }, []);
 
   const value = useMemo(
-    () => ({ user, profile, isStaff, isLoading, refreshProfile }),
-    [user, profile, isStaff, isLoading, refreshProfile],
+    () => ({ user, profile, isStaff, staffRole, isAdmin, isLoading, refreshProfile }),
+    [user, profile, isStaff, staffRole, isAdmin, isLoading, refreshProfile],
   );
 
   return (

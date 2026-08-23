@@ -32,11 +32,12 @@ import {
   type Timestamp,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
-import { ThumbsDown, ThumbsUp } from "lucide-react";
+import { Pin, ThumbsDown, ThumbsUp } from "lucide-react";
 import { db, functions } from "@/lib/firebase";
 import { usePublicAuth } from "@/lib/public-auth-context";
 import { RiArrowRightLine } from "react-icons/ri";
 import MentionTextarea from "@/components/MentionTextarea";
+import UserProfileModal, { type StaffProfile, type StaffRole } from "@/components/UserProfileModal";
 
 type CommentRecord = {
   id: string;
@@ -52,6 +53,9 @@ type CommentRecord = {
   likeCount?: number;
   dislikeCount?: number;
   replyCount?: number;
+  pinned?: boolean;
+  pinnedAt?: Timestamp;
+  pinnedBy?: string;
 };
 
 type ReplyRecord = {
@@ -83,17 +87,53 @@ type CommentsSectionProps = {
   articleTitle: string;
 };
 
-type StaffRole = "super" | "admin" | "manager" | "moderator";
-
-type StaffProfile = {
-  name: string;
-  avatar: string;
-  role: StaffRole;
-};
-
 const MAX_COMMENT_LENGTH = 2000;
 const COMMENTS_PAGE_SIZE = 15;
 const REPLIES_PAGE_SIZE = 5;
+
+function sortCommentsWithPriority(
+  commentsList: CommentRecord[],
+  staffMap: Record<string, StaffProfile>,
+  sortMode: CommentSort,
+): CommentRecord[] {
+  const pinned = commentsList.filter((c) => c.pinned);
+  const nonPinned = commentsList.filter((c) => !c.pinned);
+  const staffComments = nonPinned.filter((c) => Boolean(staffMap[c.authorId]));
+  const regularComments = nonPinned.filter((c) => !staffMap[c.authorId]);
+
+  const sortFn = (a: CommentRecord, b: CommentRecord) => {
+    if (sortMode === "liked") {
+      const likeDiff = (b.likeCount || 0) - (a.likeCount || 0);
+      if (likeDiff !== 0) return likeDiff;
+      return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
+    }
+    if (sortMode === "oldest") {
+      return (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0);
+    }
+    return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
+  };
+
+  staffComments.sort(sortFn);
+  regularComments.sort(sortFn);
+
+  return [...pinned, ...staffComments, ...regularComments];
+}
+
+function sortRepliesWithPriority(
+  repliesList: ReplyRecord[],
+  staffMap: Record<string, StaffProfile>,
+): ReplyRecord[] {
+  const staffReplies = repliesList.filter((r) => Boolean(staffMap[r.authorId]));
+  const regularReplies = repliesList.filter((r) => !staffMap[r.authorId]);
+
+  const sortFn = (a: ReplyRecord, b: ReplyRecord) =>
+    (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0);
+
+  staffReplies.sort(sortFn);
+  regularReplies.sort(sortFn);
+
+  return [...staffReplies, ...regularReplies];
+}
 
 function ReaderAvatar({
   name,
@@ -230,12 +270,13 @@ export default function CommentsSection({
   articleSlug,
   articleTitle,
 }: CommentsSectionProps) {
-  const { user, profile, isStaff, isLoading: authLoading } = usePublicAuth();
+  const { user, profile, isStaff, isAdmin, isLoading: authLoading } = usePublicAuth();
   const [comments, setComments] = useState<CommentRecord[]>([]);
   const [content, setContent] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [pinBusyId, setPinBusyId] = useState<string | null>(null);
   const [reactionBusyId, setReactionBusyId] = useState<string | null>(null);
   const [sort, setSort] = useState<CommentSort>("recent");
   const [reactions, setReactions] = useState<Record<string, CommentReaction>>(
@@ -260,6 +301,31 @@ export default function CommentsSection({
   const [staffProfiles, setStaffProfiles] = useState<Record<string, StaffProfile>>(
     {},
   );
+  const [selectedUserModal, setSelectedUserModal] = useState<{
+    userId: string;
+    initialData?: {
+      name?: string;
+      handle?: string;
+      photoURL?: string;
+    };
+    staffProfile?: StaffProfile;
+  } | null>(null);
+
+  const openProfileModal = (
+    userId: string,
+    initialData?: { name?: string; handle?: string; photoURL?: string },
+    staff?: StaffProfile,
+  ) => {
+    setSelectedUserModal({
+      userId,
+      initialData,
+      staffProfile: staff,
+    });
+  };
+
+  const closeProfileModal = () => {
+    setSelectedUserModal(null);
+  };
   const commentCursor = useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
   const pageIndexRef = useRef(0);
   const commentPages = useRef<
@@ -297,6 +363,29 @@ export default function CommentsSection({
           countsReady.current = true;
         }
 
+        let pinnedDoc: CommentRecord | null = null;
+        if (reset) {
+          try {
+            const pinnedSnap = await getDocs(
+              query(
+                collection(db, "comments"),
+                where("articleId", "==", articleId),
+                where("status", "==", "visible"),
+                where("pinned", "==", true),
+                limit(1)
+              )
+            );
+            if (!pinnedSnap.empty) {
+              pinnedDoc = {
+                id: pinnedSnap.docs[0].id,
+                ...pinnedSnap.docs[0].data(),
+              } as CommentRecord;
+            }
+          } catch (err) {
+            console.warn("Unable to load pinned comment:", err);
+          }
+        }
+
         const constraints: QueryConstraint[] = [
           where("articleId", "==", articleId),
           where("status", "==", "visible"),
@@ -313,16 +402,24 @@ export default function CommentsSection({
 
         const snapshot = await getDocs(query(collection(db, "comments"), ...constraints));
         if (requestId !== requestSequence.current) return;
-        const pageDocs = snapshot.docs.slice(0, COMMENTS_PAGE_SIZE);
-        const page = pageDocs.map((snapshotDoc) => ({
+
+        const rawDocs = snapshot.docs;
+        const filteredDocs = pinnedDoc
+          ? rawDocs.filter((d) => d.id !== pinnedDoc!.id)
+          : rawDocs;
+        const pageDocs = filteredDocs.slice(0, COMMENTS_PAGE_SIZE);
+        const mappedComments = pageDocs.map((snapshotDoc) => ({
           id: snapshotDoc.id,
           ...snapshotDoc.data(),
         })) as CommentRecord[];
-        commentCursor.current = pageDocs.at(-1) || null;
+
+        const page = reset && pinnedDoc ? [pinnedDoc, ...mappedComments] : mappedComments;
+
+        commentCursor.current = filteredDocs.length > 0 ? pageDocs.at(-1) || null : null;
         const nextPage = {
           comments: page,
           cursor: commentCursor.current,
-          hasMore: snapshot.docs.length > COMMENTS_PAGE_SIZE,
+          hasMore: filteredDocs.length > COMMENTS_PAGE_SIZE,
         };
         if (reset) {
           commentPages.current = [nextPage];
@@ -810,6 +907,60 @@ export default function CommentsSection({
     }
   };
 
+  const handleTogglePin = async (comment: CommentRecord) => {
+    if (!user || !isAdmin || pinBusyId) return;
+    const newPinned = !comment.pinned;
+    setPinBusyId(comment.id);
+    setError("");
+    try {
+      try {
+        const togglePin = httpsCallable<{ commentId: string; pinned: boolean }>(
+          functions,
+          "togglePinComment"
+        );
+        await togglePin({ commentId: comment.id, pinned: newPinned });
+      } catch (fnErr) {
+        // Fallback to direct Firestore update
+        const batch = writeBatch(db);
+        if (newPinned) {
+          comments.forEach((c) => {
+            if (c.pinned && c.id !== comment.id) {
+              batch.update(doc(db, "comments", c.id), {
+                pinned: false,
+                pinnedAt: null,
+                pinnedBy: null,
+              });
+            }
+          });
+          batch.update(doc(db, "comments", comment.id), {
+            pinned: true,
+            pinnedAt: serverTimestamp(),
+            pinnedBy: user.uid,
+          });
+        } else {
+          batch.update(doc(db, "comments", comment.id), {
+            pinned: false,
+            pinnedAt: null,
+            pinnedBy: null,
+          });
+        }
+        await batch.commit();
+      }
+
+      void loadComments(true);
+    } catch (pinError: any) {
+      console.error("Unable to toggle pinned comment:", pinError);
+      setError(pinError?.message || "Could not update pinned comment.");
+    } finally {
+      setPinBusyId(null);
+    }
+  };
+
+  const displayComments = useMemo(
+    () => sortCommentsWithPriority(comments, staffProfiles, sort),
+    [comments, staffProfiles, sort],
+  );
+
   return (
     <section
       id="comments"
@@ -863,30 +1014,30 @@ export default function CommentsSection({
       ) : null}
 
       {!authLoading && !user ? (
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/30 py-6">
-          <p className="text-white/60">Sign in to leave a comment.</p>
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/30 py-7">
+          <p className="font-light text-white/70">
+            Sign in to join the conversation and mention other readers.
+          </p>
           <Link
             href="/account"
             className="group inline-flex items-center gap-3 font-semibold uppercase transition-colors duration-300 hover:text-[#8a2ae3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3]"
           >
-            Sign in
+            Sign in to comment
             <RiArrowRightLine className="text-2xl transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
         </div>
       ) : null}
 
       {!authLoading && user && !profile?.handle ? (
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/30 py-6">
-          <p className="text-white/60">
-            {isStaff
-              ? "Finish your CMS team profile before commenting."
-              : "Choose a handle before commenting."}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/30 py-7">
+          <p className="font-light text-white/70">
+            Choose your comment handle to participate in discussions.
           </p>
           <Link
             href="/account"
             className="group inline-flex items-center gap-3 font-semibold uppercase transition-colors duration-300 hover:text-[#8a2ae3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3]"
           >
-            {isStaff ? "Open account" : "Set your handle"}
+            Claim your handle
             <RiArrowRightLine className="text-2xl transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
         </div>
@@ -895,7 +1046,7 @@ export default function CommentsSection({
       {user && profile?.handle ? (
         <form
           onSubmit={submitComment}
-          className="flex gap-4 border-b border-white/30 py-6"
+          className="flex gap-4 border-b border-white/30 py-7"
         >
           <ReaderAvatar
             name={authorName}
@@ -972,14 +1123,14 @@ export default function CommentsSection({
         </div>
       ) : null}
 
-      {!loading && !error && comments.length === 0 ? (
+      {!loading && !error && displayComments.length === 0 ? (
         <p className="border-b border-white/30 py-8 text-white/50">
           No comments yet.
         </p>
       ) : null}
 
       <div>
-        {comments.map((comment) => {
+        {displayComments.map((comment) => {
           const isOwner = user?.uid === comment.authorId;
           const isDeletedAuthor = comment.authorId === "deleted-user";
           const isEditing = editingId === comment.id;
@@ -992,31 +1143,75 @@ export default function CommentsSection({
           return (
             <article
               key={comment.id}
-              className="flex gap-4 border-b border-white/30 py-7"
+              className={`flex gap-4 border-b border-white/30 py-7 transition-colors duration-200 ${
+                comment.pinned
+                  ? "-mx-3 sm:-mx-5 rounded-sm border-l-2 border-l-[#8a2ae3] bg-[#8a2ae3]/[0.04] px-3 sm:px-5"
+                  : ""
+              }`}
             >
-              <ReaderAvatar
-                name={isDeletedAuthor ? "Deleted user" : staffProfile?.name || comment.authorName}
-                photoURL={
-                  isDeletedAuthor
-                    ? "/logos/LAP-Logo-Color.png"
-                    : staffProfile?.avatar || comment.authorPhotoURL
+              <button
+                type="button"
+                onClick={() =>
+                  openProfileModal(
+                    comment.authorId,
+                    {
+                      name: comment.authorName,
+                      handle: commentHandle,
+                      photoURL: comment.authorPhotoURL,
+                    },
+                    staffProfile,
+                  )
                 }
-                className="h-10 w-10"
-              />
+                className="flex shrink-0 cursor-pointer transition-transform hover:scale-105 focus:outline-none"
+                title={`View ${isDeletedAuthor ? "user" : commentHandle}'s profile`}
+              >
+                <ReaderAvatar
+                  name={isDeletedAuthor ? "Deleted user" : staffProfile?.name || comment.authorName}
+                  photoURL={
+                    isDeletedAuthor
+                      ? "/logos/LAP-Logo-Color.png"
+                      : staffProfile?.avatar || comment.authorPhotoURL
+                  }
+                  className="h-10 w-10"
+                />
+              </button>
               <div className="min-w-0 flex-1">
+                {comment.pinned ? (
+                  <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#8a2ae3]">
+                    <Pin className="h-3.5 w-3.5 fill-current" />
+                    <span>Pinned by Admin</span>
+                  </div>
+                ) : null}
                 <header className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    {isDeletedAuthor ? (
-                      <h3 className="break-words text-sm font-semibold uppercase text-white/55">
-                        Deleted user
-                      </h3>
-                    ) : staffProfile ? (
-                      <StaffIdentity staff={staffProfile} handle={commentHandle} />
-                    ) : (
-                      <h3 className="break-words text-sm font-semibold uppercase">
-                        @{commentHandle}
-                      </h3>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openProfileModal(
+                          comment.authorId,
+                          {
+                            name: comment.authorName,
+                            handle: commentHandle,
+                            photoURL: comment.authorPhotoURL,
+                          },
+                          staffProfile,
+                        )
+                      }
+                      className="cursor-pointer text-left transition-colors hover:text-[#8a2ae3] focus:outline-none"
+                      title={`View ${isDeletedAuthor ? "user" : commentHandle}'s profile`}
+                    >
+                      {isDeletedAuthor ? (
+                        <h3 className="break-words text-sm font-semibold uppercase text-white/55">
+                          Deleted user
+                        </h3>
+                      ) : staffProfile ? (
+                        <StaffIdentity staff={staffProfile} handle={commentHandle} />
+                      ) : (
+                        <h3 className="break-words text-sm font-semibold uppercase">
+                          @{commentHandle}
+                        </h3>
+                      )}
+                    </button>
                     <p className="mt-1 font-mono text-xs tabular-nums text-white/40">
                       {date
                         ? date.toLocaleDateString(undefined, {
@@ -1028,28 +1223,46 @@ export default function CommentsSection({
                       {comment.edited ? " (edited)" : ""}
                     </p>
                   </div>
-                  {isOwner ? (
-                    <div className="flex gap-4 text-xs font-medium uppercase">
+                  <div className="flex items-center gap-4 text-xs font-medium uppercase">
+                    {isAdmin ? (
                       <button
                         type="button"
-                        onClick={() => {
-                          setEditingId(comment.id);
-                          setEditingContent(comment.content);
-                        }}
-                        className="border-b border-white/40 pb-1 transition-colors duration-300 hover:border-[#8a2ae3] hover:text-[#8a2ae3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3]"
+                        onClick={() => handleTogglePin(comment)}
+                        disabled={pinBusyId === comment.id}
+                        className={`inline-flex items-center gap-1 border-b pb-1 transition-colors duration-300 ${
+                          comment.pinned
+                            ? "border-[#8a2ae3] text-[#8a2ae3] hover:border-white hover:text-white"
+                            : "border-white/40 text-white/60 hover:border-[#8a2ae3] hover:text-[#8a2ae3]"
+                        } disabled:opacity-40`}
+                        title={comment.pinned ? "Unpin comment" : "Pin comment to top"}
                       >
-                        Edit
+                        <Pin className={`h-3 w-3 ${comment.pinned ? "fill-current" : ""}`} />
+                        {comment.pinned ? "Unpin" : "Pin"}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => removeComment(comment.id)}
-                        disabled={busyId === comment.id}
-                        className="border-b border-white/40 pb-1 text-white/60 transition-colors duration-300 hover:border-red-400 hover:text-red-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-red-400 disabled:opacity-40"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  ) : null}
+                    ) : null}
+                    {isOwner ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingId(comment.id);
+                            setEditingContent(comment.content);
+                          }}
+                          className="border-b border-white/40 pb-1 transition-colors duration-300 hover:border-[#8a2ae3] hover:text-[#8a2ae3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3]"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeComment(comment.id)}
+                          disabled={busyId === comment.id}
+                          className="border-b border-white/40 pb-1 text-white/60 transition-colors duration-300 hover:border-red-400 hover:text-red-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-red-400 disabled:opacity-40"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
                 </header>
 
                 {isEditing ? (
@@ -1236,7 +1449,10 @@ export default function CommentsSection({
                     !replyThreads[comment.id]?.replies.length ? (
                       <p className="py-4 text-sm text-white/40">No replies yet.</p>
                     ) : null}
-                    {replyThreads[comment.id]?.replies.map((reply) => {
+                    {sortRepliesWithPriority(
+                      replyThreads[comment.id]?.replies || [],
+                      staffProfiles,
+                    ).map((reply) => {
                       const replyStaff = staffProfiles[reply.authorId];
                       const replyHandle =
                         reply.authorHandle ||
@@ -1253,36 +1469,70 @@ export default function CommentsSection({
                           key={reply.id}
                           className="flex gap-3 border-b border-white/15 py-5 last:border-b-0"
                         >
-                          <ReaderAvatar
-                            name={
-                              isDeletedReplyAuthor
-                                ? "Deleted user"
-                                : replyStaff?.name || reply.authorName
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openProfileModal(
+                                reply.authorId,
+                                {
+                                  name: reply.authorName,
+                                  handle: replyHandle,
+                                  photoURL: reply.authorPhotoURL,
+                                },
+                                replyStaff,
+                              )
                             }
-                            photoURL={
-                              isDeletedReplyAuthor
-                                ? "/logos/LAP-Logo-Color.png"
-                                : replyStaff?.avatar || reply.authorPhotoURL
-                            }
-                            className="h-8 w-8"
-                          />
+                            className="flex shrink-0 cursor-pointer transition-transform hover:scale-105 focus:outline-none"
+                            title={`View ${isDeletedReplyAuthor ? "user" : replyHandle}'s profile`}
+                          >
+                            <ReaderAvatar
+                              name={
+                                isDeletedReplyAuthor
+                                  ? "Deleted user"
+                                  : replyStaff?.name || reply.authorName
+                              }
+                              photoURL={
+                                isDeletedReplyAuthor
+                                  ? "/logos/LAP-Logo-Color.png"
+                                  : replyStaff?.avatar || reply.authorPhotoURL
+                              }
+                              className="h-8 w-8"
+                            />
+                          </button>
                           <div className="min-w-0 flex-1">
                             <header className="flex flex-wrap items-start justify-between gap-3">
                               <div>
-                                {isDeletedReplyAuthor ? (
-                                  <h4 className="text-xs font-semibold uppercase text-white/55">
-                                    Deleted user
-                                  </h4>
-                                ) : replyStaff ? (
-                                  <StaffIdentity
-                                    staff={replyStaff}
-                                    handle={replyHandle}
-                                  />
-                                ) : (
-                                  <h4 className="text-xs font-semibold uppercase">
-                                    @{replyHandle}
-                                  </h4>
-                                )}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    openProfileModal(
+                                      reply.authorId,
+                                      {
+                                        name: reply.authorName,
+                                        handle: replyHandle,
+                                        photoURL: reply.authorPhotoURL,
+                                      },
+                                      replyStaff,
+                                    )
+                                  }
+                                  className="cursor-pointer text-left transition-colors hover:text-[#8a2ae3] focus:outline-none"
+                                  title={`View ${isDeletedReplyAuthor ? "user" : replyHandle}'s profile`}
+                                >
+                                  {isDeletedReplyAuthor ? (
+                                    <h4 className="text-xs font-semibold uppercase text-white/55">
+                                      Deleted user
+                                    </h4>
+                                  ) : replyStaff ? (
+                                    <StaffIdentity
+                                      staff={replyStaff}
+                                      handle={replyHandle}
+                                    />
+                                  ) : (
+                                    <h4 className="text-xs font-semibold uppercase">
+                                      @{replyHandle}
+                                    </h4>
+                                  )}
+                                </button>
                                 <p className="mt-1 font-mono text-[10px] text-white/35">
                                   {replyDate
                                     ? replyDate.toLocaleDateString(undefined, {
@@ -1404,6 +1654,14 @@ export default function CommentsSection({
           </button>
         </nav>
       ) : null}
+
+      <UserProfileModal
+        isOpen={Boolean(selectedUserModal)}
+        userId={selectedUserModal?.userId || null}
+        initialData={selectedUserModal?.initialData}
+        staffProfile={selectedUserModal?.staffProfile}
+        onClose={closeProfileModal}
+      />
     </section>
   );
 }

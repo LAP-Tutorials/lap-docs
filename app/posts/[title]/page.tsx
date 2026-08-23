@@ -18,6 +18,7 @@ import {
 } from "@/lib/seo";
 import { removeYouTubeIframe } from "@/lib/video";
 import CommentsSection from "@/components/CommentsSection";
+import ScrollToTop from "@/components/ScrollToTop";
 
 type RouteParams = {
   title: string;
@@ -353,6 +354,8 @@ export default async function ArticleDetails({
           ))}
         </div>
       </div>
+
+      <ScrollToTop />
     </main>
   );
 }
