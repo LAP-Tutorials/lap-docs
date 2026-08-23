@@ -16,6 +16,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getCountFromServer,
   getDocs,
   limit,
   onSnapshot,
@@ -31,13 +32,44 @@ import {
   type QueryDocumentSnapshot,
   type Timestamp,
 } from "firebase/firestore";
+import { createPortal } from "react-dom";
 import { httpsCallable } from "firebase/functions";
-import { Pin, ThumbsDown, ThumbsUp } from "lucide-react";
-import { db, functions } from "@/lib/firebase";
+import { Pin, ThumbsDown, ThumbsUp, Image as ImageIcon, X as CloseIcon, ZoomIn, Loader2, ChevronLeft, ChevronRight, Globe, Languages, Pencil, Trash2 } from "lucide-react";
+import { db, functions, storage } from "@/lib/firebase";
 import { usePublicAuth } from "@/lib/public-auth-context";
-import { RiArrowRightLine } from "react-icons/ri";
+import {
+  RiArrowRightLine,
+  RiImageAddLine,
+  RiCloseLine,
+  RiZoomInLine,
+  RiTranslate2,
+  RiGlobalLine,
+  RiArrowLeftSLine,
+  RiArrowRightSLine,
+  RiArrowDownSLine,
+  RiCheckLine,
+} from "react-icons/ri";
 import MentionTextarea from "@/components/MentionTextarea";
 import UserProfileModal, { type StaffProfile, type StaffRole } from "@/components/UserProfileModal";
+import {
+  sanitizeAndCompressImage,
+  uploadSanitizedCommentImage,
+  uploadMultipleSanitizedImages,
+  deleteCommentImageSafe,
+  deleteMultipleCommentImagesSafe,
+  type SanitizedImageResult,
+  type CommentImageAttachment,
+} from "@/lib/image-sanitizer";
+import {
+  SUPPORTED_LANGUAGES,
+  getDefaultTargetLanguage,
+  setSavedTargetLanguage,
+  getAutoTranslatePreference,
+  setAutoTranslatePreference,
+  translateCommentText,
+  getLanguageName,
+  type TranslationResult,
+} from "@/lib/translator";
 
 type CommentRecord = {
   id: string;
@@ -47,6 +79,11 @@ type CommentRecord = {
   authorHandle?: string;
   authorPhotoURL: string;
   content: string;
+  imageUrl?: string;
+  imageStoragePath?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  images?: CommentImageAttachment[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
   edited: boolean;
@@ -61,11 +98,19 @@ type CommentRecord = {
 type ReplyRecord = {
   id: string;
   parentCommentId: string;
+  articleId?: string;
+  articleSlug?: string;
+  articleTitle?: string;
   authorId: string;
   authorName: string;
   authorHandle?: string;
   authorPhotoURL: string;
   content: string;
+  imageUrl?: string;
+  imageStoragePath?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  images?: CommentImageAttachment[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
   edited: boolean;
@@ -265,6 +310,288 @@ function MentionText({ content }: { content: string }) {
   return <>{nodes}</>;
 }
 
+function getEntryImages(item: {
+  images?: CommentImageAttachment[];
+  imageUrl?: string;
+  imageStoragePath?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+}): CommentImageAttachment[] {
+  if (Array.isArray(item.images) && item.images.length > 0) {
+    return item.images;
+  }
+  if (item.imageUrl) {
+    return [
+      {
+        url: item.imageUrl,
+        storagePath: item.imageStoragePath || "",
+        width: item.imageWidth,
+        height: item.imageHeight,
+        alt: "Attachment",
+      },
+    ];
+  }
+  return [];
+}
+
+function LanguageDropdown({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (code: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [open]);
+
+  const selectedLang =
+    SUPPORTED_LANGUAGES.find((l) => l.code === value) || SUPPORTED_LANGUAGES[0];
+
+  return (
+    <div ref={dropdownRef} className="relative inline-block text-left">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="inline-flex items-center gap-1.5 font-mono text-xs text-white transition-colors hover:text-[#8a2ae3] focus:outline-none"
+        title="Choose target language"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <RiGlobalLine className="text-sm text-[#8a2ae3] shrink-0" />
+        <span>{selectedLang.name}</span>
+        <RiArrowDownSLine
+          className={`text-xs transition-transform duration-200 ${
+            open ? "rotate-180 text-[#8a2ae3]" : "text-white/40"
+          }`}
+        />
+      </button>
+
+      {open ? (
+        <div
+          role="listbox"
+          className="absolute left-0 top-full z-50 mt-2 max-h-64 w-52 overflow-y-auto border border-white/20 bg-[#141414] py-1 shadow-2xl backdrop-blur-md focus:outline-none"
+        >
+          {SUPPORTED_LANGUAGES.map((l) => {
+            const isSelected = l.code === value;
+            return (
+              <button
+                key={l.code}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                onClick={() => {
+                  onChange(l.code);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center justify-between px-3 py-1.5 text-left font-mono text-xs transition-colors ${
+                  isSelected
+                    ? "bg-[#8a2ae3] font-medium text-white"
+                    : "text-white/80 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                <span>{l.name}</span>
+                {l.nativeName && l.nativeName !== l.name ? (
+                  <span
+                    className={`text-[10px] ${
+                      isSelected ? "text-white/70" : "text-white/40"
+                    }`}
+                  >
+                    {l.nativeName}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ImageAttachmentPreviews({
+  images,
+  onRemove,
+  maxCount = 4,
+}: {
+  images: SanitizedImageResult[];
+  onRemove: (index: number) => void;
+  maxCount?: number;
+}) {
+  if (images.length === 0) return null;
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2.5">
+      {images.map((img, idx) => (
+        <div
+          key={`${img.fileName}-${idx}`}
+          className="group relative flex items-center gap-2.5 border border-white/20 bg-white/[0.04] p-1.5 pr-2.5 text-xs font-mono"
+        >
+          <img
+            src={img.previewUrl}
+            alt={img.fileName}
+            className="h-12 w-12 border border-white/15 object-cover"
+          />
+          <div className="min-w-0 max-w-[120px] sm:max-w-[160px]">
+            <p className="truncate text-xs text-white/90">{img.fileName}</p>
+            <p className="text-[10px] text-white/40">
+              {(img.sizeBytes / 1024).toFixed(0)} KB · WebP
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onRemove(idx)}
+            className="ml-1 flex h-5 w-5 items-center justify-center border border-white/20 text-white/70 transition-colors hover:bg-white hover:text-black"
+            title="Remove image"
+          >
+            <RiCloseLine className="text-xs" />
+          </button>
+        </div>
+      ))}
+      <span className="font-mono text-[11px] text-white/40">
+        {images.length}/{maxCount} {images.length === 1 ? "image" : "images"}
+      </span>
+    </div>
+  );
+}
+
+function CommentImagesGrid({
+  images,
+  author,
+  onOpenLightbox,
+}: {
+  images: CommentImageAttachment[];
+  author: string;
+  onOpenLightbox: (images: CommentImageAttachment[], index: number, author: string) => void;
+}) {
+  if (!images || images.length === 0) return null;
+  const count = images.length;
+
+  if (count === 1) {
+    return (
+      <div className="mt-3.5 max-w-lg">
+        <button
+          type="button"
+          onClick={() => onOpenLightbox(images, 0, author)}
+          className="group relative block overflow-hidden border border-white/20 bg-black/40 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8a2ae3]"
+          title="Click to view full size"
+        >
+          <img
+            src={images[0].url}
+            alt={images[0].alt || "Comment image attachment"}
+            loading="lazy"
+            decoding="async"
+            className="max-h-80 w-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
+          />
+          <div className="pointer-events-none absolute inset-0 flex items-end justify-end bg-black/30 p-2 opacity-0 transition-opacity group-hover:opacity-100">
+            <span className="flex items-center gap-1.5 border border-white/20 bg-black/85 px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-white">
+              <RiZoomInLine className="text-sm text-[#8a2ae3]" />
+              <span>Expand</span>
+            </span>
+          </div>
+        </button>
+      </div>
+    );
+  }
+
+  if (count === 2) {
+    return (
+      <div className="mt-3.5 grid max-w-xl grid-cols-2 gap-2">
+        {images.map((img, idx) => (
+          <button
+            key={img.url + idx}
+            type="button"
+            onClick={() => onOpenLightbox(images, idx, author)}
+            className="group relative block h-44 w-full overflow-hidden border border-white/20 bg-black/40 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8a2ae3] sm:h-52"
+            title={`View image ${idx + 1} of 2`}
+          >
+            <img
+              src={img.url}
+              alt={img.alt || `Attachment ${idx + 1}`}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            <div className="pointer-events-none absolute inset-0 flex items-end justify-end bg-black/30 p-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+              <span className="flex items-center gap-1 border border-white/20 bg-black/85 px-1.5 py-0.5 font-mono text-[10px] uppercase text-white">
+                <RiZoomInLine className="text-xs text-[#8a2ae3]" />
+                <span>Zoom</span>
+              </span>
+            </div>
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  if (count === 3) {
+    return (
+      <div className="mt-3.5 grid max-w-xl grid-cols-3 gap-2">
+        {images.map((img, idx) => (
+          <button
+            key={img.url + idx}
+            type="button"
+            onClick={() => onOpenLightbox(images, idx, author)}
+            className="group relative block h-36 w-full overflow-hidden border border-white/20 bg-black/40 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8a2ae3] sm:h-44"
+            title={`View image ${idx + 1} of 3`}
+          >
+            <img
+              src={img.url}
+              alt={img.alt || `Attachment ${idx + 1}`}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            <div className="pointer-events-none absolute inset-0 flex items-end justify-end bg-black/30 p-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+              <span className="flex items-center gap-1 border border-white/20 bg-black/85 px-1.5 py-0.5 font-mono text-[10px] uppercase text-white">
+                <RiZoomInLine className="text-xs text-[#8a2ae3]" />
+              </span>
+            </div>
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  // 4 images: 2x2 grid
+  return (
+    <div className="mt-3.5 grid max-w-xl grid-cols-2 gap-2">
+      {images.map((img, idx) => (
+        <button
+          key={img.url + idx}
+          type="button"
+          onClick={() => onOpenLightbox(images, idx, author)}
+          className="group relative block h-36 w-full overflow-hidden border border-white/20 bg-black/40 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8a2ae3] sm:h-44"
+          title={`View image ${idx + 1} of 4`}
+        >
+          <img
+            src={img.url}
+            alt={img.alt || `Attachment ${idx + 1}`}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+          <div className="pointer-events-none absolute inset-0 flex items-end justify-end bg-black/30 p-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+            <span className="flex items-center gap-1 border border-white/20 bg-black/85 px-1.5 py-0.5 font-mono text-[10px] uppercase text-white">
+              <RiZoomInLine className="text-xs text-[#8a2ae3]" />
+            </span>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function CommentsSection({
   articleId,
   articleSlug,
@@ -297,6 +624,7 @@ export default function CommentsSection({
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreComments, setHasMoreComments] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
+  const [totalCommentsCount, setTotalCommentsCount] = useState(0);
   const [error, setError] = useState("");
   const [staffProfiles, setStaffProfiles] = useState<Record<string, StaffProfile>>(
     {},
@@ -310,6 +638,43 @@ export default function CommentsSection({
     };
     staffProfile?: StaffProfile;
   } | null>(null);
+
+  // Multi-image attachments state
+  const [commentImages, setCommentImages] = useState<SanitizedImageResult[]>([]);
+  const [commentImageProcessing, setCommentImageProcessing] = useState(false);
+  const [commentImageError, setCommentImageError] = useState<string | null>(null);
+
+  const [replyImages, setReplyImages] = useState<SanitizedImageResult[]>([]);
+  const [replyImageProcessing, setReplyImageProcessing] = useState(false);
+  const [replyImageError, setReplyImageError] = useState<string | null>(null);
+
+  // Gallery Lightbox Modal state
+  const [lightboxGallery, setLightboxGallery] = useState<{
+    images: CommentImageAttachment[];
+    currentIndex: number;
+    author: string;
+  } | null>(null);
+
+  // Auto-Translation state
+  const [targetLang, setTargetLang] = useState<string>(() => getDefaultTargetLanguage());
+  const [autoTranslate, setAutoTranslate] = useState<boolean>(() => getAutoTranslatePreference());
+  const [translations, setTranslations] = useState<
+    Record<
+      string,
+      {
+        translatedText: string;
+        sourceLang: string;
+        sourceLangName: string;
+        isSameLanguage: boolean;
+        isUnrecognizedLanguage?: boolean;
+        showingOriginal?: boolean;
+      }
+    >
+  >({});
+  const [translatingIds, setTranslatingIds] = useState<Set<string>>(new Set());
+
+  const commentFileInputRef = useRef<HTMLInputElement>(null);
+  const replyFileInputRef = useRef<HTMLInputElement>(null);
 
   const openProfileModal = (
     userId: string,
@@ -447,9 +812,25 @@ export default function CommentsSection({
     [articleId, sort],
   );
 
+  const fetchTotalCommentCount = useCallback(async () => {
+    try {
+      const coll = collection(db, "comments");
+      const q = query(
+        coll,
+        where("articleId", "==", articleId),
+        where("status", "==", "visible")
+      );
+      const snap = await getCountFromServer(q);
+      setTotalCommentsCount(snap.data().count);
+    } catch (err) {
+      console.warn("Unable to fetch total comment count:", err);
+    }
+  }, [articleId]);
+
   useEffect(() => {
     void loadComments(true);
-  }, [loadComments]);
+    void fetchTotalCommentCount();
+  }, [loadComments, fetchTotalCommentCount]);
 
   const showPreviousPage = () => {
     const previousIndex = pageIndexRef.current - 1;
@@ -646,20 +1027,176 @@ export default function CommentsSection({
   );
   const currentStaffProfile = user ? staffProfiles[user.uid] : undefined;
 
+  const handleSelectCommentImages = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    const maxAllowed = 4 - commentImages.length;
+    if (maxAllowed <= 0) {
+      setCommentImageError("You can attach up to 4 images per comment.");
+      if (e.target) e.target.value = "";
+      return;
+    }
+    const toProcess = files.slice(0, maxAllowed);
+    setCommentImageProcessing(true);
+    setCommentImageError(null);
+    try {
+      const sanitizedList = await Promise.all(
+        toProcess.map((f) => sanitizeAndCompressImage(f)),
+      );
+      setCommentImages((prev) => [...prev, ...sanitizedList]);
+    } catch (err: any) {
+      setCommentImageError(err?.message || "Could not process image.");
+    } finally {
+      setCommentImageProcessing(false);
+      if (e.target) e.target.value = "";
+    }
+  };
+
+  const handleSelectReplyImages = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    const maxAllowed = 4 - replyImages.length;
+    if (maxAllowed <= 0) {
+      setReplyImageError("You can attach up to 4 images per reply.");
+      if (e.target) e.target.value = "";
+      return;
+    }
+    const toProcess = files.slice(0, maxAllowed);
+    setReplyImageProcessing(true);
+    setReplyImageError(null);
+    try {
+      const sanitizedList = await Promise.all(
+        toProcess.map((f) => sanitizeAndCompressImage(f)),
+      );
+      setReplyImages((prev) => [...prev, ...sanitizedList]);
+    } catch (err: any) {
+      setReplyImageError(err?.message || "Could not process image.");
+    } finally {
+      setReplyImageProcessing(false);
+      if (e.target) e.target.value = "";
+    }
+  };
+
+  const handleTargetLangChange = (newLang: string) => {
+    setTargetLang(newLang);
+    setSavedTargetLanguage(newLang);
+    setTranslations({});
+  };
+
+  const handleToggleAutoTranslate = () => {
+    const next = !autoTranslate;
+    setAutoTranslate(next);
+    setAutoTranslatePreference(next);
+    if (!next) {
+      setTranslations({});
+    }
+  };
+
+  const toggleTranslation = async (id: string, text: string) => {
+    const existing = translations[id];
+    if (existing) {
+      setTranslations((prev) => ({
+        ...prev,
+        [id]: {
+          ...existing,
+          showingOriginal: !existing.showingOriginal,
+        },
+      }));
+      return;
+    }
+
+    if (translatingIds.has(id)) return;
+    setTranslatingIds((prev) => new Set(prev).add(id));
+    try {
+      const res = await translateCommentText(text, targetLang);
+      setTranslations((prev) => ({
+        ...prev,
+        [id]: {
+          translatedText: res.translatedText,
+          sourceLang: res.detectedSourceLang,
+          sourceLangName: res.sourceLangName,
+          isSameLanguage: res.isSameLanguage,
+          isUnrecognizedLanguage: res.isUnrecognizedLanguage,
+          showingOriginal: false,
+        },
+      }));
+    } finally {
+      setTranslatingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  };
+
+  // Auto-translate effect when enabled
+  useEffect(() => {
+    if (!autoTranslate) return;
+    const toTranslate: Array<{ id: string; content: string }> = [];
+
+    comments.forEach((c) => {
+      if (c.content?.trim() && !translations[c.id] && !translatingIds.has(c.id)) {
+        toTranslate.push({ id: c.id, content: c.content });
+      }
+    });
+
+    Object.values(replyThreads).forEach((thread) => {
+      thread.replies.forEach((r) => {
+        if (r.content?.trim() && !translations[r.id] && !translatingIds.has(r.id)) {
+          toTranslate.push({ id: r.id, content: r.content });
+        }
+      });
+    });
+
+    if (toTranslate.length === 0) return;
+
+    void Promise.all(
+      toTranslate.slice(0, 10).map(async ({ id, content }) => {
+        try {
+          const res = await translateCommentText(content, targetLang);
+          setTranslations((prev) => ({
+            ...prev,
+            [id]: {
+              translatedText: res.translatedText,
+              sourceLang: res.detectedSourceLang,
+              sourceLangName: res.sourceLangName,
+              isSameLanguage: res.isSameLanguage,
+              isUnrecognizedLanguage: res.isUnrecognizedLanguage,
+              showingOriginal: false,
+            },
+          }));
+        } catch {}
+      }),
+    );
+  }, [autoTranslate, targetLang, comments, replyThreads]);
+
   const submitComment = async (event: FormEvent) => {
     event.preventDefault();
     const trimmedContent = content.trim();
     if (
       !user ||
       !profile?.handle ||
-      !trimmedContent ||
+      (!trimmedContent && commentImages.length === 0) ||
       trimmedContent.length > MAX_COMMENT_LENGTH
     ) return;
 
     setBusyId("new");
     setError("");
     try {
-      await addDoc(collection(db, "comments"), {
+      let uploadedImages: CommentImageAttachment[] = [];
+      if (commentImages.length > 0) {
+        uploadedImages = await uploadMultipleSanitizedImages(
+          storage,
+          user.uid,
+          commentImages,
+        );
+      }
+
+      const commentData: Record<string, any> = {
         articleId,
         articleSlug,
         articleTitle,
@@ -675,8 +1212,20 @@ export default function CommentsSection({
         likeCount: 0,
         dislikeCount: 0,
         replyCount: 0,
-      });
+      };
+
+      if (uploadedImages.length > 0) {
+        commentData.images = uploadedImages;
+        commentData.imageUrl = uploadedImages[0].url;
+        commentData.imageStoragePath = uploadedImages[0].storagePath;
+        if (uploadedImages[0].width) commentData.imageWidth = uploadedImages[0].width;
+        if (uploadedImages[0].height) commentData.imageHeight = uploadedImages[0].height;
+      }
+
+      await addDoc(collection(db, "comments"), commentData);
       setContent("");
+      setCommentImages([]);
+      setCommentImageError(null);
       if (sort === "recent") {
         await loadComments(true);
       } else {
@@ -695,14 +1244,23 @@ export default function CommentsSection({
     if (
       !user ||
       !profile?.handle ||
-      !trimmedContent ||
+      (!trimmedContent && replyImages.length === 0) ||
       trimmedContent.length > MAX_COMMENT_LENGTH
     ) return;
 
     setReplyBusyId(comment.id);
     setError("");
     try {
-      await addDoc(collection(db, "commentReplies"), {
+      let uploadedImages: CommentImageAttachment[] = [];
+      if (replyImages.length > 0) {
+        uploadedImages = await uploadMultipleSanitizedImages(
+          storage,
+          user.uid,
+          replyImages,
+        );
+      }
+
+      const replyData: Record<string, any> = {
         parentCommentId: comment.id,
         articleId,
         articleSlug,
@@ -716,7 +1274,17 @@ export default function CommentsSection({
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         edited: false,
-      });
+      };
+
+      if (uploadedImages.length > 0) {
+        replyData.images = uploadedImages;
+        replyData.imageUrl = uploadedImages[0].url;
+        replyData.imageStoragePath = uploadedImages[0].storagePath;
+        if (uploadedImages[0].width) replyData.imageWidth = uploadedImages[0].width;
+        if (uploadedImages[0].height) replyData.imageHeight = uploadedImages[0].height;
+      }
+
+      await addDoc(collection(db, "commentReplies"), replyData);
       updateCurrentPage((current) =>
         current.map((item) =>
           item.id === comment.id
@@ -725,6 +1293,8 @@ export default function CommentsSection({
         ),
       );
       setReplyContent("");
+      setReplyImages([]);
+      setReplyImageError(null);
       setReplyingToId(null);
       setExpandedReplies((current) => new Set(current).add(comment.id));
       await loadReplies(comment.id, true);
@@ -764,14 +1334,23 @@ export default function CommentsSection({
     }
   };
 
-  const removeReply = async (commentId: string, replyId: string) => {
+  const removeReply = async (commentId: string, reply: ReplyRecord) => {
     if (!window.confirm("Delete this reply permanently?")) return;
+    const replyId = reply.id;
     setReplyBusyId(replyId);
     setError("");
     try {
+      const pathsToDelete: string[] = [];
+      if (reply.images) pathsToDelete.push(...reply.images.map((i) => i.storagePath));
+      if (reply.imageStoragePath && !pathsToDelete.includes(reply.imageStoragePath)) {
+        pathsToDelete.push(reply.imageStoragePath);
+      }
+      if (pathsToDelete.length > 0) {
+        void deleteMultipleCommentImagesSafe(storage, pathsToDelete);
+      }
       await deleteDoc(doc(db, "commentReplies", replyId));
       updateReplyThread(commentId, (current) =>
-        current.filter((reply) => reply.id !== replyId),
+        current.filter((r) => r.id !== replyId),
       );
       updateCurrentPage((current) =>
         current.map((comment) =>
@@ -868,11 +1447,21 @@ export default function CommentsSection({
     }
   };
 
-  const removeComment = async (commentId: string) => {
+  const removeComment = async (comment: CommentRecord) => {
     if (!window.confirm("Delete this comment and all its replies permanently?")) return;
+    const commentId = comment.id;
     setBusyId(commentId);
     setError("");
     try {
+      const pathsToDelete: string[] = [];
+      if (comment.images) pathsToDelete.push(...comment.images.map((i) => i.storagePath));
+      if (comment.imageStoragePath && !pathsToDelete.includes(comment.imageStoragePath)) {
+        pathsToDelete.push(comment.imageStoragePath);
+      }
+      if (pathsToDelete.length > 0) {
+        void deleteMultipleCommentImagesSafe(storage, pathsToDelete);
+      }
+
       // 1. Delete the parent comment directly (always permitted for the comment author)
       await deleteDoc(doc(db, "comments", commentId));
 
@@ -883,7 +1472,16 @@ export default function CommentsSection({
         );
         if (!repliesSnap.empty) {
           const batch = writeBatch(db);
-          repliesSnap.forEach((r) => batch.delete(r.ref));
+          const replyPaths: string[] = [];
+          repliesSnap.forEach((r) => {
+            const rData = r.data();
+            if (rData?.images) replyPaths.push(...rData.images.map((i: any) => i.storagePath));
+            if (rData?.imageStoragePath) replyPaths.push(rData.imageStoragePath);
+            batch.delete(r.ref);
+          });
+          if (replyPaths.length > 0) {
+            void deleteMultipleCommentImagesSafe(storage, replyPaths);
+          }
           await batch.commit();
         }
       } catch (cascadeError) {
@@ -961,6 +1559,8 @@ export default function CommentsSection({
     [comments, staffProfiles, sort],
   );
 
+  const totalPages = Math.max(1, Math.ceil(totalCommentsCount / COMMENTS_PAGE_SIZE));
+
   return (
     <section
       id="comments"
@@ -968,7 +1568,7 @@ export default function CommentsSection({
       aria-labelledby="comments-heading"
     >
       <header className="flex flex-col gap-5 border-b border-white/30 py-7 md:flex-row md:items-end md:justify-between">
-        <div className="flex items-baseline gap-4">
+        <div className="flex flex-wrap items-baseline gap-4">
           <h2
             id="comments-heading"
             className="text-4xl font-semibold uppercase leading-none md:text-5xl"
@@ -976,32 +1576,59 @@ export default function CommentsSection({
             Comments
           </h2>
           <span className="font-mono text-sm tabular-nums text-white/45">
-            Page {pageIndex + 1}
+            {totalCommentsCount} {totalCommentsCount === 1 ? "comment" : "comments"} · Page {pageIndex + 1} / {totalPages}
           </span>
         </div>
-        <nav aria-label="Sort comments" className="flex flex-wrap gap-x-5 gap-y-2">
-          {(
-            [
-              ["recent", "Recent"],
-              ["oldest", "Oldest"],
-              ["liked", "Most liked"],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setSort(value)}
-              aria-pressed={sort === value}
-              className={`border-b pb-1 text-xs font-semibold uppercase tracking-wide transition-colors ${
-                sort === value
-                  ? "border-[#8a2ae3] text-white"
-                  : "border-transparent text-white/45 hover:border-white/40 hover:text-white"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          {/* Translation Controls */}
+          <div className="flex items-center gap-3 border border-white/15 bg-white/[0.03] px-2.5 py-1 text-xs font-mono">
+            <LanguageDropdown
+              value={targetLang}
+              onChange={handleTargetLangChange}
+            />
+            <span className="text-white/20">|</span>
+            <label className="inline-flex items-center gap-1.5 cursor-pointer select-none text-[11px] text-white/60 hover:text-white">
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={autoTranslate}
+                onClick={handleToggleAutoTranslate}
+                className={`flex h-3.5 w-3.5 items-center justify-center border transition-colors ${
+                  autoTranslate
+                    ? "border-[#8a2ae3] bg-[#8a2ae3] text-white"
+                    : "border-white/30 bg-transparent hover:border-white/60"
+                }`}
+              >
+                {autoTranslate ? <RiCheckLine className="text-xs" /> : null}
+              </button>
+              <span onClick={handleToggleAutoTranslate}>Auto-translate</span>
+            </label>
+          </div>
+
+          <nav aria-label="Sort comments" className="flex flex-wrap gap-x-5 gap-y-2">
+            {(
+              [
+                ["recent", "Recent"],
+                ["oldest", "Oldest"],
+                ["liked", "Most liked"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setSort(value)}
+                aria-pressed={sort === value}
+                className={`border-b pb-1 text-xs font-semibold uppercase tracking-wide transition-colors ${
+                  sort === value
+                    ? "border-[#8a2ae3] text-white"
+                    : "border-transparent text-white/45 hover:border-white/40 hover:text-white"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+        </div>
       </header>
 
       {error ? (
@@ -1080,26 +1707,81 @@ export default function CommentsSection({
                   !event.nativeEvent.isComposing
                 ) {
                   event.preventDefault();
-                  if (busyId !== "new" && content.trim()) {
+                  if (busyId !== "new" && (content.trim() || commentImages.length > 0)) {
                     event.currentTarget.form?.requestSubmit();
                   }
                 }
               }}
               maxLength={MAX_COMMENT_LENGTH}
               rows={3}
-              placeholder="Write a comment…"
+              placeholder="Write a comment or attach images…"
               className="mt-2 w-full resize-y border-0 border-b border-white/40 bg-transparent px-0 py-2 text-base leading-7 text-white outline-none transition-colors duration-300 placeholder:text-white/30 focus:border-[#8a2ae3] focus:ring-0"
             />
+
+            {/* Hidden file input */}
+            <input
+              type="file"
+              multiple
+              ref={commentFileInputRef}
+              onChange={handleSelectCommentImages}
+              accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif,.jpg,.jpeg,.png,.webp,.gif,.avif"
+              className="hidden"
+            />
+
+            {/* Image Preview Strip */}
+            <ImageAttachmentPreviews
+              images={commentImages}
+              onRemove={(idx) =>
+                setCommentImages((prev) => prev.filter((_, i) => i !== idx))
+              }
+              maxCount={4}
+            />
+
+            {commentImageProcessing ? (
+              <div className="mt-2 flex items-center gap-2 text-xs font-mono text-[#8a2ae3]">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Optimizing & converting images…</span>
+              </div>
+            ) : null}
+
+            {commentImageError ? (
+              <p className="mt-2 text-xs font-mono text-red-300">{commentImageError}</p>
+            ) : null}
+
             <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
-              <span
-                className={`font-mono text-xs tabular-nums ${
-                  remaining < 100 ? "text-[#8a2ae3]" : "text-white/40"
-                }`}
-              >
-                {content.length}/{MAX_COMMENT_LENGTH}
-              </span>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => commentFileInputRef.current?.click()}
+                  disabled={busyId === "new" || commentImageProcessing || commentImages.length >= 4}
+                  className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-white/50 transition-colors hover:text-white disabled:opacity-40"
+                  title="Attach up to 4 images (JPEG, PNG, WebP, GIF, HEIC, AVIF)"
+                >
+                  <RiImageAddLine className="text-base text-[#8a2ae3]" />
+                  <span>
+                    {commentImages.length === 0
+                      ? "Attach images"
+                      : commentImages.length < 4
+                      ? `Add image (${commentImages.length}/4)`
+                      : "Max 4 images"}
+                  </span>
+                </button>
+
+                <span
+                  className={`font-mono text-xs tabular-nums ${
+                    remaining < 100 ? "text-[#8a2ae3]" : "text-white/40"
+                  }`}
+                >
+                  {content.length}/{MAX_COMMENT_LENGTH}
+                </span>
+              </div>
+
               <button
-                disabled={busyId === "new" || !content.trim()}
+                disabled={
+                  busyId === "new" ||
+                  commentImageProcessing ||
+                  (!content.trim() && commentImages.length === 0)
+                }
                 className="group inline-flex items-center gap-3 font-semibold uppercase transition-colors duration-300 hover:text-[#8a2ae3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-35"
               >
                 {busyId === "new" ? "Posting…" : "Post comment"}
@@ -1241,61 +1923,141 @@ export default function CommentsSection({
                       </button>
                     ) : null}
                     {isOwner ? (
-                      <>
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => {
                             setEditingId(comment.id);
                             setEditingContent(comment.content);
                           }}
-                          className="border-b border-white/40 pb-1 transition-colors duration-300 hover:border-[#8a2ae3] hover:text-[#8a2ae3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3]"
+                          className="flex h-6 w-6 items-center justify-center border border-white/20 text-white/60 transition-colors hover:border-white hover:text-white focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#8a2ae3]"
+                          title="Edit comment"
+                          aria-label="Edit comment"
                         >
-                          Edit
+                          <Pencil className="h-3 w-3" />
                         </button>
                         <button
                           type="button"
-                          onClick={() => removeComment(comment.id)}
+                          onClick={() => removeComment(comment)}
                           disabled={busyId === comment.id}
-                          className="border-b border-white/40 pb-1 text-white/60 transition-colors duration-300 hover:border-red-400 hover:text-red-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-red-400 disabled:opacity-40"
+                          className="flex h-6 w-6 items-center justify-center border border-red-500/30 text-red-400/70 transition-colors hover:border-red-400 hover:bg-red-500/10 hover:text-red-300 focus-visible:outline focus-visible:outline-1 focus-visible:outline-red-400 disabled:opacity-40"
+                          title="Delete comment"
+                          aria-label="Delete comment"
                         >
-                          Delete
+                          <Trash2 className="h-3 w-3" />
                         </button>
-                      </>
+                      </div>
                     ) : null}
                   </div>
                 </header>
 
                 {isEditing ? (
                   <div className="mt-3">
-                  <MentionTextarea
-                    value={editingContent}
-                    onChange={setEditingContent}
-                    maxLength={MAX_COMMENT_LENGTH}
-                    rows={3}
-                    className="w-full resize-y border-0 border-b border-white/40 bg-transparent px-0 py-2 text-base leading-7 outline-none transition-colors duration-300 focus:border-[#8a2ae3] focus:ring-0"
-                  />
-                  <div className="mt-3 flex justify-end gap-5">
-                    <button
-                      type="button"
-                      onClick={() => setEditingId(null)}
-                      className="border-b border-white/40 pb-1 text-sm font-medium uppercase transition-colors duration-300 hover:border-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => saveEdit(comment.id)}
-                      disabled={busyId === comment.id || !editingContent.trim()}
-                      className="group inline-flex items-center gap-2 text-sm font-semibold uppercase transition-colors duration-300 hover:text-[#8a2ae3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3] disabled:opacity-40"
-                    >
-                      Save <RiArrowRightLine className="text-xl" />
-                    </button>
-                  </div>
+                    <MentionTextarea
+                      value={editingContent}
+                      onChange={setEditingContent}
+                      maxLength={MAX_COMMENT_LENGTH}
+                      rows={3}
+                      className="w-full resize-y border-0 border-b border-white/40 bg-transparent px-0 py-2 text-base leading-7 outline-none transition-colors duration-300 focus:border-[#8a2ae3] focus:ring-0"
+                    />
+                    <div className="mt-3 flex justify-end gap-5">
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(null)}
+                        className="border-b border-white/40 pb-1 text-sm font-medium uppercase transition-colors duration-300 hover:border-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => saveEdit(comment.id)}
+                        disabled={busyId === comment.id || !editingContent.trim()}
+                        className="group inline-flex items-center gap-2 text-sm font-semibold uppercase transition-colors duration-300 hover:text-[#8a2ae3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3] disabled:opacity-40"
+                      >
+                        Save <RiArrowRightLine className="text-xl" />
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <p className="mt-3 max-w-3xl whitespace-pre-wrap break-words font-light leading-7 text-white/80">
-                    <MentionText content={comment.content} />
-                  </p>
+                  <>
+                    {comment.content?.trim() ? (
+                      <div>
+                        <p className="mt-3 max-w-3xl whitespace-pre-wrap break-words font-light leading-7 text-white/80">
+                          <MentionText
+                            content={
+                              translations[comment.id] &&
+                              !translations[comment.id].showingOriginal
+                                ? translations[comment.id].translatedText
+                                : comment.content
+                            }
+                          />
+                        </p>
+
+                        {/* Translation status / toggle */}
+                        <div className="mt-1.5 flex items-center gap-2 font-mono text-[11px]">
+                          {translatingIds.has(comment.id) ? (
+                            <span className="inline-flex items-center gap-1 text-white/40">
+                              <Loader2 className="h-3 w-3 animate-spin text-[#8a2ae3]" /> Translating…
+                            </span>
+                          ) : translations[comment.id]?.isUnrecognizedLanguage ? (
+                            <div className="inline-flex flex-wrap items-center gap-1.5 text-amber-300/85">
+                              <span>⚠️ Could not identify language · Needs review</span>
+                              <span>·</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setTranslations((prev) => {
+                                    const next = { ...prev };
+                                    delete next[comment.id];
+                                    return next;
+                                  });
+                                  setTimeout(() => toggleTranslation(comment.id, comment.content), 50);
+                                }}
+                                className="underline hover:text-amber-200"
+                              >
+                                Retry
+                              </button>
+                            </div>
+                          ) : translations[comment.id] && !translations[comment.id].isSameLanguage ? (
+                            <div className="inline-flex flex-wrap items-center gap-2 text-white/50">
+                              <span>
+                                Translated from <strong className="text-[#8a2ae3]">{translations[comment.id].sourceLangName}</strong>
+                              </span>
+                              <span>·</span>
+                              <button
+                                type="button"
+                                onClick={() => toggleTranslation(comment.id, comment.content)}
+                                className="underline hover:text-white"
+                              >
+                                {translations[comment.id].showingOriginal
+                                  ? "Show translation"
+                                  : "Show original"}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => toggleTranslation(comment.id, comment.content)}
+                              className="inline-flex items-center gap-1 text-white/35 transition-colors hover:text-[#8a2ae3]"
+                              title={`Translate to ${getLanguageName(targetLang)}`}
+                            >
+                              <RiTranslate2 className="text-xs" />
+                              <span>Translate</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {/* Multi-Image Grid */}
+                    <CommentImagesGrid
+                      images={getEntryImages(comment)}
+                      author={commentHandle}
+                      onOpenLightbox={(imgs, idx, author) =>
+                        setLightboxGallery({ images: imgs, currentIndex: idx, author })
+                      }
+                    />
+                  </>
                 )}
 
                 <div
@@ -1369,6 +2131,8 @@ export default function CommentsSection({
                           current === comment.id ? null : comment.id,
                         );
                         setReplyContent("");
+                        setReplyImages([]);
+                        setReplyImageError(null);
                       }}
                       className="border-b border-transparent pb-0.5 font-sans font-semibold uppercase tracking-wide transition-colors hover:border-[#8a2ae3] hover:text-[#8a2ae3]"
                     >
@@ -1397,7 +2161,7 @@ export default function CommentsSection({
                           event.preventDefault();
                           if (
                             replyBusyId !== comment.id &&
-                            replyContent.trim()
+                            (replyContent.trim() || replyImages.length > 0)
                           ) {
                             void submitReply(comment);
                           }
@@ -1409,16 +2173,69 @@ export default function CommentsSection({
                       placeholder={`Reply to @${commentHandle}…`}
                       className="w-full resize-y border-0 border-b border-white/35 bg-transparent px-0 py-2 text-sm leading-6 text-white outline-none placeholder:text-white/30 focus:border-[#8a2ae3] focus:ring-0"
                     />
-                    <div className="mt-3 flex items-center justify-between gap-4">
-                      <span className="font-mono text-[11px] tabular-nums text-white/35">
-                        {replyContent.length}/{MAX_COMMENT_LENGTH}
-                      </span>
+
+                    {/* Hidden file input for reply */}
+                    <input
+                      type="file"
+                      multiple
+                      ref={replyFileInputRef}
+                      onChange={handleSelectReplyImages}
+                      accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif,.jpg,.jpeg,.png,.webp,.gif,.avif"
+                      className="hidden"
+                    />
+
+                    {/* Reply Image Preview Strip */}
+                    <ImageAttachmentPreviews
+                      images={replyImages}
+                      onRemove={(idx) =>
+                        setReplyImages((prev) => prev.filter((_, i) => i !== idx))
+                      }
+                      maxCount={4}
+                    />
+
+                    {replyImageProcessing ? (
+                      <div className="mt-2 flex items-center gap-2 text-xs font-mono text-[#8a2ae3]">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Optimizing & converting images…</span>
+                      </div>
+                    ) : null}
+
+                    {replyImageError ? (
+                      <p className="mt-2 text-xs font-mono text-red-300">{replyImageError}</p>
+                    ) : null}
+
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => replyFileInputRef.current?.click()}
+                          disabled={replyBusyId === comment.id || replyImageProcessing || replyImages.length >= 4}
+                          className="inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-white/50 transition-colors hover:text-white disabled:opacity-40"
+                          title="Attach up to 4 images (JPEG, PNG, WebP, GIF, HEIC, AVIF)"
+                        >
+                          <RiImageAddLine className="text-sm text-[#8a2ae3]" />
+                          <span>
+                            {replyImages.length === 0
+                              ? "Attach images"
+                              : replyImages.length < 4
+                              ? `Add image (${replyImages.length}/4)`
+                              : "Max 4 images"}
+                          </span>
+                        </button>
+
+                        <span className="font-mono text-[11px] tabular-nums text-white/35">
+                          {replyContent.length}/{MAX_COMMENT_LENGTH}
+                        </span>
+                      </div>
+
                       <div className="flex gap-4 text-xs font-semibold uppercase">
                         <button
                           type="button"
                           onClick={() => {
                             setReplyingToId(null);
                             setReplyContent("");
+                            setReplyImages([]);
+                            setReplyImageError(null);
                           }}
                           className="text-white/50 transition-colors hover:text-white"
                         >
@@ -1428,7 +2245,9 @@ export default function CommentsSection({
                           type="button"
                           onClick={() => submitReply(comment)}
                           disabled={
-                            replyBusyId === comment.id || !replyContent.trim()
+                            replyBusyId === comment.id ||
+                            replyImageProcessing ||
+                            (!replyContent.trim() && replyImages.length === 0)
                           }
                           className="text-[#8a2ae3] transition-colors hover:text-white disabled:opacity-35"
                         >
@@ -1545,24 +2364,28 @@ export default function CommentsSection({
                                 </p>
                               </div>
                               {isReplyOwner ? (
-                                <div className="flex gap-3 text-[10px] font-semibold uppercase text-white/45">
+                                <div className="flex items-center gap-1.5">
                                   <button
                                     type="button"
                                     onClick={() => {
                                       setEditingReplyId(reply.id);
                                       setEditingReplyContent(reply.content);
                                     }}
-                                    className="transition-colors hover:text-white"
+                                    className="flex h-5 w-5 items-center justify-center border border-white/20 text-white/50 transition-colors hover:border-white hover:text-white"
+                                    title="Edit reply"
+                                    aria-label="Edit reply"
                                   >
-                                    Edit
+                                    <Pencil className="h-2.5 w-2.5" />
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => removeReply(comment.id, reply.id)}
+                                    onClick={() => removeReply(comment.id, reply)}
                                     disabled={replyBusyId === reply.id}
-                                    className="transition-colors hover:text-red-300 disabled:opacity-40"
+                                    className="flex h-5 w-5 items-center justify-center border border-red-500/30 text-red-400/60 transition-colors hover:border-red-400 hover:bg-red-500/10 hover:text-red-300 disabled:opacity-40"
+                                    title="Delete reply"
+                                    aria-label="Delete reply"
                                   >
-                                    Delete
+                                    <Trash2 className="h-2.5 w-2.5" />
                                   </button>
                                 </div>
                               ) : null}
@@ -1600,9 +2423,85 @@ export default function CommentsSection({
                                 </div>
                               </div>
                             ) : (
-                              <p className="mt-3 whitespace-pre-wrap break-words text-sm font-light leading-6 text-white/75">
-                                <MentionText content={reply.content} />
-                              </p>
+                              <>
+                                {reply.content?.trim() ? (
+                                  <div>
+                                    <p className="mt-3 whitespace-pre-wrap break-words text-sm font-light leading-6 text-white/75">
+                                      <MentionText
+                                        content={
+                                          translations[reply.id] &&
+                                          !translations[reply.id].showingOriginal
+                                            ? translations[reply.id].translatedText
+                                            : reply.content
+                                        }
+                                      />
+                                    </p>
+
+                                    {/* Translation status / toggle */}
+                                    <div className="mt-1 flex items-center gap-2 font-mono text-[10px]">
+                                      {translatingIds.has(reply.id) ? (
+                                        <span className="inline-flex items-center gap-1 text-white/40">
+                                          <Loader2 className="h-2.5 w-2.5 animate-spin text-[#8a2ae3]" /> Translating…
+                                        </span>
+                                      ) : translations[reply.id]?.isUnrecognizedLanguage ? (
+                                        <div className="inline-flex flex-wrap items-center gap-1.5 text-amber-300/85">
+                                          <span>⚠️ Could not identify language · Needs review</span>
+                                          <span>·</span>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setTranslations((prev) => {
+                                                const next = { ...prev };
+                                                delete next[reply.id];
+                                                return next;
+                                              });
+                                              setTimeout(() => toggleTranslation(reply.id, reply.content), 50);
+                                            }}
+                                            className="underline hover:text-amber-200"
+                                          >
+                                            Retry
+                                          </button>
+                                        </div>
+                                      ) : translations[reply.id] && !translations[reply.id].isSameLanguage ? (
+                                        <div className="inline-flex flex-wrap items-center gap-1.5 text-white/50">
+                                          <span>
+                                            Translated from <strong className="text-[#8a2ae3]">{translations[reply.id].sourceLangName}</strong>
+                                          </span>
+                                          <span>·</span>
+                                          <button
+                                            type="button"
+                                            onClick={() => toggleTranslation(reply.id, reply.content)}
+                                            className="underline hover:text-white"
+                                          >
+                                            {translations[reply.id].showingOriginal
+                                              ? "Show translation"
+                                              : "Show original"}
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => toggleTranslation(reply.id, reply.content)}
+                                          className="inline-flex items-center gap-1 text-white/35 transition-colors hover:text-[#8a2ae3]"
+                                          title={`Translate to ${getLanguageName(targetLang)}`}
+                                        >
+                                          <RiTranslate2 className="text-[11px]" />
+                                          <span>Translate</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ) : null}
+
+                                {/* Multi-Image Grid for Replies */}
+                                <CommentImagesGrid
+                                  images={getEntryImages(reply)}
+                                  author={replyHandle}
+                                  onOpenLightbox={(imgs, idx, author) =>
+                                    setLightboxGallery({ images: imgs, currentIndex: idx, author })
+                                  }
+                                />
+                              </>
                             )}
                           </div>
                         </article>
@@ -1628,7 +2527,7 @@ export default function CommentsSection({
         })}
       </div>
 
-      {pageIndex > 0 || hasMoreComments ? (
+      {pageIndex > 0 || hasMoreComments || totalPages > 1 ? (
         <nav
           aria-label="Comment pages"
           className="flex items-center justify-between border-b border-white/30 py-6"
@@ -1642,12 +2541,12 @@ export default function CommentsSection({
             Previous
           </button>
           <span className="font-mono text-xs uppercase tracking-wide text-white/40">
-            Page {pageIndex + 1}
+            Page {pageIndex + 1} / {totalPages}
           </span>
           <button
             type="button"
             onClick={showNextPage}
-            disabled={!hasMoreComments || loadingMore}
+            disabled={!hasMoreComments || pageIndex + 1 >= totalPages || loadingMore}
             className="border-b border-white/40 pb-1 text-sm font-semibold uppercase tracking-wide transition-colors hover:border-[#8a2ae3] hover:text-[#8a2ae3] disabled:cursor-wait disabled:opacity-40"
           >
             {loadingMore ? "Loading…" : "Next"}
@@ -1662,6 +2561,131 @@ export default function CommentsSection({
         staffProfile={selectedUserModal?.staffProfile}
         onClose={closeProfileModal}
       />
+
+      {/* Fullscreen Gallery Lightbox Modal */}
+      {lightboxGallery && typeof document !== "undefined" && createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6"
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setLightboxGallery(null);
+            if (e.key === "ArrowLeft" && lightboxGallery.images.length > 1) {
+              setLightboxGallery((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      currentIndex:
+                        prev.currentIndex > 0
+                          ? prev.currentIndex - 1
+                          : prev.images.length - 1,
+                    }
+                  : null,
+              );
+            }
+            if (e.key === "ArrowRight" && lightboxGallery.images.length > 1) {
+              setLightboxGallery((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      currentIndex:
+                        prev.currentIndex < prev.images.length - 1
+                          ? prev.currentIndex + 1
+                          : 0,
+                    }
+                  : null,
+              );
+            }
+          }}
+          tabIndex={-1}
+        >
+          <div
+            className="fixed inset-0 bg-black/90 backdrop-blur-md transition-opacity"
+            onClick={() => setLightboxGallery(null)}
+            aria-hidden="true"
+          />
+          <div className="relative z-10 flex max-h-[90vh] max-w-5xl w-full flex-col border border-white/20 bg-[#0e0e10] p-4 text-white shadow-2xl">
+            <div className="mb-3 flex items-center justify-between border-b border-white/15 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs text-white/50">Attachment by</span>
+                  <span className="font-mono text-xs font-semibold text-[#8a2ae3]">
+                    @{lightboxGallery.author}
+                  </span>
+                </div>
+                {lightboxGallery.images.length > 1 ? (
+                  <span className="border border-white/20 bg-white/[0.05] px-2 py-0.5 font-mono text-[11px] text-white/70">
+                    {lightboxGallery.currentIndex + 1} of {lightboxGallery.images.length}
+                  </span>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={() => setLightboxGallery(null)}
+                className="flex h-7 w-7 items-center justify-center border border-white/20 text-white/70 transition-colors hover:bg-white hover:text-black"
+                aria-label="Close image preview"
+              >
+                <RiCloseLine className="text-lg" />
+              </button>
+            </div>
+
+            <div className="relative flex flex-1 items-center justify-center overflow-auto py-2">
+              {lightboxGallery.images.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLightboxGallery((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            currentIndex:
+                              prev.currentIndex > 0
+                                ? prev.currentIndex - 1
+                                : prev.images.length - 1,
+                          }
+                        : null,
+                    )
+                  }
+                  className="absolute left-2 z-20 flex h-10 w-10 items-center justify-center border border-white/20 bg-black/70 text-white transition-colors hover:bg-white hover:text-black"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+              ) : null}
+
+              <img
+                src={lightboxGallery.images[lightboxGallery.currentIndex]?.url}
+                alt={lightboxGallery.images[lightboxGallery.currentIndex]?.alt || "Attachment"}
+                className="max-h-[72vh] w-auto max-w-full object-contain border border-white/10"
+              />
+
+              {lightboxGallery.images.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLightboxGallery((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            currentIndex:
+                              prev.currentIndex < prev.images.length - 1
+                                ? prev.currentIndex + 1
+                                : 0,
+                          }
+                        : null,
+                    )
+                  }
+                  className="absolute right-2 z-20 flex h-10 w-10 items-center justify-center border border-white/20 bg-black/70 text-white transition-colors hover:bg-white hover:text-black"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </section>
   );
 }
