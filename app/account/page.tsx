@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
@@ -27,11 +28,15 @@ import {
 } from "@/lib/public-auth-context";
 import {
   RiArrowRightLine,
+  RiArrowLeftLine,
+  RiAlertLine,
+  RiCheckLine,
   RiDeleteBinLine,
   RiEyeLine,
   RiEyeOffLine,
   RiGoogleFill,
   RiImageAddLine,
+  RiShieldCheckLine,
   RiUser3Line,
 } from "react-icons/ri";
 
@@ -107,13 +112,27 @@ function handleAvailabilityMessage(status: HandleAvailability) {
 
 export default function AccountPage() {
   const router = useRouter();
-  const { user, profile, isStaff, isLoading, refreshProfile } = usePublicAuth();
+  const {
+    user,
+    profile,
+    isStaff,
+    isLoading,
+    isSuspended,
+    isBanned,
+    isIpBanned,
+    ipBanReason,
+    clientIp,
+    refreshProfile,
+  } = usePublicAuth();
   const [mode, setMode] = useState<"signin" | "register">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showGuidelinesStep, setShowGuidelinesStep] = useState(false);
+  const [acceptedGuidelines, setAcceptedGuidelines] = useState(false);
   const [handle, setHandle] = useState("");
   const [pendingPhotoURL, setPendingPhotoURL] = useState("");
   const [message, setMessage] = useState("");
@@ -177,6 +196,10 @@ export default function AccountPage() {
 
   const submitEmail = async (event: FormEvent) => {
     event.preventDefault();
+    if (mode === "register" && !acceptedTerms) {
+      setError("Please agree to the Terms of Service and Privacy Policy to create your account.");
+      return;
+    }
     if (mode === "register" && password !== confirmPassword) {
       setError("The passwords do not match.");
       return;
@@ -203,7 +226,7 @@ export default function AccountPage() {
         );
         const existingProfile = await getExistingPublicProfile(credential.user);
         if (existingProfile) {
-          await syncPublicUser(credential.user);
+          await syncPublicUser(credential.user, clientIp);
           await refreshProfile();
           setMessage("Signed in.");
         } else {
@@ -234,6 +257,10 @@ export default function AccountPage() {
   };
 
   const signInWithGoogle = async () => {
+    if (mode === "register" && !acceptedTerms) {
+      setError("Please agree to the Terms of Service and Privacy Policy before creating an account with Google.");
+      return;
+    }
     setBusy(true);
     setError("");
     setMessage("");
@@ -251,7 +278,7 @@ export default function AccountPage() {
       if (mode === "register") {
         const existingProfile = await getExistingPublicProfile(credential.user);
         if (existingProfile?.handle) {
-          await syncPublicUser(credential.user);
+          await syncPublicUser(credential.user, clientIp);
           await refreshProfile();
           setMessage(`Your account already exists as @${existingProfile.handle}.`);
         } else {
@@ -260,7 +287,7 @@ export default function AccountPage() {
       } else {
         const existingProfile = await getExistingPublicProfile(credential.user);
         if (existingProfile) {
-          await syncPublicUser(credential.user);
+          await syncPublicUser(credential.user, clientIp);
           await refreshProfile();
           setMessage("Signed in.");
         } else {
@@ -310,7 +337,7 @@ export default function AccountPage() {
     }
   };
 
-  const saveHandle = async (event: FormEvent) => {
+  const proceedToGuidelines = async (event: FormEvent) => {
     event.preventDefault();
     if (!user) return;
     if (profile?.handle) {
@@ -348,14 +375,32 @@ export default function AccountPage() {
               : "That handle is already taken.",
         );
       }
+      setShowGuidelinesStep(true);
+    } catch (nextError) {
+      setError(friendlyAuthError(nextError));
+    } finally {
+      setSavingHandle(false);
+    }
+  };
 
-      const savedHandle = await claimPublicHandle(user, normalizedHandle);
+  const finalizeAccountWithGuidelines = async () => {
+    if (!user) return;
+    if (!acceptedGuidelines) {
+      setError("Please agree to follow the Community Guidelines to finish joining.");
+      return;
+    }
+    const normalizedHandle = normalizeHandle(handle);
+    setSavingHandle(true);
+    setError("");
+    setMessage("");
+    try {
+      const savedHandle = await claimPublicHandle(user, normalizedHandle, clientIp);
       await updateProfile(user, { displayName: savedHandle });
       await syncPublicUser(user);
       await refreshProfile();
       setHandle(savedHandle);
       setPendingPhotoURL("");
-      setMessage(`Your account is ready as @${savedHandle}.`);
+      setMessage(`Your account is ready as @${savedHandle}. Welcome!`);
       router.push("/");
     } catch (nextError) {
       setError(friendlyAuthError(nextError));
@@ -484,6 +529,54 @@ export default function AccountPage() {
       </header>
 
       <section className="py-8">
+        {/* Account / IP Ban Lockout Notice */}
+        {isBanned ? (
+          <div className="mb-8 border border-red-500/50 bg-red-500/10 p-6 text-center space-y-2">
+            <RiAlertLine className="mx-auto text-4xl text-red-400" />
+            <h2 className="text-xl font-bold uppercase tracking-wide text-red-200">
+              Account / IP Address Banned
+            </h2>
+            <p className="text-sm text-white/80 max-w-md mx-auto">
+              {profile?.banReason || ipBanReason || "This account and its associated IP addresses have been permanently banned from the community for severe violations of the Community Guidelines."}
+            </p>
+            <Link
+              href="/community-guidelines"
+              className="text-xs text-red-300 underline inline-block mt-2"
+            >
+              Read Community Guidelines →
+            </Link>
+          </div>
+        ) : isSuspended ? (
+          /* Commenting Suspension Notice */
+          <div className="mb-8 border border-orange-500/50 bg-orange-500/10 p-5 space-y-2">
+            <div className="flex items-center gap-2 text-orange-300 font-bold uppercase text-xs tracking-wider">
+              <RiAlertLine className="text-lg text-orange-400" />
+              Commenting Privileges Suspended
+            </div>
+            <p className="text-xs text-white/80">
+              Your commenting privileges are currently suspended until{" "}
+              <strong className="text-white">
+                {profile?.suspendedUntil?.toDate ? profile.suspendedUntil.toDate().toLocaleDateString() : "further notice"}
+              </strong>{" "}
+              {profile?.suspensionReason ? `due to: "${profile.suspensionReason}"` : "due to Community Guidelines violations"}.
+            </p>
+          </div>
+        ) : profile?.status === "warning" ? (
+          /* Formal Warning Notice */
+          <div className="mb-8 border border-amber-500/40 bg-amber-500/10 p-4 space-y-1">
+            <div className="flex items-center gap-2 text-amber-300 font-bold uppercase text-xs tracking-wider">
+              <RiAlertLine className="text-base text-amber-400" />
+              Active Warning on Account
+            </div>
+            <p className="text-xs text-white/80">
+              A formal warning was issued to this account {profile?.lastWarningReason ? `(${profile.lastWarningReason})` : ""}. Please review our standards to keep your account in good standing.
+            </p>
+            <Link href="/community-guidelines" className="text-xs text-amber-300 underline inline-block mt-1">
+              View Community Guidelines →
+            </Link>
+          </div>
+        ) : null}
+
         {message ? (
           <p role="status" className="mb-7 border-l-2 border-[#8a2ae3] py-1 pl-4 text-white/80">
             {message}
@@ -551,50 +644,132 @@ export default function AccountPage() {
                 </div>
 
                 {!profile?.handle ? (
-                  <form onSubmit={saveHandle}>
-              <label htmlFor="handle" className="text-sm font-medium uppercase tracking-[0.18em] text-white/55">
-                Handle
-              </label>
-              <div className="relative">
-                <span className="absolute bottom-3 left-0 text-lg text-white/40">@</span>
-                <input
-                  id="handle"
-                  value={handle}
-                  onChange={(event) =>
-                    setHandle(
-                      event.target.value
-                        .toLowerCase()
-                        .replace(/^@+/, "")
-                        .replace(/\s+/g, "_")
-                        .replace(/[^a-z0-9_-]/g, "")
-                        .slice(0, 20),
-                    )
-                  }
-                  minLength={3}
-                  maxLength={20}
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  className={`${fieldClassName} pl-6`}
-                />
-              </div>
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
-                <p aria-live="polite" className={`text-sm ${handleStatusClassName}`}>
-                  {handleAvailabilityMessage(handleAvailability)}
-                </p>
-                <button
-                  disabled={
-                    savingHandle ||
-                    handleAvailability !== "available" ||
-                    !photoURL
-                  }
-                  className="group inline-flex items-center gap-2 font-semibold uppercase transition-colors hover:text-[#8a2ae3] disabled:opacity-35"
-                >
-                  {savingHandle ? "Saving…" : "Finish account"}
-                  <RiArrowRightLine className="text-xl transition-transform group-hover:translate-x-1" />
-                </button>
-              </div>
-                  </form>
+                  showGuidelinesStep ? (
+                    <div className="space-y-6 border border-[#8a2ae3]/40 bg-[#8a2ae3]/10 p-6">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#8a2ae3]/30 text-[#8a2ae3]">
+                          <RiShieldCheckLine className="text-2xl" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold text-white uppercase tracking-wide">Community Guidelines Commitment</h3>
+                          <p className="text-xs text-white/70">
+                            Joining as <strong className="text-[#8a2ae3]">@{normalizeHandle(handle)}</strong>
+                          </p>
+                        </div>
+                      </div>
+
+                      <p className="text-sm text-gray-300 leading-relaxed">
+                        To maintain a welcoming, respectful, and technical space for everyone, all members agree to our core community standards:
+                      </p>
+
+                      <div className="space-y-3 text-xs text-gray-300">
+                        <div className="flex items-start gap-2.5">
+                          <span className="text-[#8a2ae3] font-bold">✓</span>
+                          <span><strong>Be Respectful:</strong> No harassment, hate speech, bullying, or personal attacks. Disagree with ideas, not individuals.</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <span className="text-[#8a2ae3] font-bold">✓</span>
+                          <span><strong>Constructive & Relevant:</strong> Keep comments on topic, provide helpful technical insights, and support beginners.</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <span className="text-[#8a2ae3] font-bold">✓</span>
+                          <span><strong>No Spam or Scams:</strong> No automated posting, unsolicited self-promotion, affiliate farming, or deceptive links.</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <span className="text-[#8a2ae3] font-bold">✓</span>
+                          <span><strong>Authentic Identity:</strong> No impersonation of staff, authors, or other readers.</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-2">
+                        <Link
+                          href="/community-guidelines"
+                          target="_blank"
+                          className="text-xs text-[#8a2ae3] underline hover:text-white"
+                        >
+                          Read our complete Community Guidelines &rarr;
+                        </Link>
+                      </div>
+
+                      <label className="flex items-start gap-3 cursor-pointer select-none border-t border-white/15 pt-4 text-xs text-white/90">
+                        <input
+                          type="checkbox"
+                          checked={acceptedGuidelines}
+                          onChange={(e) => setAcceptedGuidelines(e.target.checked)}
+                          className="mt-0.5 h-4 w-4 rounded border-white/30 bg-transparent text-[#8a2ae3] focus:ring-[#8a2ae3]"
+                        />
+                        <span>
+                          I have read and agree to follow the <strong>Community Guidelines</strong>.
+                        </span>
+                      </label>
+
+                      <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowGuidelinesStep(false)}
+                          disabled={savingHandle}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase text-white/50 hover:text-white"
+                        >
+                          <RiArrowLeftLine className="text-base" /> Change Handle
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={finalizeAccountWithGuidelines}
+                          disabled={savingHandle || !acceptedGuidelines}
+                          className="group inline-flex items-center gap-2 bg-[#8a2ae3] px-6 py-3 text-xs font-semibold uppercase text-white transition-colors hover:bg-[#9d3df0] disabled:opacity-40"
+                        >
+                          <span>{savingHandle ? "Joining…" : "Agree & Join Community"}</span>
+                          <RiArrowRightLine className="text-base transition-transform group-hover:translate-x-1" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <form onSubmit={proceedToGuidelines}>
+                      <label htmlFor="handle" className="text-sm font-medium uppercase tracking-[0.18em] text-white/55">
+                        Handle
+                      </label>
+                      <div className="relative">
+                        <span className="absolute bottom-3 left-0 text-lg text-white/40">@</span>
+                        <input
+                          id="handle"
+                          value={handle}
+                          onChange={(event) =>
+                            setHandle(
+                              event.target.value
+                                .toLowerCase()
+                                .replace(/^@+/, "")
+                                .replace(/\s+/g, "_")
+                                .replace(/[^a-z0-9_-]/g, "")
+                                .slice(0, 20),
+                            )
+                          }
+                          minLength={3}
+                          maxLength={20}
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          className={`${fieldClassName} pl-6`}
+                        />
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
+                        <p aria-live="polite" className={`text-sm ${handleStatusClassName}`}>
+                          {handleAvailabilityMessage(handleAvailability)}
+                        </p>
+                        <button
+                          disabled={
+                            savingHandle ||
+                            handleAvailability !== "available" ||
+                            !photoURL
+                          }
+                          className="group inline-flex items-center gap-2 font-semibold uppercase transition-colors hover:text-[#8a2ae3] disabled:opacity-35"
+                        >
+                          {savingHandle ? "Checking…" : "Continue to Guidelines"}
+                          <RiArrowRightLine className="text-xl transition-transform group-hover:translate-x-1" />
+                        </button>
+                      </div>
+                    </form>
+                  )
                 ) : null}
               </>
             )}
@@ -650,6 +825,29 @@ export default function AccountPage() {
                 );
               })}
             </div>
+
+            {mode === "register" ? (
+              <div className="mb-6 border border-white/15 bg-white/[0.03] p-4">
+                <label className="flex items-start gap-3 cursor-pointer select-none text-xs text-white/80">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-white/30 bg-transparent text-[#8a2ae3] focus:ring-[#8a2ae3]"
+                  />
+                  <span>
+                    I agree to the{" "}
+                    <Link href="/terms-of-service" target="_blank" className="text-white underline hover:text-[#8a2ae3]">
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link href="/privacy-policy" target="_blank" className="text-white underline hover:text-[#8a2ae3]">
+                      Privacy Policy
+                    </Link>.
+                  </span>
+                </label>
+              </div>
+            ) : null}
 
             <button
               type="button"

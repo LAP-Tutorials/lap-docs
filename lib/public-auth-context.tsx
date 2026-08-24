@@ -26,6 +26,14 @@ export type PublicProfile = {
   photoURL: string;
   provider: string;
   handle: string;
+  status?: "active" | "warning" | "suspended" | "banned";
+  warningCount?: number;
+  lastWarningReason?: string;
+  suspendedUntil?: any;
+  suspensionReason?: string;
+  bannedAt?: any;
+  banReason?: string;
+  lastIp?: string;
 };
 
 export type StaffRole = "super" | "admin" | "author" | "moderator";
@@ -37,6 +45,11 @@ type PublicAuthContextValue = {
   staffRole: StaffRole | null;
   isAdmin: boolean;
   isLoading: boolean;
+  isSuspended: boolean;
+  isBanned: boolean;
+  isIpBanned: boolean;
+  ipBanReason?: string;
+  clientIp?: string;
   refreshProfile: () => Promise<PublicProfile | null>;
 };
 
@@ -75,6 +88,14 @@ function toPublicProfile(data: Record<string, unknown>, user: User): PublicProfi
     photoURL: typeof data.photoURL === "string" ? data.photoURL : user.photoURL || "",
     provider: typeof data.provider === "string" ? data.provider : getProvider(user),
     handle: typeof data.handle === "string" ? data.handle : "",
+    status: typeof data.status === "string" ? (data.status as any) : "active",
+    warningCount: typeof data.warningCount === "number" ? data.warningCount : 0,
+    lastWarningReason: typeof data.lastWarningReason === "string" ? data.lastWarningReason : undefined,
+    suspendedUntil: data.suspendedUntil,
+    suspensionReason: typeof data.suspensionReason === "string" ? data.suspensionReason : undefined,
+    bannedAt: data.bannedAt,
+    banReason: typeof data.banReason === "string" ? data.banReason : undefined,
+    lastIp: typeof data.lastIp === "string" ? data.lastIp : undefined,
   };
 }
 
@@ -152,7 +173,7 @@ export async function getExistingPublicProfile(user: User) {
   return snapshot.exists() ? toPublicProfile(snapshot.data(), user) : null;
 }
 
-export async function syncPublicUser(user: User): Promise<PublicProfile> {
+export async function syncPublicUser(user: User, ip?: string): Promise<PublicProfile> {
   const userRef = doc(db, "users", user.uid);
   const snapshot = await getDoc(userRef);
   const existingHandle =
@@ -164,7 +185,7 @@ export async function syncPublicUser(user: User): Promise<PublicProfile> {
     await updateProfile(user, { displayName: existingHandle });
   }
 
-  const profile = {
+  const profile: Record<string, any> = {
     uid: user.uid,
     email: user.email || "",
     displayName: existingHandle || getDisplayName(user),
@@ -173,15 +194,21 @@ export async function syncPublicUser(user: User): Promise<PublicProfile> {
     updatedAt: serverTimestamp(),
   };
 
+  if (ip) {
+    profile.lastIp = ip;
+  }
+
   if (snapshot.exists()) {
     const currentProfile = snapshot.data();
     const needsHandleMigration = typeof currentProfile.handle !== "string";
+    const needsIpUpdate = Boolean(ip && currentProfile.lastIp !== ip);
     const profileChanged =
       currentProfile.email !== profile.email ||
       currentProfile.displayName !== profile.displayName ||
       currentProfile.photoURL !== profile.photoURL ||
       currentProfile.provider !== profile.provider ||
-      needsHandleMigration;
+      needsHandleMigration ||
+      needsIpUpdate;
 
     if (profileChanged) {
       await updateDoc(userRef, {
@@ -199,7 +226,7 @@ export async function syncPublicUser(user: User): Promise<PublicProfile> {
   throw new Error("Complete your reader profile before continuing.");
 }
 
-export async function claimPublicHandle(user: User, value: string) {
+export async function claimPublicHandle(user: User, value: string, ip?: string) {
   const handle = normalizeHandle(value);
   const validationError = validateHandle(handle);
   if (validationError) throw new Error(validationError);
@@ -248,6 +275,7 @@ export async function claimPublicHandle(user: User, value: string) {
         photoURL: user.photoURL || "",
         provider: getProvider(user),
         handle,
+        ...(ip ? { lastIp: ip } : {}),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -255,6 +283,7 @@ export async function claimPublicHandle(user: User, value: string) {
       transaction.update(userRef, {
         handle,
         displayName: handle,
+        ...(ip ? { lastIp: ip } : {}),
         updatedAt: serverTimestamp(),
       });
     }
@@ -270,6 +299,23 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
   const [staffRole, setStaffRole] = useState<StaffRole | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [clientIp, setClientIp] = useState<string>("127.0.0.1");
+  const [isIpBanned, setIsIpBanned] = useState<boolean>(false);
+  const [ipBanReason, setIpBanReason] = useState<string>("");
+
+  // Check client IP ban status
+  useEffect(() => {
+    fetch("/api/auth/ip")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ip) setClientIp(data.ip);
+        if (data.isBanned) {
+          setIsIpBanned(true);
+          setIpBanReason(data.reason || "Violations of Community Guidelines");
+        }
+      })
+      .catch((err) => console.warn("Failed to check IP:", err));
+  }, []);
 
   const refreshProfile = useCallback(async () => {
     const currentUser = auth.currentUser;
@@ -303,7 +349,39 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
             setStaffRole(role);
             setIsAdmin(role === "admin" || role === "super");
           }
-          setProfile(existingProfile ? await syncPublicUser(nextUser) : null);
+          const syncedProfile = existingProfile ? await syncPublicUser(nextUser) : null;
+          setProfile(syncedProfile);
+
+          // Save last known IP on server and client
+          try {
+            fetch("/api/auth/ip", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ uid: nextUser.uid }),
+            })
+              .then((r) => r.json())
+              .then((data) => {
+                if (data.ip) {
+                  setClientIp(data.ip);
+                  if (syncedProfile) {
+                    setProfile((prev) => (prev ? { ...prev, lastIp: data.ip } : prev));
+                  }
+                }
+                if (data.isBanned) {
+                  setIsIpBanned(true);
+                  setIpBanReason(data.reason || "Violations of Community Guidelines");
+                }
+              })
+              .catch(() => {});
+          } catch {
+            // ignore
+          }
+
+          if (clientIp) {
+            void updateDoc(doc(db, "users", nextUser.uid), {
+              lastIp: clientIp,
+            }).catch(() => {});
+          }
         } catch (error) {
           console.error("Unable to sync public user profile:", error);
           setProfile(null);
@@ -316,11 +394,54 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
       }
       setIsLoading(false);
     });
-  }, []);
+  }, [clientIp]);
+
+  const isBanned = useMemo(() => {
+    return Boolean(profile?.status === "banned" || profile?.bannedAt || isIpBanned);
+  }, [profile?.status, profile?.bannedAt, isIpBanned]);
+
+  const isSuspended = useMemo(() => {
+    if (!profile?.suspendedUntil) return false;
+    let suspendTime = 0;
+    if (typeof profile.suspendedUntil?.toMillis === "function") {
+      suspendTime = profile.suspendedUntil.toMillis();
+    } else if (profile.suspendedUntil?.seconds) {
+      suspendTime = profile.suspendedUntil.seconds * 1000;
+    } else if (typeof profile.suspendedUntil === "string" || typeof profile.suspendedUntil === "number") {
+      suspendTime = new Date(profile.suspendedUntil).getTime();
+    }
+    return suspendTime > Date.now();
+  }, [profile?.suspendedUntil]);
 
   const value = useMemo(
-    () => ({ user, profile, isStaff, staffRole, isAdmin, isLoading, refreshProfile }),
-    [user, profile, isStaff, staffRole, isAdmin, isLoading, refreshProfile],
+    () => ({
+      user,
+      profile,
+      isStaff,
+      staffRole,
+      isAdmin,
+      isLoading,
+      isSuspended,
+      isBanned,
+      isIpBanned,
+      ipBanReason,
+      clientIp,
+      refreshProfile,
+    }),
+    [
+      user,
+      profile,
+      isStaff,
+      staffRole,
+      isAdmin,
+      isLoading,
+      isSuspended,
+      isBanned,
+      isIpBanned,
+      ipBanReason,
+      clientIp,
+      refreshProfile,
+    ],
   );
 
   return (

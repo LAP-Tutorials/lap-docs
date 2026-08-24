@@ -72,6 +72,9 @@ export default function Footer() {
                   <Link href="/terms-of-service">Terms of Service</Link>
                 </li>
                 <li>
+                  <Link href="/community-guidelines">Community Guidelines</Link>
+                </li>
+                <li>
                   <Link href="mailto:contact@lap.onl?subject=Contact%20from%20L.A.P%20-%20Docs">
                     Contact Support
                   </Link>

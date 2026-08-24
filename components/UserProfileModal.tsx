@@ -15,6 +15,7 @@ import {
   RiCalendarLine,
   RiChat3Line,
   RiCloseLine,
+  RiFlagLine,
   RiGithubFill,
   RiGlobeLine,
   RiMapPinLine,
@@ -25,6 +26,8 @@ import {
   RiYoutubeFill,
 } from "react-icons/ri";
 import { db } from "@/lib/firebase";
+import { usePublicAuth } from "@/lib/public-auth-context";
+import ReportModal from "@/components/ReportModal";
 
 export type StaffRole = "super" | "admin" | "author" | "moderator";
 
@@ -154,8 +157,10 @@ export default function UserProfileModal({
   isOpen,
   onClose,
 }: UserProfileModalProps) {
+  const { user } = usePublicAuth();
   const [profile, setProfile] = useState<LoadedProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !userId) {
@@ -529,8 +534,34 @@ export default function UserProfileModal({
               )}
             </div>
           ) : null}
+
+          {/* Action Row: Report User button (Disabled for Team Members) */}
+          {user && user.uid !== userId && !isDeleted && !profile?.role && !staffProfile?.role ? (
+            <div className="mt-5 border-t border-white/10 pt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsReportModalOpen(true)}
+                className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-red-400 transition-colors"
+              >
+                <RiFlagLine className="text-sm" />
+                <span>Report User</span>
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        target={{
+          type: "user",
+          reportedUserId: userId,
+          reportedUserHandle: profile?.handle || initialData?.handle || "user",
+          reportedUserName: profile?.displayName || initialData?.name,
+        }}
+      />
     </div>
   );
 }

@@ -41,6 +41,7 @@ import {
   RiArrowRightLine,
   RiImageAddLine,
   RiCloseLine,
+  RiFlagLine,
   RiZoomInLine,
   RiTranslate2,
   RiGlobalLine,
@@ -48,9 +49,11 @@ import {
   RiArrowRightSLine,
   RiArrowDownSLine,
   RiCheckLine,
+  RiAlertLine,
 } from "react-icons/ri";
 import MentionTextarea from "@/components/MentionTextarea";
 import UserProfileModal, { type StaffProfile, type StaffRole } from "@/components/UserProfileModal";
+import ReportModal, { type ReportTarget } from "@/components/ReportModal";
 import {
   sanitizeAndCompressImage,
   uploadSanitizedCommentImage,
@@ -597,7 +600,18 @@ export default function CommentsSection({
   articleSlug,
   articleTitle,
 }: CommentsSectionProps) {
-  const { user, profile, isStaff, isAdmin, isLoading: authLoading } = usePublicAuth();
+  const {
+    user,
+    profile,
+    isStaff,
+    isAdmin,
+    isLoading: authLoading,
+    isSuspended,
+    isBanned,
+    isIpBanned,
+    ipBanReason,
+  } = usePublicAuth();
+  const [dismissedWarning, setDismissedWarning] = useState(false);
   const [comments, setComments] = useState<CommentRecord[]>([]);
   const [content, setContent] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -638,6 +652,7 @@ export default function CommentsSection({
     };
     staffProfile?: StaffProfile;
   } | null>(null);
+  const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
 
   // Multi-image attachments state
   const [commentImages, setCommentImages] = useState<SanitizedImageResult[]>([]);
@@ -1174,6 +1189,15 @@ export default function CommentsSection({
 
   const submitComment = async (event: FormEvent) => {
     event.preventDefault();
+    if (isBanned) {
+      setError("Your account or IP address is banned from participating in comments.");
+      return;
+    }
+    if (isSuspended) {
+      setError("Your commenting privileges are currently suspended due to Community Guidelines violations.");
+      return;
+    }
+
     const trimmedContent = content.trim();
     if (
       !user ||
@@ -1238,6 +1262,15 @@ export default function CommentsSection({
   };
 
   const submitReply = async (comment: CommentRecord) => {
+    if (isBanned) {
+      setError("Your account or IP address is banned from participating in comments.");
+      return;
+    }
+    if (isSuspended) {
+      setError("Your commenting privileges are currently suspended.");
+      return;
+    }
+
     const trimmedContent = replyContent.trim();
     if (
       !user ||
@@ -1638,7 +1671,72 @@ export default function CommentsSection({
         </p>
       ) : null}
 
-      {!authLoading && !user ? (
+      {/* Community Guidelines Warning Notice Banner */}
+      {user && profile?.status === "warning" && !dismissedWarning ? (
+        <div className="border border-amber-500/40 bg-amber-500/10 p-4 border-b flex items-start justify-between gap-3 my-4">
+          <div>
+            <div className="flex items-center gap-2 text-amber-300 font-semibold uppercase text-xs tracking-wider">
+              <RiAlertLine className="text-base text-amber-400 shrink-0" />
+              Community Guidelines Warning Notice
+            </div>
+            <p className="text-xs text-white/80 mt-1">
+              You have received a formal warning regarding your recent activity {profile?.lastWarningReason ? `(${profile.lastWarningReason})` : ""}. Please review our standards to keep your account in good standing.
+            </p>
+            <Link href="/community-guidelines" className="text-xs text-amber-300 underline mt-1.5 inline-block">
+              View Community Guidelines →
+            </Link>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDismissedWarning(true)}
+            className="text-white/40 hover:text-white text-xs uppercase font-mono px-2 py-1 border border-white/10 hover:bg-white/5"
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
+
+      {/* Account / IP Ban Lockout Banner */}
+      {isBanned ? (
+        <div className="border border-red-500/50 bg-red-500/10 p-6 text-center space-y-2 border-b my-4">
+          <div className="flex justify-center text-red-400">
+            <RiAlertLine className="text-3xl" />
+          </div>
+          <h3 className="font-semibold text-lg text-red-200 uppercase tracking-wide">
+            Participation Prohibited
+          </h3>
+          <p className="text-sm text-white/70 max-w-xl mx-auto">
+            {profile?.banReason || ipBanReason || "This account / IP address has been permanently banned from commenting for severe violations of our Community Guidelines."}
+          </p>
+          <Link
+            href="/community-guidelines"
+            className="text-xs text-red-300 underline inline-block mt-2"
+          >
+            Read Community Guidelines
+          </Link>
+        </div>
+      ) : isSuspended ? (
+        /* Temporary Suspension Banner */
+        <div className="border border-orange-500/50 bg-orange-500/10 p-5 space-y-2 border-b my-4">
+          <div className="flex items-center gap-2 text-orange-300 font-semibold uppercase text-xs tracking-wider">
+            <RiAlertLine className="text-lg text-orange-400 shrink-0" />
+            Commenting Privileges Suspended
+          </div>
+          <p className="text-xs text-white/80">
+            Your commenting privileges are temporarily suspended until{" "}
+            <strong className="text-white">
+              {profile?.suspendedUntil?.toDate ? profile.suspendedUntil.toDate().toLocaleDateString() : "further notice"}
+            </strong>{" "}
+            due to Community Guidelines violations {profile?.suspensionReason ? `("${profile.suspensionReason}")` : ""}.
+          </p>
+          <Link
+            href="/community-guidelines"
+            className="text-xs text-orange-300 underline inline-block"
+          >
+            Read Community Guidelines
+          </Link>
+        </div>
+      ) : !authLoading && !user ? (
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/30 py-7">
           <p className="font-light text-white/70">
             Sign in to join the conversation and mention other readers.
@@ -1651,9 +1749,7 @@ export default function CommentsSection({
             <RiArrowRightLine className="text-2xl transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
         </div>
-      ) : null}
-
-      {!authLoading && user && !profile?.handle ? (
+      ) : !authLoading && user && !profile?.handle ? (
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/30 py-7">
           <p className="font-light text-white/70">
             Choose your comment handle to participate in discussions.
@@ -1668,7 +1764,7 @@ export default function CommentsSection({
         </div>
       ) : null}
 
-      {user && profile?.handle ? (
+      {user && profile?.handle && !isBanned && !isSuspended ? (
         <form
           onSubmit={submitComment}
           className="flex gap-4 border-b border-white/30 py-7"
@@ -1785,6 +1881,15 @@ export default function CommentsSection({
                 {busyId === "new" ? "Posting…" : "Post comment"}
                 <RiArrowRightLine className="text-2xl transition-transform duration-300 group-hover:translate-x-1" />
               </button>
+            </div>
+            <div className="mt-2 text-right">
+              <Link
+                href="/community-guidelines"
+                target="_blank"
+                className="text-[11px] text-white/40 hover:text-white transition-colors"
+              >
+                Please adhere to our <span className="underline text-[#8a2ae3]">Community Guidelines</span>
+              </Link>
             </div>
           </div>
         </form>
@@ -1945,6 +2050,28 @@ export default function CommentsSection({
                           <Trash2 className="h-3 w-3" />
                         </button>
                       </div>
+                    ) : user && !isDeletedAuthor && !staffProfile && !staffProfiles[comment.authorId] ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setReportTarget({
+                            type: "comment",
+                            reportedUserId: comment.authorId,
+                            reportedUserHandle: commentHandle,
+                            reportedUserName: comment.authorName,
+                            commentId: comment.id,
+                            commentContent: comment.content,
+                            articleId,
+                            articleTitle,
+                            articleSlug,
+                          })
+                        }
+                        className="flex h-6 w-6 items-center justify-center border border-white/15 text-white/40 transition-colors hover:border-red-400 hover:text-red-300"
+                        title="Report comment"
+                        aria-label="Report comment"
+                      >
+                        <RiFlagLine className="h-3 w-3" />
+                      </button>
                     ) : null}
                   </div>
                 </header>
@@ -2388,6 +2515,29 @@ export default function CommentsSection({
                                     <Trash2 className="h-2.5 w-2.5" />
                                   </button>
                                 </div>
+                              ) : user && !isDeletedReplyAuthor && !replyStaff && !staffProfiles[reply.authorId] ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setReportTarget({
+                                      type: "reply",
+                                      reportedUserId: reply.authorId,
+                                      reportedUserHandle: replyHandle,
+                                      reportedUserName: reply.authorName,
+                                      commentId: reply.id,
+                                      parentCommentId: comment.id,
+                                      commentContent: reply.content,
+                                      articleId,
+                                      articleTitle,
+                                      articleSlug,
+                                    })
+                                  }
+                                  className="flex h-5 w-5 items-center justify-center border border-white/15 text-white/35 transition-colors hover:border-red-400 hover:text-red-300"
+                                  title="Report reply"
+                                  aria-label="Report reply"
+                                >
+                                  <RiFlagLine className="h-2.5 w-2.5" />
+                                </button>
                               ) : null}
                             </header>
                             {isReplyEditing ? (
@@ -2562,6 +2712,12 @@ export default function CommentsSection({
         initialData={selectedUserModal?.initialData}
         staffProfile={selectedUserModal?.staffProfile}
         onClose={closeProfileModal}
+      />
+
+      <ReportModal
+        isOpen={Boolean(reportTarget)}
+        onClose={() => setReportTarget(null)}
+        target={reportTarget}
       />
 
       {/* Fullscreen Gallery Lightbox Modal */}
