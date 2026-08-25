@@ -32,7 +32,15 @@ function AuthorCard({ authorData }) {
   // Generate social media links dynamically
   const socialLinks = authorData.socials
     ? Object.entries(authorData.socials)
-        .filter(([platform, url]) => url) // Remove empty links
+        .filter(([, url]) => {
+          if (typeof url !== "string") return false;
+          try {
+            const parsed = new URL(url.trim());
+            return parsed.protocol === "https:" && parsed.username === "" && parsed.password === "";
+          } catch {
+            return false;
+          }
+        })
         .map(([platform, url]) => ({
           href: url,
           ariaLabel: `Visit ${authorData.name}'s ${platform} page`,
