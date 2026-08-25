@@ -183,6 +183,16 @@ function sortRepliesWithPriority(
   return [...staffReplies, ...regularReplies];
 }
 
+function callableErrorMessage(error: unknown, fallback: string) {
+  if (typeof error === "object" && error && "message" in error) {
+    const message = String((error as { message: string }).message)
+      .replace(/^FirebaseError:\s*/i, "")
+      .trim();
+    if (message && !/^(internal|internal error)$/i.test(message)) return message;
+  }
+  return fallback;
+}
+
 function ReaderAvatar({
   name,
   photoURL,
@@ -1282,7 +1292,7 @@ export default function CommentsSection({
     } catch (submitError) {
       await deleteMultipleCommentImagesSafe(storage, uploadedImages);
       console.error("Unable to post comment:", submitError);
-      setError("We could not post your comment. Please try again.");
+      setError(callableErrorMessage(submitError, "We could not post your comment. Please try again."));
     } finally {
       setBusyId(null);
     }
@@ -1341,7 +1351,7 @@ export default function CommentsSection({
     } catch (replyError) {
       await deleteMultipleCommentImagesSafe(storage, uploadedImages);
       console.error("Unable to post reply:", replyError);
-      setError("We could not post your reply. Please try again.");
+      setError(callableErrorMessage(replyError, "We could not post your reply. Please try again."));
     } finally {
       setReplyBusyId(null);
     }
@@ -1740,13 +1750,15 @@ export default function CommentsSection({
       ) : !authLoading && user && !profile?.handle ? (
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/30 py-7">
           <p className="font-light text-white/70">
-            Choose your comment handle to participate in discussions.
+            {isStaff
+              ? "Set your team handle in the CMS before commenting."
+              : "Choose your comment handle to participate in discussions."}
           </p>
           <Link
-            href="/account"
+            href={isStaff ? "https://cms.lap.onl/admin/profile" : "/account"}
             className="group inline-flex items-center gap-3 font-semibold uppercase transition-colors duration-300 hover:text-[#8a2ae3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3]"
           >
-            Claim your handle
+            {isStaff ? "Open CMS profile" : "Claim your handle"}
             <RiArrowRightLine className="text-2xl transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
         </div>

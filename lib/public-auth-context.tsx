@@ -373,8 +373,41 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
 
           const syncedProfile = existingProfile ? await syncPublicUser(nextUser) : null;
           if (!active) return;
+          const staffData = hasStaffDoc ? staffSnapshot.data() : undefined;
+          const staffHandle =
+            typeof staffData?.handle === "string"
+              ? staffData.handle.trim().toLowerCase().replace(/^@+/, "")
+              : "";
+          const staffProfile: PublicProfile | null = staffHandle
+            ? {
+                uid: nextUser.uid,
+                email: nextUser.email || "",
+                displayName:
+                  (typeof staffData?.name === "string" && staffData.name) ||
+                  syncedProfile?.displayName ||
+                  staffHandle,
+                photoURL:
+                  (typeof staffData?.avatar === "string" && staffData.avatar) ||
+                  syncedProfile?.photoURL ||
+                  nextUser.photoURL ||
+                  "",
+                provider: getProvider(nextUser),
+                handle: staffHandle,
+                status: syncedProfile?.status || "active",
+                warningCount: syncedProfile?.warningCount,
+                lastWarningReason: syncedProfile?.lastWarningReason,
+                suspendedUntil: syncedProfile?.suspendedUntil,
+                suspensionReason: syncedProfile?.suspensionReason,
+                bannedAt: syncedProfile?.bannedAt,
+                banReason: syncedProfile?.banReason,
+              }
+            : null;
           setUser(nextUser);
-          setProfile(syncedProfile);
+          setProfile(
+            syncedProfile?.handle
+              ? syncedProfile
+              : staffProfile || syncedProfile,
+          );
         } catch (error) {
           console.error("Unable to sync public user profile:", error);
           setUser(null);
