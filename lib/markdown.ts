@@ -134,6 +134,9 @@ export async function processMarkdown(content: string): Promise<string> {
         "src",
         "width",
         "title",
+        "sandbox",
+        "referrerpolicy",
+        "loading",
       ],
       button: ["id", "class", "data-code", "aria-label", "title", "type"],
       div: ["class", "data-copy-wrapper"],
@@ -164,6 +167,12 @@ export async function processMarkdown(content: string): Promise<string> {
     allowedSchemesByTag: {
       iframe: ["https"],
     },
+    allowedIframeHostnames: [
+      "youtube.com",
+      "www.youtube.com",
+      "youtube-nocookie.com",
+      "www.youtube-nocookie.com",
+    ],
     transformTags: {
       a: (tagName, attribs) => ({
         tagName,
@@ -171,6 +180,15 @@ export async function processMarkdown(content: string): Promise<string> {
           ...attribs,
           target: "_blank",
           rel: "noopener noreferrer",
+        },
+      }),
+      iframe: (tagName, attribs) => ({
+        tagName,
+        attribs: {
+          ...attribs,
+          sandbox: "allow-scripts allow-same-origin allow-presentation",
+          referrerpolicy: "strict-origin-when-cross-origin",
+          loading: "lazy",
         },
       }),
     },

@@ -1264,33 +1264,12 @@ export default function CommentsSection({
         );
       }
 
-      const commentData: Record<string, any> = {
+      const createComment = httpsCallable(functions, "createComment");
+      await createComment({
         articleId,
-        articleSlug,
-        articleTitle,
-        authorId: user.uid,
-        authorName,
-        authorHandle: profile.handle,
-        authorPhotoURL: profile.photoURL || user.photoURL || "",
         content: trimmedContent,
-        status: "visible",
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        edited: false,
-        likeCount: 0,
-        dislikeCount: 0,
-        replyCount: 0,
-      };
-
-      if (uploadedImages.length > 0) {
-        commentData.images = uploadedImages;
-        commentData.imageUrl = uploadedImages[0].url;
-        commentData.imageStoragePath = uploadedImages[0].storagePath;
-        if (uploadedImages[0].width) commentData.imageWidth = uploadedImages[0].width;
-        if (uploadedImages[0].height) commentData.imageHeight = uploadedImages[0].height;
-      }
-
-      await addDoc(collection(db, "comments"), commentData);
+        images: uploadedImages,
+      });
       setContent("");
       commentImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
       setCommentImages([]);
@@ -1339,31 +1318,12 @@ export default function CommentsSection({
         );
       }
 
-      const replyData: Record<string, any> = {
+      const createReply = httpsCallable(functions, "createCommentReply");
+      await createReply({
         parentCommentId: comment.id,
-        articleId,
-        articleSlug,
-        articleTitle,
-        authorId: user.uid,
-        authorName,
-        authorHandle: profile.handle,
-        authorPhotoURL: profile.photoURL || user.photoURL || "",
         content: trimmedContent,
-        status: "visible",
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        edited: false,
-      };
-
-      if (uploadedImages.length > 0) {
-        replyData.images = uploadedImages;
-        replyData.imageUrl = uploadedImages[0].url;
-        replyData.imageStoragePath = uploadedImages[0].storagePath;
-        if (uploadedImages[0].width) replyData.imageWidth = uploadedImages[0].width;
-        if (uploadedImages[0].height) replyData.imageHeight = uploadedImages[0].height;
-      }
-
-      await addDoc(collection(db, "commentReplies"), replyData);
+        images: uploadedImages,
+      });
       updateCurrentPage((current) =>
         current.map((item) =>
           item.id === comment.id
@@ -1592,39 +1552,11 @@ export default function CommentsSection({
     setPinBusyId(comment.id);
     setError("");
     try {
-      try {
-        const togglePin = httpsCallable<{ commentId: string; pinned: boolean }>(
-          functions,
-          "togglePinComment"
-        );
-        await togglePin({ commentId: comment.id, pinned: newPinned });
-      } catch (fnErr) {
-        // Fallback to direct Firestore update
-        const batch = writeBatch(db);
-        if (newPinned) {
-          comments.forEach((c) => {
-            if (c.pinned && c.id !== comment.id) {
-              batch.update(doc(db, "comments", c.id), {
-                pinned: false,
-                pinnedAt: null,
-                pinnedBy: null,
-              });
-            }
-          });
-          batch.update(doc(db, "comments", comment.id), {
-            pinned: true,
-            pinnedAt: serverTimestamp(),
-            pinnedBy: user.uid,
-          });
-        } else {
-          batch.update(doc(db, "comments", comment.id), {
-            pinned: false,
-            pinnedAt: null,
-            pinnedBy: null,
-          });
-        }
-        await batch.commit();
-      }
+      const togglePin = httpsCallable<{ commentId: string; pinned: boolean }>(
+        functions,
+        "togglePinComment"
+      );
+      await togglePin({ commentId: comment.id, pinned: newPinned });
 
       void loadComments(true);
     } catch (pinError: any) {

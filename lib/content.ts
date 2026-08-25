@@ -182,7 +182,14 @@ function normalizeSocials(source: unknown): SocialMap {
 
   return Object.entries(source).reduce<SocialMap>((acc, [platform, value]) => {
     if (typeof value === "string" && value.trim()) {
-      acc[platform] = value.trim();
+      try {
+        const parsed = new URL(value.trim());
+        if (parsed.protocol === "https:" && !parsed.username && !parsed.password) {
+          acc[platform] = parsed.toString();
+        }
+      } catch {
+        // Unsafe or malformed social URLs are omitted from public output.
+      }
     }
 
     return acc;

@@ -303,28 +303,6 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
   const [isDeviceBlocked, setIsDeviceBlocked] = useState(false);
   const [deviceBlockReason, setDeviceBlockReason] = useState("");
 
-  // Preflight the pseudonymous browser identity. Network addresses are checked
-  // server-side as private signals and are never returned to the browser.
-  useEffect(() => {
-    let active = true;
-    void getDeviceRiskPayload()
-      .then(async (payload) => {
-        const checkRisk = httpsCallable<
-          typeof payload,
-          { blocked: boolean; reason?: string }
-        >(functions, "checkDeviceRisk");
-        const result = await checkRisk(payload);
-        if (active && result.data.blocked) {
-          setIsDeviceBlocked(true);
-          setDeviceBlockReason(result.data.reason || "This browser installation is blocked.");
-        }
-      })
-      .catch((error) => console.warn("Unable to preflight browser identity:", error));
-    return () => {
-      active = false;
-    };
-  }, []);
-
   const refreshProfile = useCallback(async () => {
     const currentUser = auth.currentUser;
     if (!currentUser) {
@@ -349,7 +327,13 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
           const payload = await getDeviceRiskPayload();
           const syncRisk = httpsCallable<
             typeof payload,
-            { blocked: boolean; reason?: string }
+            {
+              blocked: boolean;
+              reason?: string;
+              riskFlagged?: boolean;
+              riskReason?: string;
+              staffBypass?: boolean;
+            }
           >(functions, "syncUserRisk");
           const [existingProfile, staffSnapshot] = await Promise.all([
             getExistingPublicProfile(nextUser),
@@ -362,12 +346,20 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
             ? await syncRisk(payload)
             : { data: { blocked: false } };
           if (!active) return;
-          const hasStaffDoc = staffSnapshot.exists();
+          const rawStaffRole = staffSnapshot.data()?.role;
+          const hasStaffDoc =
+            staffSnapshot.exists() &&
+            ["super", "admin", "author", "moderator"].includes(rawStaffRole);
           setIsStaff(hasStaffDoc);
           if (hasStaffDoc) {
-            const role = (staffSnapshot.data()?.role as StaffRole) || null;
+            const role = rawStaffRole as StaffRole;
             setStaffRole(role);
             setIsAdmin(role === "admin" || role === "super");
+            // Reader device bans do not lock vetted team accounts out of the
+            // site. Staff compromise and offboarding use the team controls;
+            // the server still records matching risk signals for review.
+            setIsDeviceBlocked(false);
+            setDeviceBlockReason("");
           }
 
           if (riskResult.data.blocked && !hasStaffDoc) {

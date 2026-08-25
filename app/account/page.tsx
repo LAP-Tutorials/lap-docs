@@ -241,7 +241,10 @@ export default function AccountPage() {
 
     try {
       const deviceRisk = await checkCurrentDevice();
-      if (deviceRisk.blocked || isDeviceBlocked) {
+      // Registration is denied before creating an Auth record. Existing users
+      // may authenticate so syncUserRisk can distinguish a blocked reader from
+      // a vetted staff account, which is handled by the separate team controls.
+      if (mode === "register" && (deviceRisk.blocked || isDeviceBlocked)) {
         setError(deviceRisk.reason || deviceBlockReason || "This browser installation has been blocked due to Community Guidelines violations.");
         return;
       }
@@ -314,7 +317,7 @@ export default function AccountPage() {
     setMessage("");
     try {
       const deviceRisk = await checkCurrentDevice();
-      if (deviceRisk.blocked || isDeviceBlocked) {
+      if (mode === "register" && (deviceRisk.blocked || isDeviceBlocked)) {
         setError(deviceRisk.reason || deviceBlockReason || "This browser installation has been blocked due to Community Guidelines violations.");
         return;
       }
@@ -435,8 +438,8 @@ export default function AccountPage() {
 
   const finalizeAccountWithGuidelines = async () => {
     if (!user) return;
-    if (!acceptedGuidelines) {
-      setError("Please agree to follow the Community Guidelines to finish joining.");
+    if (!acceptedTerms || !acceptedGuidelines) {
+      setError("Please accept the Terms and Community Guidelines to finish joining.");
       return;
     }
     const normalizedHandle = normalizeHandle(handle);
@@ -756,6 +759,18 @@ export default function AccountPage() {
                       <label className="flex items-start gap-3 cursor-pointer select-none border-t border-white/15 pt-4 text-xs text-white/90">
                         <input
                           type="checkbox"
+                          checked={acceptedTerms}
+                          onChange={(e) => setAcceptedTerms(e.target.checked)}
+                          className="mt-0.5 h-4 w-4 rounded border-white/30 bg-transparent text-[#8a2ae3] focus:ring-[#8a2ae3]"
+                        />
+                        <span>
+                          I have read and accept the <Link href="/terms-of-service" target="_blank" className="underline">Terms of Service</Link> and <Link href="/privacy-policy" target="_blank" className="underline">Privacy Policy</Link>.
+                        </span>
+                      </label>
+
+                      <label className="flex items-start gap-3 cursor-pointer select-none text-xs text-white/90">
+                        <input
+                          type="checkbox"
                           checked={acceptedGuidelines}
                           onChange={(e) => setAcceptedGuidelines(e.target.checked)}
                           className="mt-0.5 h-4 w-4 rounded border-white/30 bg-transparent text-[#8a2ae3] focus:ring-[#8a2ae3]"
@@ -778,7 +793,7 @@ export default function AccountPage() {
                         <button
                           type="button"
                           onClick={finalizeAccountWithGuidelines}
-                          disabled={savingHandle || !acceptedGuidelines}
+                          disabled={savingHandle || !acceptedTerms || !acceptedGuidelines}
                           className="group inline-flex items-center gap-2 bg-[#8a2ae3] px-6 py-3 text-xs font-semibold uppercase text-white transition-colors hover:bg-[#9d3df0] disabled:opacity-40"
                         >
                           <span>{savingHandle ? "Joining…" : "Agree & Join Community"}</span>

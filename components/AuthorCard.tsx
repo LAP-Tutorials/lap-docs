@@ -63,6 +63,7 @@ function AuthorCard({ authorData }) {
                   key={index}
                   href={link.href as string}
                   target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={link.ariaLabel}
                   className="text-white text-2xl hover:text-[#8a2ae3] transition ease-in-out duration-300"
                 >
