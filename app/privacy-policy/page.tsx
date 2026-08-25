@@ -60,11 +60,7 @@ export default function PrivacyPolicy() {
       <h1 className="text-4xl font-bold mb-8">Privacy Policy</h1>
       <p className="mb-4 text-gray-300">
         Last updated:{" "}
-        {new Date().toLocaleDateString("en-US", {
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-        })}
+        August 25, 2026
       </p>
 
       <section className="mb-8">
@@ -101,6 +97,21 @@ export default function PrivacyPolicy() {
             pages visited, and time spent on those pages, allowing us to monitor
             traffic patterns.
           </li>
+          <li>
+            <strong>Community Content:</strong> We store comments, replies,
+            reactions, reports, uploaded images, and moderation history needed
+            to operate and protect the community.
+          </li>
+          <li>
+            <strong>Security and Device Signals:</strong> For account abuse
+            prevention, we issue a random identifier to this browser
+            installation and collect coarse browser characteristics: browser
+            and platform, screen dimensions and color depth, timezone,
+            language, CPU-core count, approximate device memory, and touch
+            capability. The characteristics and device identifier are
+            normalized and stored as keyed one-way hashes. We also record the public
+            IP address observed by our server as a private network signal.
+          </li>
         </ul>
         <p className="mb-4 text-gray-300 leading-relaxed">
           You can read all published content without an account. An account is
@@ -127,7 +138,10 @@ export default function PrivacyPolicy() {
           </li>
           <li>
             <strong>To ensure security:</strong> To monitor and protect our
-            website from malicious activity.
+            website from malicious activity. Account and browser-installation
+            blocks may be used after serious violations. IP addresses are not
+            used by themselves to block everyone sharing a café, school,
+            office, carrier, or home network.
           </li>
         </ul>
       </section>
@@ -148,6 +162,13 @@ export default function PrivacyPolicy() {
           some portions of our analytics may not function properly, though you
           will still be able to read our documentation.
         </p>
+        <p className="mb-4 text-gray-300 leading-relaxed">
+          The random browser-installation identifier is stored in local
+          storage. Clearing site data removes that local copy. Security records
+          already associated with an account may remain where reasonably
+          necessary to enforce our rules, investigate abuse, and protect other
+          users.
+        </p>
       </section>
 
       <section className="mb-8">
@@ -157,9 +178,17 @@ export default function PrivacyPolicy() {
         <p className="mb-4 text-gray-300 leading-relaxed">
           We do not sell, trade, or otherwise transfer your personally
           identifiable information to outside parties. However, we do share data
-          with trusted third-party service providers who assist us in operating
-          our website, such as Google Analytics for traffic analysis. These
-          parties agree to keep this information confidential.
+          with service providers who assist us in operating the website. These
+          include Google Firebase for authentication, databases, server
+          functions, and file storage; Google Analytics for traffic analysis;
+          and our hosting providers.
+        </p>
+        <p className="mb-4 text-gray-300 leading-relaxed">
+          Comment translation is optional. When you enable automatic
+          translation, request a translation, or a moderator translates content
+          for review, the comment text and requested language may be sent to
+          Google Translate or MyMemory to produce the result. Reader automatic
+          translation is off by default.
         </p>
       </section>
 
@@ -172,6 +201,13 @@ export default function PrivacyPolicy() {
           to the personal data we hold about you, request corrections, or
           request deletion of your data. To exercise these rights, please
           contact us directly.
+        </p>
+        <p className="mb-4 text-gray-300 leading-relaxed">
+          Deleting your reader account removes the account and private profile
+          data. Content that must remain coherent in public discussions may be
+          retained with the author shown as a deleted user. Security,
+          moderation, and audit records may be retained for as long as needed
+          to prevent abuse, resolve disputes, or meet legal obligations.
         </p>
       </section>
 

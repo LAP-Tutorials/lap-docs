@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { onAuthStateChanged, updateProfile, type User } from "firebase/auth";
+import { httpsCallable } from "firebase/functions";
 import {
   doc,
   getDoc,
@@ -17,7 +18,8 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, functions } from "@/lib/firebase";
+import { getDeviceRiskPayload } from "@/lib/device-identity";
 
 export type PublicProfile = {
   uid: string;
@@ -33,7 +35,6 @@ export type PublicProfile = {
   suspensionReason?: string;
   bannedAt?: any;
   banReason?: string;
-  lastIp?: string;
 };
 
 export type StaffRole = "super" | "admin" | "author" | "moderator";
@@ -47,9 +48,8 @@ type PublicAuthContextValue = {
   isLoading: boolean;
   isSuspended: boolean;
   isBanned: boolean;
-  isIpBanned: boolean;
-  ipBanReason?: string;
-  clientIp?: string;
+  isDeviceBlocked: boolean;
+  deviceBlockReason?: string;
   refreshProfile: () => Promise<PublicProfile | null>;
 };
 
@@ -59,6 +59,8 @@ const PublicAuthContext = createContext<PublicAuthContextValue | undefined>(
 
 const HANDLE_PATTERN = /^[a-z0-9_-]{3,20}$/;
 const PROTECTED_BRAND_PATTERN = /^(official|real|the|team|weare|my)?(lap|arclapain)/;
+export const TERMS_VERSION = "2026-08-25";
+export const GUIDELINES_VERSION = "2026-08-25";
 
 export type PublicHandleAvailability =
   | "available"
@@ -95,7 +97,6 @@ function toPublicProfile(data: Record<string, unknown>, user: User): PublicProfi
     suspensionReason: typeof data.suspensionReason === "string" ? data.suspensionReason : undefined,
     bannedAt: data.bannedAt,
     banReason: typeof data.banReason === "string" ? data.banReason : undefined,
-    lastIp: typeof data.lastIp === "string" ? data.lastIp : undefined,
   };
 }
 
@@ -173,7 +174,7 @@ export async function getExistingPublicProfile(user: User) {
   return snapshot.exists() ? toPublicProfile(snapshot.data(), user) : null;
 }
 
-export async function syncPublicUser(user: User, ip?: string): Promise<PublicProfile> {
+export async function syncPublicUser(user: User): Promise<PublicProfile> {
   const userRef = doc(db, "users", user.uid);
   const snapshot = await getDoc(userRef);
   const existingHandle =
@@ -194,21 +195,15 @@ export async function syncPublicUser(user: User, ip?: string): Promise<PublicPro
     updatedAt: serverTimestamp(),
   };
 
-  if (ip) {
-    profile.lastIp = ip;
-  }
-
   if (snapshot.exists()) {
     const currentProfile = snapshot.data();
     const needsHandleMigration = typeof currentProfile.handle !== "string";
-    const needsIpUpdate = Boolean(ip && currentProfile.lastIp !== ip);
     const profileChanged =
       currentProfile.email !== profile.email ||
       currentProfile.displayName !== profile.displayName ||
       currentProfile.photoURL !== profile.photoURL ||
       currentProfile.provider !== profile.provider ||
-      needsHandleMigration ||
-      needsIpUpdate;
+      needsHandleMigration;
 
     if (profileChanged) {
       await updateDoc(userRef, {
@@ -226,7 +221,7 @@ export async function syncPublicUser(user: User, ip?: string): Promise<PublicPro
   throw new Error("Complete your reader profile before continuing.");
 }
 
-export async function claimPublicHandle(user: User, value: string, ip?: string) {
+export async function claimPublicHandle(user: User, value: string) {
   const handle = normalizeHandle(value);
   const validationError = validateHandle(handle);
   if (validationError) throw new Error(validationError);
@@ -244,14 +239,6 @@ export async function claimPublicHandle(user: User, value: string, ip?: string) 
 
   const userRef = doc(db, "users", user.uid);
   const handleRef = doc(db, "handles", handle);
-
-  if (ip) {
-    const cleanIpKey = ip.trim().replace(/^::ffff:/, "").replace(/[:.]/g, "_").toLowerCase();
-    const ipSnap = await getDoc(doc(db, "bannedIps", cleanIpKey));
-    if (ipSnap.exists()) {
-      throw new Error("Your IP address has been permanently banned due to Community Guidelines violations.");
-    }
-  }
 
   return runTransaction(db, async (transaction) => {
     const userSnapshot = await transaction.get(userRef);
@@ -283,7 +270,10 @@ export async function claimPublicHandle(user: User, value: string, ip?: string) 
         photoURL: user.photoURL || "",
         provider: getProvider(user),
         handle,
-        ...(ip ? { lastIp: ip } : {}),
+        termsAcceptedAt: serverTimestamp(),
+        termsVersion: TERMS_VERSION,
+        guidelinesAcceptedAt: serverTimestamp(),
+        guidelinesVersion: GUIDELINES_VERSION,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -291,7 +281,10 @@ export async function claimPublicHandle(user: User, value: string, ip?: string) 
       transaction.update(userRef, {
         handle,
         displayName: handle,
-        ...(ip ? { lastIp: ip } : {}),
+        termsAcceptedAt: serverTimestamp(),
+        termsVersion: TERMS_VERSION,
+        guidelinesAcceptedAt: serverTimestamp(),
+        guidelinesVersion: GUIDELINES_VERSION,
         updatedAt: serverTimestamp(),
       });
     }
@@ -307,22 +300,29 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
   const [staffRole, setStaffRole] = useState<StaffRole | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [clientIp, setClientIp] = useState<string>("127.0.0.1");
-  const [isIpBanned, setIsIpBanned] = useState<boolean>(false);
-  const [ipBanReason, setIpBanReason] = useState<string>("");
+  const [isDeviceBlocked, setIsDeviceBlocked] = useState(false);
+  const [deviceBlockReason, setDeviceBlockReason] = useState("");
 
-  // Check client IP ban status
+  // Preflight the pseudonymous browser identity. Network addresses are checked
+  // server-side as private signals and are never returned to the browser.
   useEffect(() => {
-    fetch("/api/auth/ip")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.ip) setClientIp(data.ip);
-        if (data.isBanned) {
-          setIsIpBanned(true);
-          setIpBanReason(data.reason || "Violations of Community Guidelines");
+    let active = true;
+    void getDeviceRiskPayload()
+      .then(async (payload) => {
+        const checkRisk = httpsCallable<
+          typeof payload,
+          { blocked: boolean; reason?: string }
+        >(functions, "checkDeviceRisk");
+        const result = await checkRisk(payload);
+        if (active && result.data.blocked) {
+          setIsDeviceBlocked(true);
+          setDeviceBlockReason(result.data.reason || "This browser installation is blocked.");
         }
       })
-      .catch((err) => console.warn("Failed to check IP:", err));
+      .catch((error) => console.warn("Unable to preflight browser identity:", error));
+    return () => {
+      active = false;
+    };
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -339,17 +339,29 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, async (nextUser) => {
-      setUser(nextUser);
+    let active = true;
+    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
       if (nextUser) {
         setIsStaff(false);
         setStaffRole(null);
         setIsAdmin(false);
         try {
+          const payload = await getDeviceRiskPayload();
+          const syncRisk = httpsCallable<
+            typeof payload,
+            { blocked: boolean; reason?: string }
+          >(functions, "syncUserRisk");
           const [existingProfile, staffSnapshot] = await Promise.all([
             getExistingPublicProfile(nextUser),
             getDoc(doc(db, "authors", nextUser.uid)),
           ]);
+          // New accounts are linked to the browser by the onboarding flow after
+          // its post-auth checks. This avoids leaving orphan device records when
+          // a user accidentally creates an account while trying to sign in.
+          const riskResult = existingProfile || staffSnapshot.exists()
+            ? await syncRisk(payload)
+            : { data: { blocked: false } };
+          if (!active) return;
           const hasStaffDoc = staffSnapshot.exists();
           setIsStaff(hasStaffDoc);
           if (hasStaffDoc) {
@@ -358,20 +370,9 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
             setIsAdmin(role === "admin" || role === "super");
           }
 
-          // Check if current device IP is banned
-          const ipData = await fetch("/api/auth/ip", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ uid: nextUser.uid }),
-          })
-            .then((r) => r.json())
-            .catch(() => null);
-
-          if (ipData?.ip) setClientIp(ipData.ip);
-
-          if (ipData?.isBanned && !hasStaffDoc) {
-            setIsIpBanned(true);
-            setIpBanReason(ipData.reason || "Violations of Community Guidelines");
+          if (riskResult.data.blocked && !hasStaffDoc) {
+            setIsDeviceBlocked(true);
+            setDeviceBlockReason(riskResult.data.reason || "This browser installation is blocked.");
             setUser(null);
             setProfile(null);
             await auth.signOut();
@@ -379,18 +380,18 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
           }
 
           const syncedProfile = existingProfile ? await syncPublicUser(nextUser) : null;
+          if (!active) return;
+          setUser(nextUser);
           setProfile(syncedProfile);
-
-          if (clientIp) {
-            void updateDoc(doc(db, "users", nextUser.uid), {
-              lastIp: clientIp,
-            }).catch(() => {});
-          }
         } catch (error) {
           console.error("Unable to sync public user profile:", error);
+          setUser(null);
           setProfile(null);
+          setDeviceBlockReason("We could not verify this browser installation. Please reconnect and try again.");
+          await auth.signOut().catch(() => undefined);
         }
       } else {
+        setUser(null);
         setProfile(null);
         setIsStaff(false);
         setStaffRole(null);
@@ -398,11 +399,15 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
       }
       setIsLoading(false);
     });
-  }, [clientIp]);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
 
   const isBanned = useMemo(() => {
-    return Boolean(profile?.status === "banned" || profile?.bannedAt || isIpBanned);
-  }, [profile?.status, profile?.bannedAt, isIpBanned]);
+    return Boolean(profile?.status === "banned" || profile?.bannedAt || isDeviceBlocked);
+  }, [profile?.status, profile?.bannedAt, isDeviceBlocked]);
 
   const isSuspended = useMemo(() => {
     if (!profile?.suspendedUntil) return false;
@@ -427,9 +432,8 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       isSuspended,
       isBanned,
-      isIpBanned,
-      ipBanReason,
-      clientIp,
+      isDeviceBlocked,
+      deviceBlockReason,
       refreshProfile,
     }),
     [
@@ -441,9 +445,8 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       isSuspended,
       isBanned,
-      isIpBanned,
-      ipBanReason,
-      clientIp,
+      isDeviceBlocked,
+      deviceBlockReason,
       refreshProfile,
     ],
   );

@@ -185,8 +185,8 @@ export default function UserProfileModal({
 
     const fetchProfileData = async () => {
       try {
-        const userRef = doc(db, "users", userId);
-        const authorRef = doc(db, "authors", userId);
+        const userRef = doc(db, "publicProfiles", userId);
+        const authorRef = doc(db, "publicAuthors", userId);
         const commentsRef = collection(db, "comments");
         const repliesRef = collection(db, "commentReplies");
 

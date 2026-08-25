@@ -608,8 +608,7 @@ export default function CommentsSection({
     isLoading: authLoading,
     isSuspended,
     isBanned,
-    isIpBanned,
-    ipBanReason,
+    deviceBlockReason,
   } = usePublicAuth();
   const [dismissedWarning, setDismissedWarning] = useState(false);
   const [comments, setComments] = useState<CommentRecord[]>([]);
@@ -639,6 +638,7 @@ export default function CommentsSection({
   const [hasMoreComments, setHasMoreComments] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
   const [totalCommentsCount, setTotalCommentsCount] = useState(0);
+  const [hasPinnedComment, setHasPinnedComment] = useState(false);
   const [error, setError] = useState("");
   const [staffProfiles, setStaffProfiles] = useState<Record<string, StaffProfile>>(
     {},
@@ -662,6 +662,8 @@ export default function CommentsSection({
   const [replyImages, setReplyImages] = useState<SanitizedImageResult[]>([]);
   const [replyImageProcessing, setReplyImageProcessing] = useState(false);
   const [replyImageError, setReplyImageError] = useState<string | null>(null);
+  const commentImagesRef = useRef<SanitizedImageResult[]>([]);
+  const replyImagesRef = useRef<SanitizedImageResult[]>([]);
 
   // Gallery Lightbox Modal state
   const [lightboxGallery, setLightboxGallery] = useState<{
@@ -687,6 +689,10 @@ export default function CommentsSection({
     >
   >({});
   const [translatingIds, setTranslatingIds] = useState<Set<string>>(new Set());
+  const translationsRef = useRef(translations);
+  const translatingIdsRef = useRef(translatingIds);
+  translationsRef.current = translations;
+  translatingIdsRef.current = translatingIds;
 
   const commentFileInputRef = useRef<HTMLInputElement>(null);
   const replyFileInputRef = useRef<HTMLInputElement>(null);
@@ -715,7 +721,7 @@ export default function CommentsSection({
       hasMore: boolean;
     }>
   >([]);
-  const countsReady = useRef(false);
+  const pinnedCommentId = useRef<string | null>(null);
   const requestSequence = useRef(0);
   const replyCursors = useRef<
     Record<string, QueryDocumentSnapshot<DocumentData> | null>
@@ -737,12 +743,6 @@ export default function CommentsSection({
       setError("");
 
       try {
-        if (sort === "liked" && !countsReady.current) {
-          const ensureCounts = httpsCallable(functions, "ensureCommentCounts");
-          await ensureCounts({});
-          countsReady.current = true;
-        }
-
         let pinnedDoc: CommentRecord | null = null;
         if (reset) {
           try {
@@ -756,12 +756,19 @@ export default function CommentsSection({
               )
             );
             if (!pinnedSnap.empty) {
+              pinnedCommentId.current = pinnedSnap.docs[0].id;
+              setHasPinnedComment(true);
               pinnedDoc = {
                 id: pinnedSnap.docs[0].id,
                 ...pinnedSnap.docs[0].data(),
               } as CommentRecord;
+            } else {
+              pinnedCommentId.current = null;
+              setHasPinnedComment(false);
             }
           } catch (err) {
+            pinnedCommentId.current = null;
+            setHasPinnedComment(false);
             console.warn("Unable to load pinned comment:", err);
           }
         }
@@ -778,14 +785,14 @@ export default function CommentsSection({
         if (!reset && commentCursor.current) {
           constraints.push(startAfter(commentCursor.current));
         }
-        constraints.push(limit(COMMENTS_PAGE_SIZE + 1));
+        constraints.push(limit(COMMENTS_PAGE_SIZE + 2));
 
         const snapshot = await getDocs(query(collection(db, "comments"), ...constraints));
         if (requestId !== requestSequence.current) return;
 
         const rawDocs = snapshot.docs;
-        const filteredDocs = pinnedDoc
-          ? rawDocs.filter((d) => d.id !== pinnedDoc!.id)
+        const filteredDocs = pinnedCommentId.current
+          ? rawDocs.filter((d) => d.id !== pinnedCommentId.current)
           : rawDocs;
         const pageDocs = filteredDocs.slice(0, COMMENTS_PAGE_SIZE);
         const mappedComments = pageDocs.map((snapshotDoc) => ({
@@ -799,7 +806,9 @@ export default function CommentsSection({
         const nextPage = {
           comments: page,
           cursor: commentCursor.current,
-          hasMore: filteredDocs.length > COMMENTS_PAGE_SIZE,
+          hasMore:
+            filteredDocs.length > COMMENTS_PAGE_SIZE ||
+            rawDocs.length === COMMENTS_PAGE_SIZE + 2,
         };
         if (reset) {
           commentPages.current = [nextPage];
@@ -1002,7 +1011,7 @@ export default function CommentsSection({
     let cancelled = false;
     const loadTrustedProfiles = async () => {
       try {
-        const snapshot = await getDocs(collection(db, "authors"));
+        const snapshot = await getDocs(collection(db, "publicAuthors"));
         if (cancelled) return;
 
         const nextProfiles: Record<string, StaffProfile> = {};
@@ -1056,12 +1065,14 @@ export default function CommentsSection({
     const toProcess = files.slice(0, maxAllowed);
     setCommentImageProcessing(true);
     setCommentImageError(null);
+    const sanitizedList: SanitizedImageResult[] = [];
     try {
-      const sanitizedList = await Promise.all(
-        toProcess.map((f) => sanitizeAndCompressImage(f)),
-      );
+      for (const file of toProcess) {
+        sanitizedList.push(await sanitizeAndCompressImage(file));
+      }
       setCommentImages((prev) => [...prev, ...sanitizedList]);
     } catch (err: any) {
+      sanitizedList.forEach((image) => URL.revokeObjectURL(image.previewUrl));
       setCommentImageError(err?.message || "Could not process image.");
     } finally {
       setCommentImageProcessing(false);
@@ -1083,12 +1094,14 @@ export default function CommentsSection({
     const toProcess = files.slice(0, maxAllowed);
     setReplyImageProcessing(true);
     setReplyImageError(null);
+    const sanitizedList: SanitizedImageResult[] = [];
     try {
-      const sanitizedList = await Promise.all(
-        toProcess.map((f) => sanitizeAndCompressImage(f)),
-      );
+      for (const file of toProcess) {
+        sanitizedList.push(await sanitizeAndCompressImage(file));
+      }
       setReplyImages((prev) => [...prev, ...sanitizedList]);
     } catch (err: any) {
+      sanitizedList.forEach((image) => URL.revokeObjectURL(image.previewUrl));
       setReplyImageError(err?.message || "Could not process image.");
     } finally {
       setReplyImageProcessing(false);
@@ -1109,6 +1122,38 @@ export default function CommentsSection({
     if (!next) {
       setTranslations({});
     }
+  };
+
+  useEffect(() => {
+    commentImagesRef.current = commentImages;
+  }, [commentImages]);
+
+  useEffect(() => {
+    replyImagesRef.current = replyImages;
+  }, [replyImages]);
+
+  useEffect(
+    () => () => {
+      commentImagesRef.current.forEach((image) => URL.revokeObjectURL(image.previewUrl));
+      replyImagesRef.current.forEach((image) => URL.revokeObjectURL(image.previewUrl));
+    },
+    [],
+  );
+
+  const removePendingCommentImage = (index: number) => {
+    setCommentImages((current) => {
+      const removed = current[index];
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return current.filter((_, itemIndex) => itemIndex !== index);
+    });
+  };
+
+  const removePendingReplyImage = (index: number) => {
+    setReplyImages((current) => {
+      const removed = current[index];
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return current.filter((_, itemIndex) => itemIndex !== index);
+    });
   };
 
   const toggleTranslation = async (id: string, text: string) => {
@@ -1150,16 +1195,17 @@ export default function CommentsSection({
 
   // Language detection & translation pipeline
   useEffect(() => {
+    if (!autoTranslate) return;
     const toCheck: Array<{ id: string; content: string }> = [];
     comments.forEach((c) => {
-      if (c.content?.trim() && !translations[c.id] && !translatingIds.has(c.id)) {
+      if (c.content?.trim() && !translationsRef.current[c.id] && !translatingIdsRef.current.has(c.id)) {
         toCheck.push({ id: c.id, content: c.content });
       }
     });
 
     Object.values(replyThreads).forEach((thread) => {
       thread.replies.forEach((r) => {
-        if (r.content?.trim() && !translations[r.id] && !translatingIds.has(r.id)) {
+        if (r.content?.trim() && !translationsRef.current[r.id] && !translatingIdsRef.current.has(r.id)) {
           toCheck.push({ id: r.id, content: r.content });
         }
       });
@@ -1179,7 +1225,7 @@ export default function CommentsSection({
               sourceLangName: res.sourceLangName,
               isSameLanguage: res.isSameLanguage,
               isUnrecognizedLanguage: res.isUnrecognizedLanguage,
-              showingOriginal: !autoTranslate,
+              showingOriginal: false,
             },
           }));
         } catch {}
@@ -1190,7 +1236,7 @@ export default function CommentsSection({
   const submitComment = async (event: FormEvent) => {
     event.preventDefault();
     if (isBanned) {
-      setError("Your account or IP address is banned from participating in comments.");
+      setError("Your account or browser installation is blocked from participating in comments.");
       return;
     }
     if (isSuspended) {
@@ -1208,8 +1254,8 @@ export default function CommentsSection({
 
     setBusyId("new");
     setError("");
+    let uploadedImages: CommentImageAttachment[] = [];
     try {
-      let uploadedImages: CommentImageAttachment[] = [];
       if (commentImages.length > 0) {
         uploadedImages = await uploadMultipleSanitizedImages(
           storage,
@@ -1246,6 +1292,7 @@ export default function CommentsSection({
 
       await addDoc(collection(db, "comments"), commentData);
       setContent("");
+      commentImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
       setCommentImages([]);
       setCommentImageError(null);
       if (sort === "recent") {
@@ -1254,6 +1301,7 @@ export default function CommentsSection({
         setSort("recent");
       }
     } catch (submitError) {
+      await deleteMultipleCommentImagesSafe(storage, uploadedImages);
       console.error("Unable to post comment:", submitError);
       setError("We could not post your comment. Please try again.");
     } finally {
@@ -1263,7 +1311,7 @@ export default function CommentsSection({
 
   const submitReply = async (comment: CommentRecord) => {
     if (isBanned) {
-      setError("Your account or IP address is banned from participating in comments.");
+      setError("Your account or browser installation is blocked from participating in comments.");
       return;
     }
     if (isSuspended) {
@@ -1281,8 +1329,8 @@ export default function CommentsSection({
 
     setReplyBusyId(comment.id);
     setError("");
+    let uploadedImages: CommentImageAttachment[] = [];
     try {
-      let uploadedImages: CommentImageAttachment[] = [];
       if (replyImages.length > 0) {
         uploadedImages = await uploadMultipleSanitizedImages(
           storage,
@@ -1324,12 +1372,14 @@ export default function CommentsSection({
         ),
       );
       setReplyContent("");
+      replyImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
       setReplyImages([]);
       setReplyImageError(null);
       setReplyingToId(null);
       setExpandedReplies((current) => new Set(current).add(comment.id));
       await loadReplies(comment.id, true);
     } catch (replyError) {
+      await deleteMultipleCommentImagesSafe(storage, uploadedImages);
       console.error("Unable to post reply:", replyError);
       setError("We could not post your reply. Please try again.");
     } finally {
@@ -1590,7 +1640,13 @@ export default function CommentsSection({
     [comments, staffProfiles, sort],
   );
 
-  const totalPages = Math.max(1, Math.ceil(totalCommentsCount / COMMENTS_PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(
+      Math.max(0, totalCommentsCount - (hasPinnedComment ? 1 : 0)) /
+        COMMENTS_PAGE_SIZE,
+    ),
+  );
 
   return (
     <section
@@ -1706,7 +1762,7 @@ export default function CommentsSection({
             Participation Prohibited
           </h3>
           <p className="text-sm text-white/70 max-w-xl mx-auto">
-            {profile?.banReason || ipBanReason || "This account / IP address has been permanently banned from commenting for severe violations of our Community Guidelines."}
+            {profile?.banReason || deviceBlockReason || "This account or browser installation has been blocked from commenting for severe violations of our Community Guidelines."}
           </p>
           <Link
             href="/community-guidelines"
@@ -1825,9 +1881,7 @@ export default function CommentsSection({
             {/* Image Preview Strip */}
             <ImageAttachmentPreviews
               images={commentImages}
-              onRemove={(idx) =>
-                setCommentImages((prev) => prev.filter((_, i) => i !== idx))
-              }
+              onRemove={removePendingCommentImage}
               maxCount={4}
             />
 
@@ -2314,9 +2368,7 @@ export default function CommentsSection({
                     {/* Reply Image Preview Strip */}
                     <ImageAttachmentPreviews
                       images={replyImages}
-                      onRemove={(idx) =>
-                        setReplyImages((prev) => prev.filter((_, i) => i !== idx))
-                      }
+                      onRemove={removePendingReplyImage}
                       maxCount={4}
                     />
 

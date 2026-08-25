@@ -292,7 +292,7 @@ function getDocumentId(documentName: string) {
 }
 
 async function getCollectionDocuments(
-  collectionId: "authors",
+  collectionId: "publicAuthors" | "authors",
 ): Promise<ContentDocument[]> {
   const { apiKey, projectId } = getRequiredFirebaseConfig();
   const documents: ContentDocument[] = [];
@@ -334,6 +334,20 @@ async function getCollectionDocuments(
   } while (pageToken);
 
   return documents;
+}
+
+async function getPublicAuthorDocuments() {
+  try {
+    const publicDocuments = await getCollectionDocuments("publicAuthors");
+    // Migration bridge: before the companion CMS functions/rules are rolled out,
+    // the mirror collection does not exist yet. The tightened rules deny this
+    // legacy fallback after rollout, so it cannot bypass the private boundary.
+    return publicDocuments.length > 0
+      ? publicDocuments
+      : getCollectionDocuments("authors");
+  } catch {
+    return getCollectionDocuments("authors");
+  }
 }
 
 async function getPublishedArticleDocuments(): Promise<ContentDocument[]> {
@@ -490,7 +504,7 @@ export function buildTopicSummaries(articles: ArticleRecord[]): TopicSummary[] {
 }
 
 export async function getAllAuthors() {
-  const documents = await getCollectionDocuments("authors");
+  const documents = await getPublicAuthorDocuments();
   return documents
     .map((document) => normalizeAuthorDoc(document))
     .filter((author) => author.showOnTeam)
@@ -528,7 +542,7 @@ export async function getPublishedArticlesForAuthor(authorUID: string) {
 }
 
 export async function getAuthorBySlug(slug: string) {
-  const documents = await getCollectionDocuments("authors");
+  const documents = await getPublicAuthorDocuments();
   const document = documents.find((entry) => entry.data.slug === slug);
 
   if (!document) return null;

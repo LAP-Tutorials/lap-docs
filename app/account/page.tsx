@@ -17,6 +17,8 @@ import {
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { httpsCallable } from "firebase/functions";
 import { auth, functions, storage } from "@/lib/firebase";
+import { getDeviceRiskPayload } from "@/lib/device-identity";
+import { sanitizeAndCompressImage } from "@/lib/image-sanitizer";
 import {
   checkPublicHandleAvailability,
   claimPublicHandle,
@@ -46,6 +48,24 @@ const fieldClassName =
 const primaryButtonClassName =
   "group inline-flex min-h-16 w-full items-center justify-between bg-white px-5 font-semibold uppercase text-black transition-colors duration-300 hover:bg-[#8a2ae3] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40";
 const CMS_PROFILE_URL = "https://lap-cms.vercel.app/admin/profile";
+
+async function checkCurrentDevice() {
+  const payload = await getDeviceRiskPayload();
+  const checkRisk = httpsCallable<typeof payload, { blocked: boolean; reason?: string }>(
+    functions,
+    "checkDeviceRisk",
+  );
+  return (await checkRisk(payload)).data;
+}
+
+async function syncCurrentDevice() {
+  const payload = await getDeviceRiskPayload();
+  const syncRisk = httpsCallable<typeof payload, { blocked: boolean; reason?: string }>(
+    functions,
+    "syncUserRisk",
+  );
+  return (await syncRisk(payload)).data;
+}
 
 type HandleAvailability =
   | "idle"
@@ -131,9 +151,8 @@ export default function AccountPage() {
     isLoading,
     isSuspended,
     isBanned,
-    isIpBanned,
-    ipBanReason,
-    clientIp,
+    isDeviceBlocked,
+    deviceBlockReason,
     refreshProfile,
   } = usePublicAuth();
   const [mode, setMode] = useState<"signin" | "register">("signin");
@@ -221,20 +240,24 @@ export default function AccountPage() {
     setMessage("");
 
     try {
-      // 1. Upfront live check for banned IP address
-      const ipCheckRes = await fetch("/api/auth/ip").then((r) => r.json()).catch(() => null);
-      if (ipCheckRes?.isBanned || isIpBanned) {
-        setError("Registration and sign-in are forbidden. Your IP address has been permanently banned due to Community Guidelines violations.");
-        setBusy(false);
+      const deviceRisk = await checkCurrentDevice();
+      if (deviceRisk.blocked || isDeviceBlocked) {
+        setError(deviceRisk.reason || deviceBlockReason || "This browser installation has been blocked due to Community Guidelines violations.");
         return;
       }
 
       if (mode === "register") {
-        await createUserWithEmailAndPassword(
+        const credential = await createUserWithEmailAndPassword(
           auth,
           email.trim(),
           password,
         );
+        const syncedRisk = await syncCurrentDevice();
+        if (syncedRisk.blocked) {
+          await deleteUser(credential.user).catch(() => undefined);
+          await signOut(auth).catch(() => undefined);
+          throw new Error(syncedRisk.reason || "This browser installation is blocked.");
+        }
         setPassword("");
         setConfirmPassword("");
         setMessage("Account created. Add your photo and handle to finish.");
@@ -244,9 +267,14 @@ export default function AccountPage() {
           email.trim(),
           password,
         );
+        const syncedRisk = await syncCurrentDevice();
+        if (syncedRisk.blocked) {
+          await signOut(auth).catch(() => undefined);
+          throw new Error(syncedRisk.reason || "This browser installation is blocked.");
+        }
         const existingProfile = await getExistingPublicProfile(credential.user);
         if (existingProfile) {
-          await syncPublicUser(credential.user, clientIp);
+          await syncPublicUser(credential.user);
           await refreshProfile();
           setMessage("Signed in.");
         } else {
@@ -285,32 +313,14 @@ export default function AccountPage() {
     setError("");
     setMessage("");
     try {
-      // 1. Upfront live check for banned IP address
-      const ipCheckRes = await fetch("/api/auth/ip").then((r) => r.json()).catch(() => null);
-      if (ipCheckRes?.isBanned || isIpBanned) {
-        setError("Registration and sign-in are forbidden. Your IP address has been permanently banned due to Community Guidelines violations.");
-        setBusy(false);
+      const deviceRisk = await checkCurrentDevice();
+      if (deviceRisk.blocked || isDeviceBlocked) {
+        setError(deviceRisk.reason || deviceBlockReason || "This browser installation has been blocked due to Community Guidelines violations.");
         return;
       }
 
       const credential = await signInWithPopup(auth, new GoogleAuthProvider());
       const isNewFirebaseUser = getAdditionalUserInfo(credential)?.isNewUser === true;
-
-      // 2. Post-auth server IP confirmation
-      const postIpCheck = await fetch("/api/auth/ip", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uid: credential.user.uid }),
-      }).then((r) => r.json()).catch(() => null);
-
-      if (postIpCheck?.isBanned || isIpBanned) {
-        if (isNewFirebaseUser) {
-          await deleteUser(credential.user).catch(() => {});
-        }
-        await signOut(auth).catch(() => {});
-        setError("Registration and sign-in are forbidden. Your IP address has been permanently banned due to Community Guidelines violations.");
-        return;
-      }
 
       if (mode === "signin" && isNewFirebaseUser) {
         await deleteUser(credential.user);
@@ -319,10 +329,20 @@ export default function AccountPage() {
         return;
       }
 
+      const syncedRisk = await syncCurrentDevice();
+      if (syncedRisk.blocked) {
+        if (isNewFirebaseUser) {
+          await deleteUser(credential.user).catch(() => undefined);
+        }
+        await signOut(auth).catch(() => undefined);
+        setError(syncedRisk.reason || "This browser installation has been blocked due to Community Guidelines violations.");
+        return;
+      }
+
       if (mode === "register") {
         const existingProfile = await getExistingPublicProfile(credential.user);
         if (existingProfile?.handle) {
-          await syncPublicUser(credential.user, clientIp);
+          await syncPublicUser(credential.user);
           await refreshProfile();
           setMessage(`Your account already exists as @${existingProfile.handle}.`);
         } else {
@@ -331,7 +351,7 @@ export default function AccountPage() {
       } else {
         const existingProfile = await getExistingPublicProfile(credential.user);
         if (existingProfile) {
-          await syncPublicUser(credential.user, clientIp);
+          await syncPublicUser(credential.user);
           await refreshProfile();
           setMessage("Signed in.");
         } else {
@@ -357,25 +377,11 @@ export default function AccountPage() {
     setMessage("");
 
     try {
-      const checkEligibility = httpsCallable<
-        { email: string },
-        { allowed: boolean; isStaff: boolean; message?: string }
-      >(functions, "checkPasswordResetEligibility");
-
-      const result = await checkEligibility({ email: trimmedEmail });
-
-      if (!result.data.allowed || result.data.isStaff) {
-        setError(
-          result.data.message ||
-            "Contact admin or super admin to reset your password."
-        );
-        return;
-      }
-
       await sendPasswordResetEmail(auth, trimmedEmail);
-      setMessage("Check your inbox for a password reset link.");
+      setMessage("If an eligible account exists for that email, a password reset link will arrive shortly.");
     } catch (nextError) {
-      setError(friendlyAuthError(nextError));
+      console.warn("Password reset request was not accepted:", authErrorCode(nextError));
+      setMessage("If an eligible account exists for that email, a password reset link will arrive shortly.");
     } finally {
       setBusy(false);
     }
@@ -438,9 +444,14 @@ export default function AccountPage() {
     setError("");
     setMessage("");
     try {
-      const savedHandle = await claimPublicHandle(user, normalizedHandle, clientIp);
+      const savedHandle = await claimPublicHandle(user, normalizedHandle);
       await updateProfile(user, { displayName: savedHandle });
       await syncPublicUser(user);
+      const syncedRisk = await syncCurrentDevice();
+      if (syncedRisk.blocked) {
+        await signOut(auth).catch(() => undefined);
+        throw new Error(syncedRisk.reason || "This browser installation is blocked.");
+      }
       await refreshProfile();
       setHandle(savedHandle);
       setPendingPhotoURL("");
@@ -471,11 +482,16 @@ export default function AccountPage() {
     setError("");
     setMessage("");
     try {
+      const sanitized = await sanitizeAndCompressImage(file);
       const avatarRef = ref(storage, `users/${user.uid}/profile/avatar`);
-      await uploadBytes(avatarRef, file, {
-        contentType: file.type,
-        cacheControl: "public,max-age=3600",
-      });
+      try {
+        await uploadBytes(avatarRef, sanitized.blob, {
+          contentType: sanitized.contentType,
+          cacheControl: "public,max-age=3600",
+        });
+      } finally {
+        URL.revokeObjectURL(sanitized.previewUrl);
+      }
       const downloadURL = await getDownloadURL(avatarRef);
       const versionedURL = `${downloadURL}${downloadURL.includes("?") ? "&" : "?"}v=${Date.now()}`;
       await updateProfile(user, { photoURL: versionedURL });
@@ -573,21 +589,16 @@ export default function AccountPage() {
       </header>
 
       <section className="py-8">
-        {/* Account / IP Ban Lockout Notice */}
-        {isBanned || isIpBanned ? (
+        {/* Account / device lockout notice */}
+        {isBanned || isDeviceBlocked ? (
           <div className="mb-8 border border-red-500/50 bg-red-500/10 p-6 text-center space-y-3">
             <RiAlertLine className="mx-auto text-4xl text-red-400" />
             <h2 className="text-xl font-bold uppercase tracking-wide text-red-200">
-              Access Forbidden / IP Address Banned
+              Access Forbidden
             </h2>
             <p className="text-sm text-white/80 max-w-md mx-auto leading-relaxed">
-              {profile?.banReason || ipBanReason || "This device or network IP address has been permanently banned from creating accounts or signing into the community due to violations of our Community Guidelines."}
+              {profile?.banReason || deviceBlockReason || "This account or browser installation has been blocked due to violations of our Community Guidelines."}
             </p>
-            {clientIp && (
-              <p className="text-xs font-mono text-red-300/80">
-                Network IP: <span className="text-red-200 font-semibold">{clientIp}</span>
-              </p>
-            )}
             <div>
               <Link
                 href="/community-guidelines"
@@ -850,7 +861,7 @@ export default function AccountPage() {
               </button>
             </div>
           </div>
-        ) : isBanned || isIpBanned ? null : (
+        ) : isBanned || isDeviceBlocked ? null : (
           <div>
             <div className="mb-8 flex gap-7 border-b border-white/25" role="tablist" aria-label="Reader account mode">
               {(["signin", "register"] as const).map((value) => {

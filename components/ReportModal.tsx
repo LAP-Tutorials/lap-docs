@@ -3,14 +3,14 @@
 import { useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { addDoc, collection, doc, getDoc, serverTimestamp } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
 import {
   RiAlertLine,
   RiCloseLine,
   RiFlagLine,
   RiShieldCheckLine,
 } from "react-icons/ri";
-import { db } from "@/lib/firebase";
+import { functions } from "@/lib/firebase";
 import { usePublicAuth } from "@/lib/public-auth-context";
 
 export interface ReportTarget {
@@ -70,7 +70,7 @@ export default function ReportModal({
   onClose,
   target,
 }: ReportModalProps) {
-  const { user, profile } = usePublicAuth();
+  const { user } = usePublicAuth();
   const [selectedReason, setSelectedReason] = useState<string>("harassment");
   const [details, setDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -95,34 +95,15 @@ export default function ReportModal({
     setError("");
 
     try {
-      // Prevent reporting team members
-      const authorDoc = await getDoc(doc(db, "authors", target.reportedUserId));
-      if (authorDoc.exists()) {
-        setError("Team members and verified authors cannot be reported.");
-        setSubmitting(false);
-        return;
-      }
-
-      const reasonObj = REPORT_REASONS.find((r) => r.id === selectedReason);
-      await addDoc(collection(db, "reports"), {
-        type: target.type,
-        reportedUserId: target.reportedUserId,
-        reportedUserHandle: target.reportedUserHandle || "unknown",
-        reportedUserName: target.reportedUserName || target.reportedUserHandle || "Reader",
-        reporterId: user.uid,
-        reporterHandle: profile?.handle || "anonymous",
-        reporterName: profile?.displayName || user.displayName || user.email || "Reader",
+      const submitReport = httpsCallable<
+        { type: ReportTarget["type"]; targetId: string; reason: string; details: string },
+        { reportId: string }
+      >(functions, "submitReport");
+      await submitReport({
         reason: selectedReason,
-        reasonLabel: reasonObj?.label || selectedReason,
+        type: target.type,
+        targetId: target.type === "user" ? target.reportedUserId : target.commentId || "",
         details: details.trim(),
-        commentId: target.commentId || null,
-        parentCommentId: target.parentCommentId || null,
-        commentContent: target.commentContent || null,
-        articleId: target.articleId || null,
-        articleTitle: target.articleTitle || null,
-        articleSlug: target.articleSlug || null,
-        status: "pending",
-        createdAt: serverTimestamp(),
       });
 
       setSubmitted(true);
