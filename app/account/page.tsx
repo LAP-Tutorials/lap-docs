@@ -59,22 +59,30 @@ type HandleAvailability =
   | "error";
 
 function authErrorCode(error: unknown) {
-  return (
-    typeof error === "object" && error && "code" in error
-      ? String(error.code)
-      : ""
-  );
+  if (typeof error === "object" && error && "code" in error) {
+    return String(error.code);
+  }
+  if (error instanceof Error && error.message) {
+    if (error.message.includes("auth/user-disabled") || error.message.includes("user-disabled")) {
+      return "auth/user-disabled";
+    }
+  }
+  return "";
 }
 
 function friendlyAuthError(error: unknown) {
   const code = authErrorCode(error);
 
   switch (code) {
+    case "auth/user-disabled":
+      return "This account has been permanently banned due to Community Guidelines violations.";
     case "auth/email-already-in-use":
       return "An account already exists for this email.";
     case "auth/invalid-credential":
     case "auth/wrong-password":
       return "The email or password is incorrect.";
+    case "auth/user-not-found":
+      return "No account found with this email address.";
     case "auth/weak-password":
       return "Use a password with at least six characters.";
     case "auth/popup-closed-by-user":
@@ -82,9 +90,13 @@ function friendlyAuthError(error: unknown) {
     case "auth/too-many-requests":
       return "Too many attempts. Please wait and try again.";
     default:
-      return error instanceof Error
-        ? error.message
-        : "We could not complete that request. Please try again.";
+      if (error instanceof Error) {
+        if (error.message.includes("user-disabled") || error.message.includes("auth/user-disabled")) {
+          return "This account has been permanently banned due to Community Guidelines violations.";
+        }
+        return error.message;
+      }
+      return "We could not complete that request. Please try again.";
   }
 }
 
@@ -209,6 +221,14 @@ export default function AccountPage() {
     setMessage("");
 
     try {
+      // 1. Upfront live check for banned IP address
+      const ipCheckRes = await fetch("/api/auth/ip").then((r) => r.json()).catch(() => null);
+      if (ipCheckRes?.isBanned || isIpBanned) {
+        setError("Registration and sign-in are forbidden. Your IP address has been permanently banned due to Community Guidelines violations.");
+        setBusy(false);
+        return;
+      }
+
       if (mode === "register") {
         await createUserWithEmailAndPassword(
           auth,
@@ -265,8 +285,32 @@ export default function AccountPage() {
     setError("");
     setMessage("");
     try {
+      // 1. Upfront live check for banned IP address
+      const ipCheckRes = await fetch("/api/auth/ip").then((r) => r.json()).catch(() => null);
+      if (ipCheckRes?.isBanned || isIpBanned) {
+        setError("Registration and sign-in are forbidden. Your IP address has been permanently banned due to Community Guidelines violations.");
+        setBusy(false);
+        return;
+      }
+
       const credential = await signInWithPopup(auth, new GoogleAuthProvider());
       const isNewFirebaseUser = getAdditionalUserInfo(credential)?.isNewUser === true;
+
+      // 2. Post-auth server IP confirmation
+      const postIpCheck = await fetch("/api/auth/ip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: credential.user.uid }),
+      }).then((r) => r.json()).catch(() => null);
+
+      if (postIpCheck?.isBanned || isIpBanned) {
+        if (isNewFirebaseUser) {
+          await deleteUser(credential.user).catch(() => {});
+        }
+        await signOut(auth).catch(() => {});
+        setError("Registration and sign-in are forbidden. Your IP address has been permanently banned due to Community Guidelines violations.");
+        return;
+      }
 
       if (mode === "signin" && isNewFirebaseUser) {
         await deleteUser(credential.user);
@@ -530,21 +574,28 @@ export default function AccountPage() {
 
       <section className="py-8">
         {/* Account / IP Ban Lockout Notice */}
-        {isBanned ? (
-          <div className="mb-8 border border-red-500/50 bg-red-500/10 p-6 text-center space-y-2">
+        {isBanned || isIpBanned ? (
+          <div className="mb-8 border border-red-500/50 bg-red-500/10 p-6 text-center space-y-3">
             <RiAlertLine className="mx-auto text-4xl text-red-400" />
             <h2 className="text-xl font-bold uppercase tracking-wide text-red-200">
-              Account / IP Address Banned
+              Access Forbidden / IP Address Banned
             </h2>
-            <p className="text-sm text-white/80 max-w-md mx-auto">
-              {profile?.banReason || ipBanReason || "This account and its associated IP addresses have been permanently banned from the community for severe violations of the Community Guidelines."}
+            <p className="text-sm text-white/80 max-w-md mx-auto leading-relaxed">
+              {profile?.banReason || ipBanReason || "This device or network IP address has been permanently banned from creating accounts or signing into the community due to violations of our Community Guidelines."}
             </p>
-            <Link
-              href="/community-guidelines"
-              className="text-xs text-red-300 underline inline-block mt-2"
-            >
-              Read Community Guidelines →
-            </Link>
+            {clientIp && (
+              <p className="text-xs font-mono text-red-300/80">
+                Network IP: <span className="text-red-200 font-semibold">{clientIp}</span>
+              </p>
+            )}
+            <div>
+              <Link
+                href="/community-guidelines"
+                className="text-xs text-red-300 hover:text-white underline inline-block mt-2"
+              >
+                Read Community Guidelines →
+              </Link>
+            </div>
           </div>
         ) : isSuspended ? (
           /* Commenting Suspension Notice */
@@ -799,7 +850,7 @@ export default function AccountPage() {
               </button>
             </div>
           </div>
-        ) : (
+        ) : isBanned || isIpBanned ? null : (
           <div>
             <div className="mb-8 flex gap-7 border-b border-white/25" role="tablist" aria-label="Reader account mode">
               {(["signin", "register"] as const).map((value) => {

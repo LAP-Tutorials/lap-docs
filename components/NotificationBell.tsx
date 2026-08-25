@@ -21,6 +21,10 @@ import {
   AtSign,
   MessageSquare,
   FileText,
+  AlertTriangle,
+  Clock,
+  ShieldAlert,
+  CheckCircle2,
   X,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
@@ -29,7 +33,7 @@ import { usePublicAuth } from "@/lib/public-auth-context";
 export type NotificationItem = {
   id: string;
   userId: string;
-  type: "mention" | "new_comment" | "new_post";
+  type: "mention" | "new_comment" | "new_post" | "warning" | "suspension" | "user_report" | string;
   title: string;
   message: string;
   link: string;
@@ -166,11 +170,11 @@ export default function NotificationBell({
     return () => unsubscribe();
   }, [user, router]);
 
-  // Handle click outside to close
+  // Handle click outside & Escape key to close
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (
         popoverRef.current &&
         !popoverRef.current.contains(event.target as Node)
@@ -179,8 +183,21 @@ export default function NotificationBell({
       }
     };
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isOpen]);
 
   if (!user) return null;
@@ -267,6 +284,12 @@ export default function NotificationBell({
         return <MessageSquare className="h-4 w-4 text-[#5eead4]" />;
       case "new_post":
         return <FileText className="h-4 w-4 text-[#f3c969]" />;
+      case "warning":
+        return <AlertTriangle className="h-4 w-4 text-amber-400" />;
+      case "suspension":
+        return <Clock className="h-4 w-4 text-orange-400" />;
+      case "user_report":
+        return <ShieldAlert className="h-4 w-4 text-purple-400" />;
       default:
         return <Bell className="h-4 w-4 text-white/70" />;
     }
@@ -290,10 +313,19 @@ export default function NotificationBell({
         )}
       </button>
 
+      {/* Transparent Click-Outside Backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/20"
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Dropdown / Popover */}
       {isOpen && (
         <div
-          className="absolute right-0 top-full mt-2 z-50 w-[320px] sm:w-[380px] max-w-[calc(100vw-2rem)] border border-white/20 bg-[#121212] shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-in fade-in zoom-in-95 duration-150"
+          className="absolute right-0 top-full mt-2 z-50 w-[350px] sm:w-[460px] md:w-[480px] max-w-[calc(100vw-1.5rem)] border border-white/20 bg-[#121212] shadow-[0_20px_50px_rgba(0,0,0,0.85)] animate-in fade-in zoom-in-95 duration-150"
           role="dialog"
           aria-label="Notifications Panel"
         >
@@ -385,7 +417,7 @@ export default function NotificationBell({
           </div>
 
           {/* Notifications List */}
-          <div className="max-h-[380px] overflow-y-auto divide-y divide-white/[0.07]">
+          <div className="max-h-[420px] overflow-y-auto divide-y divide-white/[0.07]">
             {loading ? (
               <div className="py-10 text-center text-sm text-white/40">
                 Loading notifications…
@@ -407,7 +439,7 @@ export default function NotificationBell({
                   }`}
                 >
                   {/* Type Icon / Badge */}
-                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center bg-white/[0.07] border border-white/10">
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center bg-white/[0.07] border border-white/10">
                     {renderIcon(item.type)}
                   </div>
 
@@ -415,8 +447,9 @@ export default function NotificationBell({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <p
-                        className={`text-xs font-semibold uppercase leading-snug truncate ${
-                          !item.read ? "text-white" : "text-white/70"
+                        title={item.title}
+                        className={`text-xs font-semibold uppercase leading-snug break-words ${
+                          !item.read ? "text-white" : "text-white/75"
                         }`}
                       >
                         {item.title}
@@ -426,13 +459,16 @@ export default function NotificationBell({
                       </span>
                     </div>
 
-                    <p className="mt-1 text-xs text-white/60 line-clamp-2 leading-relaxed">
+                    <p
+                      title={item.message}
+                      className="mt-1 text-xs text-white/60 line-clamp-3 leading-relaxed break-words"
+                    >
                       {item.message}
                     </p>
                   </div>
 
                   {/* Unread indicator dot & delete button */}
-                  <div className="flex flex-col items-center gap-1.5 shrink-0">
+                  <div className="flex flex-col items-center gap-2 shrink-0 pt-0.5">
                     {!item.read && (
                       <span
                         className="h-2 w-2 rounded-full bg-[#8a2ae3] shadow-[0_0_6px_#8a2ae3]"
@@ -442,10 +478,10 @@ export default function NotificationBell({
                     <button
                       type="button"
                       onClick={(e) => handleDeleteItem(e, item.id)}
-                      title="Delete"
+                      title="Delete notification"
                       className="opacity-0 group-hover:opacity-100 p-1 text-white/40 hover:text-red-400 transition-opacity"
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>

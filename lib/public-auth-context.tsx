@@ -245,6 +245,14 @@ export async function claimPublicHandle(user: User, value: string, ip?: string) 
   const userRef = doc(db, "users", user.uid);
   const handleRef = doc(db, "handles", handle);
 
+  if (ip) {
+    const cleanIpKey = ip.trim().replace(/^::ffff:/, "").replace(/[:.]/g, "_").toLowerCase();
+    const ipSnap = await getDoc(doc(db, "bannedIps", cleanIpKey));
+    if (ipSnap.exists()) {
+      throw new Error("Your IP address has been permanently banned due to Community Guidelines violations.");
+    }
+  }
+
   return runTransaction(db, async (transaction) => {
     const userSnapshot = await transaction.get(userRef);
     const currentHandle =
@@ -349,33 +357,29 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
             setStaffRole(role);
             setIsAdmin(role === "admin" || role === "super");
           }
+
+          // Check if current device IP is banned
+          const ipData = await fetch("/api/auth/ip", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ uid: nextUser.uid }),
+          })
+            .then((r) => r.json())
+            .catch(() => null);
+
+          if (ipData?.ip) setClientIp(ipData.ip);
+
+          if (ipData?.isBanned && !hasStaffDoc) {
+            setIsIpBanned(true);
+            setIpBanReason(ipData.reason || "Violations of Community Guidelines");
+            setUser(null);
+            setProfile(null);
+            await auth.signOut();
+            return;
+          }
+
           const syncedProfile = existingProfile ? await syncPublicUser(nextUser) : null;
           setProfile(syncedProfile);
-
-          // Save last known IP on server and client
-          try {
-            fetch("/api/auth/ip", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ uid: nextUser.uid }),
-            })
-              .then((r) => r.json())
-              .then((data) => {
-                if (data.ip) {
-                  setClientIp(data.ip);
-                  if (syncedProfile) {
-                    setProfile((prev) => (prev ? { ...prev, lastIp: data.ip } : prev));
-                  }
-                }
-                if (data.isBanned) {
-                  setIsIpBanned(true);
-                  setIpBanReason(data.reason || "Violations of Community Guidelines");
-                }
-              })
-              .catch(() => {});
-          } catch {
-            // ignore
-          }
 
           if (clientIp) {
             void updateDoc(doc(db, "users", nextUser.uid), {

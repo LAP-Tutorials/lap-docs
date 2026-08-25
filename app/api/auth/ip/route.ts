@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { doc, getDoc, updateDoc } from "firebase/firestore"
+import { collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
 export const dynamic = "force-dynamic"
 
 function sanitizeIpKey(ip: string): string {
-  return ip.trim().replace(/[:.]/g, "_").toLowerCase()
+  return ip.trim().replace(/^::ffff:/, "").replace(/[:.]/g, "_").toLowerCase()
 }
 
 function extractClientIp(request: NextRequest): string {
@@ -24,6 +24,8 @@ function extractClientIp(request: NextRequest): string {
     clientIp = "127.0.0.1"
   }
 
+  clientIp = clientIp.replace(/^::ffff:/, "").trim()
+
   if (!clientIp || clientIp === "::1") {
     clientIp = "127.0.0.1"
   }
@@ -31,27 +33,41 @@ function extractClientIp(request: NextRequest): string {
   return clientIp
 }
 
+async function checkIsIpBanned(clientIp: string): Promise<{ isBanned: boolean; reason: string }> {
+  const sanitizedKey = sanitizeIpKey(clientIp)
+  try {
+    const bannedDoc = await getDoc(doc(db, "bannedIps", sanitizedKey))
+    if (bannedDoc.exists()) {
+      return {
+        isBanned: true,
+        reason: bannedDoc.data()?.reason || "Violations of Community Guidelines",
+      }
+    }
+
+    // Also check if raw IP or un-sanitized IP matches
+    const q = query(collection(db, "bannedIps"), where("ip", "==", clientIp))
+    const snap = await getDocs(q)
+    if (!snap.empty) {
+      return {
+        isBanned: true,
+        reason: snap.docs[0].data()?.reason || "Violations of Community Guidelines",
+      }
+    }
+  } catch (dbErr) {
+    console.warn("Could not check banned IP status from Firestore:", dbErr)
+  }
+  return { isBanned: false, reason: "" }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const clientIp = extractClientIp(request)
-    const sanitizedKey = sanitizeIpKey(clientIp)
-    let isBanned = false
-    let banReason = ""
-
-    try {
-      const bannedDoc = await getDoc(doc(db, "bannedIps", sanitizedKey))
-      if (bannedDoc.exists()) {
-        isBanned = true
-        banReason = bannedDoc.data()?.reason || "Violations of Community Guidelines"
-      }
-    } catch (dbErr) {
-      console.warn("Could not check banned IP status from Firestore:", dbErr)
-    }
+    const { isBanned, reason } = await checkIsIpBanned(clientIp)
 
     return NextResponse.json({
       ip: clientIp,
       isBanned,
-      reason: banReason,
+      reason,
     })
   } catch (err: any) {
     console.error("Error in GET /api/auth/ip:", err)
@@ -84,24 +100,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const sanitizedKey = sanitizeIpKey(clientIp)
-    let isBanned = false
-    let banReason = ""
-
-    try {
-      const bannedDoc = await getDoc(doc(db, "bannedIps", sanitizedKey))
-      if (bannedDoc.exists()) {
-        isBanned = true
-        banReason = bannedDoc.data()?.reason || "Violations of Community Guidelines"
-      }
-    } catch (dbErr) {
-      console.warn("Could not check banned IP status from Firestore:", dbErr)
-    }
+    const { isBanned, reason } = await checkIsIpBanned(clientIp)
 
     return NextResponse.json({
       ip: clientIp,
       isBanned,
-      reason: banReason,
+      reason,
       updated: Boolean(uid),
     })
   } catch (err: any) {
