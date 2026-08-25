@@ -1896,7 +1896,7 @@ export default function CommentsSection({
 
       {!loading && !error && displayComments.length === 0 ? (
         <p className="border-b border-white/30 py-8 text-white/50">
-          No comments yet.
+          Be the first to comment.
         </p>
       ) : null}
 
