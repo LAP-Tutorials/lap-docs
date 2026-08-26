@@ -447,14 +447,15 @@ export default function AccountPage() {
     setError("");
     setMessage("");
     try {
-      const savedHandle = await claimPublicHandle(user, normalizedHandle);
-      await updateProfile(user, { displayName: savedHandle });
-      await syncPublicUser(user);
       const syncedRisk = await syncCurrentDevice();
       if (syncedRisk.blocked) {
         await signOut(auth).catch(() => undefined);
         throw new Error(syncedRisk.reason || "This browser installation is blocked.");
       }
+      const savedHandle = await claimPublicHandle(user, normalizedHandle);
+      await updateProfile(user, { displayName: savedHandle });
+      await syncPublicUser(user);
+      await syncCurrentDevice();
       await refreshProfile();
       setHandle(savedHandle);
       setPendingPhotoURL("");

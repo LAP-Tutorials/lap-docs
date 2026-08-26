@@ -127,6 +127,19 @@ type ReplyThread = {
 };
 
 type CommentSort = "recent" | "oldest" | "liked";
+
+function hasCommentImages(item: {
+  images?: CommentImageAttachment[];
+  imageStoragePath?: string;
+  imageUrl?: string;
+}) {
+  return Boolean(
+    (item.images && item.images.length > 0) ||
+      item.imageStoragePath ||
+      item.imageUrl,
+  );
+}
+
 type CommentReaction = "like" | "dislike";
 
 type CommentsSectionProps = {
@@ -1357,9 +1370,11 @@ export default function CommentsSection({
     }
   };
 
-  const saveReplyEdit = async (commentId: string, replyId: string) => {
+  const saveReplyEdit = async (commentId: string, reply: ReplyRecord) => {
     const trimmedContent = editingReplyContent.trim();
-    if (!trimmedContent || trimmedContent.length > MAX_COMMENT_LENGTH) return;
+    if (trimmedContent.length > MAX_COMMENT_LENGTH) return;
+    if (!trimmedContent && !hasCommentImages(reply)) return;
+    const replyId = reply.id;
     setReplyBusyId(replyId);
     setError("");
     try {
@@ -1470,9 +1485,11 @@ export default function CommentsSection({
     }
   };
 
-  const saveEdit = async (commentId: string) => {
+  const saveEdit = async (comment: CommentRecord) => {
     const trimmedContent = editingContent.trim();
-    if (!trimmedContent || trimmedContent.length > MAX_COMMENT_LENGTH) return;
+    if (trimmedContent.length > MAX_COMMENT_LENGTH) return;
+    if (!trimmedContent && !hasCommentImages(comment)) return;
+    const commentId = comment.id;
     setBusyId(commentId);
     setError("");
     try {
@@ -2093,8 +2110,11 @@ export default function CommentsSection({
                       </button>
                       <button
                         type="button"
-                        onClick={() => saveEdit(comment.id)}
-                        disabled={busyId === comment.id || !editingContent.trim()}
+                        onClick={() => saveEdit(comment)}
+                        disabled={
+                          busyId === comment.id ||
+                          (!editingContent.trim() && !hasCommentImages(comment))
+                        }
                         className="group inline-flex items-center gap-2 text-sm font-semibold uppercase transition-colors duration-300 hover:text-[#8a2ae3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3] disabled:opacity-40"
                       >
                         Save <RiArrowRightLine className="text-xl" />
@@ -2556,11 +2576,12 @@ export default function CommentsSection({
                                   <button
                                     type="button"
                                     onClick={() =>
-                                      saveReplyEdit(comment.id, reply.id)
+                                      saveReplyEdit(comment.id, reply)
                                     }
                                     disabled={
                                       replyBusyId === reply.id ||
-                                      !editingReplyContent.trim()
+                                      (!editingReplyContent.trim() &&
+                                        !hasCommentImages(reply))
                                     }
                                     className="text-[#8a2ae3] hover:text-white disabled:opacity-35"
                                   >
