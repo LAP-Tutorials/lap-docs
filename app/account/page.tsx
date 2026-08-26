@@ -490,7 +490,7 @@ export default function AccountPage() {
       try {
         await uploadBytes(avatarRef, sanitized.blob, {
           contentType: sanitized.contentType,
-          cacheControl: "public,max-age=3600",
+          cacheControl: "public,max-age=300",
         });
       } finally {
         URL.revokeObjectURL(sanitized.previewUrl);
