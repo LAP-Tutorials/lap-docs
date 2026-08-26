@@ -357,7 +357,17 @@ async function getPublicAuthorDocuments() {
   }
 }
 
-async function getPublishedArticleDocuments(): Promise<ContentDocument[]> {
+function normalizeRouteSlug(slug: string) {
+  try {
+    return decodeURIComponent(slug).trim();
+  } catch {
+    return slug.trim();
+  }
+}
+
+async function getPublishedArticleDocuments(
+  revalidateSeconds: number | false = 300,
+): Promise<ContentDocument[]> {
   const { apiKey, projectId } = getRequiredFirebaseConfig();
   const params = new URLSearchParams({ key: apiKey });
   const response = await fetch(
@@ -379,7 +389,9 @@ async function getPublishedArticleDocuments(): Promise<ContentDocument[]> {
           },
         },
       }),
-      next: { revalidate: 300 },
+      ...(revalidateSeconds === false
+        ? { cache: "no-store" as const }
+        : { next: { revalidate: revalidateSeconds } }),
     },
   );
 
@@ -532,10 +544,16 @@ export async function getPublishedArticles(limitCount?: number) {
 }
 
 export async function getPublishedArticleBySlug(slug: string) {
+  const normalizedSlug = normalizeRouteSlug(slug);
   const authors = await getAllAuthors();
   const authorLookup = createAuthorLookup(authors);
   const documents = await getPublishedArticleDocuments();
-  const document = documents.find((entry) => entry.data.slug === slug);
+  const cached = documents.find((entry) => entry.data.slug === normalizedSlug);
+  const document =
+    cached ||
+    (await getPublishedArticleDocuments(false)).find(
+      (entry) => entry.data.slug === normalizedSlug,
+    );
 
   if (!document) return null;
 
