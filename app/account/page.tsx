@@ -47,7 +47,7 @@ const fieldClassName =
 
 const primaryButtonClassName =
   "group inline-flex min-h-16 w-full items-center justify-between bg-white px-5 font-semibold uppercase text-black transition-colors duration-300 hover:bg-[#8a2ae3] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40";
-const CMS_PROFILE_URL = "https://lap-cms.vercel.app/admin/profile";
+const CMS_PROFILE_URL = "https://cms.lap.onl/admin/profile";
 
 async function checkCurrentDevice() {
   const payload = await getDeviceRiskPayload();
@@ -516,6 +516,10 @@ export default function AccountPage() {
 
   const removeAccount = async () => {
     if (!user || deletingAccount) return;
+    if (isStaff) {
+      setError("Staff accounts can only be deleted from the CMS.");
+      return;
+    }
 
     const confirmation = window.prompt(
       "This permanently deletes your account and profile. Your comments will remain as Deleted user, and your article bylines and votes will remain. Type DELETE to continue.",
@@ -861,19 +865,36 @@ export default function AccountPage() {
 
             <div className="border-t border-white/20 pt-8">
               <h2 className="text-lg font-semibold uppercase">Delete account</h2>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-white/50">
-                Your profile and sign-in will be permanently removed. Articles,
-                comments, replies, and their vote totals will stay published.
-              </p>
-              <button
-                type="button"
-                onClick={removeAccount}
-                disabled={deletingAccount}
-                className="mt-5 inline-flex items-center gap-2 border-b border-red-400/60 pb-1 text-sm font-semibold uppercase text-red-300 transition-colors hover:border-red-300 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <RiDeleteBinLine className="text-lg" aria-hidden="true" />
-                {deletingAccount ? "Deleting…" : "Delete my account"}
-              </button>
+              {isStaff ? (
+                <>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-white/50">
+                    Team accounts can only be deleted from the CMS.
+                  </p>
+                  <a
+                    href={CMS_PROFILE_URL}
+                    className="mt-5 inline-flex items-center gap-2 border-b border-white/40 pb-1 text-sm font-semibold uppercase transition-colors hover:border-[#8a2ae3] hover:text-[#8a2ae3]"
+                  >
+                    Open CMS profile
+                    <RiArrowRightLine className="text-xl" aria-hidden="true" />
+                  </a>
+                </>
+              ) : (
+                <>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-white/50">
+                    Your profile and sign-in will be permanently removed. Articles,
+                    comments, replies, and their vote totals will stay published.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={removeAccount}
+                    disabled={deletingAccount}
+                    className="mt-5 inline-flex items-center gap-2 border-b border-red-400/60 pb-1 text-sm font-semibold uppercase text-red-300 transition-colors hover:border-red-300 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <RiDeleteBinLine className="text-lg" aria-hidden="true" />
+                    {deletingAccount ? "Deleting…" : "Delete my account"}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ) : isBanned || isDeviceBlocked ? null : (
