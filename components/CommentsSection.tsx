@@ -1606,6 +1606,8 @@ export default function CommentsSection({
         COMMENTS_PAGE_SIZE,
     ),
   );
+  const showSignedOutEmptyState =
+    !authLoading && !user && !error && displayComments.length === 0;
 
   return (
     <section
@@ -1910,7 +1912,7 @@ export default function CommentsSection({
         </form>
       ) : null}
 
-      {loading ? (
+      {loading && !showSignedOutEmptyState ? (
         <div
           aria-label="Loading comments"
           className="flex animate-pulse gap-4 border-b border-white/20 py-7"
@@ -1923,9 +1925,11 @@ export default function CommentsSection({
         </div>
       ) : null}
 
-      {!loading && !error && displayComments.length === 0 ? (
+      {(!loading || showSignedOutEmptyState) &&
+      !error &&
+      displayComments.length === 0 ? (
         <p className="border-b border-white/30 py-8 text-white/50">
-          Be the first to comment.
+          No comments yet.
         </p>
       ) : null}
 
