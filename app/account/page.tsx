@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -183,6 +183,7 @@ export default function AccountPage() {
   const [savingHandle, setSavingHandle] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const googleSignInStartedRef = useRef(false);
   const [handleAvailability, setHandleAvailability] =
     useState<HandleAvailability>("idle");
 
@@ -396,10 +397,12 @@ export default function AccountPage() {
   };
 
   const signInWithGoogle = async () => {
+    if (googleSignInStartedRef.current) return;
     if (mode === "register" && !acceptedTerms) {
       setError("Please agree to the Terms of Service and Privacy Policy before creating an account with Google.");
       return;
     }
+    googleSignInStartedRef.current = true;
     setBusy(true);
     setError("");
     setMessage("");
@@ -459,6 +462,7 @@ export default function AccountPage() {
     } catch (nextError) {
       setError(friendlyAuthError(nextError));
     } finally {
+      googleSignInStartedRef.current = false;
       setBusy(false);
     }
   };
@@ -483,6 +487,13 @@ export default function AccountPage() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const selectAccountMode = (value: "signin" | "register") => {
+    setMode(value);
+    setConfirmPassword("");
+    setError("");
+    setMessage("");
   };
 
   const proceedToGuidelines = async (event: FormEvent) => {
@@ -666,7 +677,7 @@ export default function AccountPage() {
         : "text-white/40";
 
   return (
-    <main className="mx-auto min-h-[65vh] w-full max-w-3xl px-4 pb-24 pt-12 md:pt-16">
+    <main className="reader-auth-shell relative z-[60] isolate mx-auto min-h-[65vh] w-full max-w-3xl px-4 pb-24 pt-12 md:pt-16">
       <header className="border-b border-white/30 pb-7">
         <p className="text-sm font-medium uppercase tracking-[0.22em] text-white/45">
           Reader account
@@ -995,7 +1006,7 @@ export default function AccountPage() {
           </div>
         ) : isBanned || isDeviceBlocked ? null : (
           <div>
-            <div className="mb-8 flex gap-7 border-b border-white/25" role="tablist" aria-label="Reader account mode">
+            <div className="relative z-10 mb-8 flex gap-7 border-b border-white/25" role="tablist" aria-label="Reader account mode">
               {(["signin", "register"] as const).map((value) => {
                 const selected = mode === value;
                 return (
@@ -1004,13 +1015,12 @@ export default function AccountPage() {
                     type="button"
                     role="tab"
                     aria-selected={selected}
-                    onClick={() => {
-                      setMode(value);
-                      setConfirmPassword("");
-                      setError("");
-                      setMessage("");
+                    onClick={() => selectAccountMode(value)}
+                    onTouchEnd={(event) => {
+                      event.preventDefault();
+                      selectAccountMode(value);
                     }}
-                    className={`-mb-px border-b-2 pb-3 font-semibold uppercase transition-colors ${
+                    className={`relative z-10 touch-manipulation -mb-px border-b-2 pb-3 font-semibold uppercase transition-colors ${
                       selected ? "border-[#8a2ae3]" : "border-transparent text-white/45 hover:text-white"
                     }`}
                   >
@@ -1046,8 +1056,12 @@ export default function AccountPage() {
             <button
               type="button"
               onClick={signInWithGoogle}
+              onTouchEnd={(event) => {
+                event.preventDefault();
+                void signInWithGoogle();
+              }}
               disabled={busy}
-              className="group flex min-h-16 w-full items-center justify-between border-y border-white/40 px-1 font-semibold uppercase transition-colors hover:text-[#8a2ae3] disabled:opacity-40"
+              className="group relative z-10 flex min-h-16 w-full touch-manipulation items-center justify-between border-y border-white/40 px-1 font-semibold uppercase transition-colors hover:text-[#8a2ae3] disabled:opacity-40"
             >
               <span className="flex items-center gap-3">
                 <RiGoogleFill className="text-xl" />
