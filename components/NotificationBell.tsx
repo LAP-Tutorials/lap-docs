@@ -51,6 +51,29 @@ export type NotificationItem = {
   };
 };
 
+type BrowserNotificationSupport =
+  | "checking"
+  | "available"
+  | "ios-browser"
+  | "unsupported";
+
+function isAppleMobileBrowser() {
+  if (typeof navigator === "undefined") return false;
+  return (
+    /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
+function isStandaloneWebApp() {
+  if (typeof window === "undefined") return false;
+  const standaloneNavigator = navigator as Navigator & { standalone?: boolean };
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    standaloneNavigator.standalone === true
+  );
+}
+
 function formatTimeAgo(timestamp?: Timestamp): string {
   if (!timestamp) return "Just now";
   const seconds = Math.floor((Date.now() - timestamp.toMillis()) / 1000);
@@ -80,12 +103,19 @@ export default function NotificationBell({
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const popoverRef = useRef<HTMLDivElement>(null);
   const [browserPermission, setBrowserPermission] = useState<NotificationPermission>("default");
+  const [browserSupport, setBrowserSupport] =
+    useState<BrowserNotificationSupport>("checking");
   const isInitialSnapshotRef = useRef(true);
 
   // Check browser notification permission
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       setBrowserPermission(Notification.permission);
+      setBrowserSupport("available");
+    } else if (isAppleMobileBrowser() && !isStandaloneWebApp()) {
+      setBrowserSupport("ios-browser");
+    } else {
+      setBrowserSupport("unsupported");
     }
   }, []);
 
@@ -141,18 +171,37 @@ export default function NotificationBell({
                 Notification.permission === "granted"
               ) {
                 try {
-                  const popup = new Notification(data.title || "New Notification", {
+                  const options: NotificationOptions = {
                     body: data.message || "You received a new notification on L.A.P Tutorials.",
-                    icon: "/favicon.ico",
+                    icon: "/icons/android-chrome-192x192.png",
                     tag: change.doc.id,
-                  });
-                  popup.onclick = () => {
-                    window.focus();
-                    if (data.link) {
-                      router.push(data.link);
-                    }
-                    popup.close();
+                    data: { url: data.link || "/" },
                   };
+
+                  if ("serviceWorker" in navigator) {
+                    void navigator.serviceWorker.ready
+                      .then((registration) =>
+                        registration.showNotification(
+                          data.title || "New Notification",
+                          options,
+                        ),
+                      )
+                      .catch((popupErr) => {
+                        console.error("Error displaying service worker notification:", popupErr);
+                      });
+                  } else {
+                    const popup = new Notification(
+                      data.title || "New Notification",
+                      options,
+                    );
+                    popup.onclick = () => {
+                      window.focus();
+                      if (data.link) {
+                        router.push(data.link);
+                      }
+                      popup.close();
+                    };
+                  }
                 } catch (popupErr) {
                   console.error("Error displaying native notification:", popupErr);
                 }
@@ -375,19 +424,24 @@ export default function NotificationBell({
           </div>
 
           {/* Browser notification prompt banner */}
-          {browserPermission === "default" && (
+          {browserSupport === "available" && browserPermission === "default" && (
             <button
               type="button"
               onClick={requestBrowserPermission}
               className="flex w-full items-center justify-between border-b border-white/10 bg-[#8a2ae3]/10 px-4 py-2 text-left text-xs text-[#8a2ae3] transition-colors hover:bg-[#8a2ae3]/20"
             >
               <span className="flex items-center gap-1.5 font-medium">
-                <Bell className="h-3.5 w-3.5" /> Enable browser pop-ups
+                <Bell className="h-3.5 w-3.5" /> Enable notifications
               </span>
               <span className="font-mono text-[10px] font-bold uppercase underline">
                 Enable
               </span>
             </button>
+          )}
+          {browserSupport === "ios-browser" && (
+            <div className="border-b border-white/10 bg-[#8a2ae3]/10 px-4 py-2 text-xs leading-relaxed text-[#c997ff]">
+              Add L.A.P Docs to your iPad Home Screen, open it there, then enable notifications.
+            </div>
           )}
 
           {/* Filter Tabs */}
