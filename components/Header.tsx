@@ -5,7 +5,7 @@ import Image from "next/image";
 import menuLinks from "@/data/menu";
 import SocialSharing from "./SocialSharing";
 import Search, { SearchItem } from "./Search";
-import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "./ui/sheet";
 import {
   RiInstagramLine,
   RiYoutubeFill,
@@ -15,7 +15,7 @@ import {
   RiUser3Line,
 } from "react-icons/ri";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { SITE_NAME } from "@/lib/seo";
@@ -24,6 +24,8 @@ import NotificationBell from "./NotificationBell";
 
 export default function Header() {
   const [allArticles, setAllArticles] = useState<SearchItem[]>([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mobileNavRef = useRef<HTMLElement>(null);
   const { user, profile } = usePublicAuth();
   const accountPhotoURL = profile?.photoURL || user?.photoURL || "";
   const accountLabel = user ? "Open your profile" : "Sign in or create an account";
@@ -83,7 +85,7 @@ export default function Header() {
         </div>
 
         {/* Mobile menu */}
-        <Sheet>
+        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger
             aria-labelledby="button-label"
             className="relative z-10 md:hidden"
@@ -106,18 +108,34 @@ export default function Header() {
           </SheetTrigger>
           <SheetContent
             side="top"
-            className="w-full pt-14"
-            aria-label="Menu Toggle"
+            className="max-h-[100dvh] w-full overflow-y-auto border-b border-white/30 bg-[#121212] px-4 pb-8 pt-16 text-white shadow-[0_24px_64px_rgba(0,0,0,0.55)] sm:px-6"
+            aria-describedby={undefined}
+            onOpenAutoFocus={(event) => {
+              event.preventDefault();
+              mobileNavRef.current?.focus({ preventScroll: true });
+            }}
+            onPointerDownOutside={() => setIsMobileMenuOpen(false)}
           >
+            <SheetTitle className="sr-only">Navigation menu</SheetTitle>
             <nav
-              className="flex flex-col flex-1 justify-end gap-6"
-              aria-labelledby="mobile-nav"
+              ref={mobileNavRef}
+              tabIndex={-1}
+              className="flex flex-1 flex-col justify-end gap-6 focus:outline-none"
+              aria-label="Primary navigation"
             >
               {/* Mobile Search */}
-              <Search articles={allArticles} className="w-full" />
+              <Search
+                articles={allArticles}
+                className="w-full"
+                onSearchSelect={() => setIsMobileMenuOpen(false)}
+              />
 
               {menuLinks.map((m, i) => (
-                <Link key={i} href={m.href}>
+                <Link
+                  key={i}
+                  href={m.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
                   {m.label}
                 </Link>
               ))}
@@ -126,6 +144,7 @@ export default function Header() {
                 <Link
                   href="/account"
                   aria-label={accountLabel}
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className="inline-flex items-center justify-center text-2xl text-white transition-colors duration-300 hover:text-[#8a2ae3]"
                 >
                   {accountPhotoURL ? (
