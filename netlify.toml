@@ -19,6 +19,7 @@
   for = "/sw.js"
   [headers.values]
     X-Robots-Tag = "noindex"
+    Cache-Control = "no-cache, no-store, must-revalidate"
 
 [[redirects]]
   from = "/&"

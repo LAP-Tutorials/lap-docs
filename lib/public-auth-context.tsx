@@ -303,6 +303,15 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
   const [isDeviceBlocked, setIsDeviceBlocked] = useState(false);
   const [deviceBlockReason, setDeviceBlockReason] = useState("");
 
+  useEffect(() => {
+    document.documentElement.dataset.lapHydrated = "true";
+    try {
+      window.sessionStorage.removeItem("lap_hydration_recovery_v1");
+    } catch {
+      // Storage can be unavailable in private browsing; hydration still succeeded.
+    }
+  }, []);
+
   const refreshProfile = useCallback(async () => {
     const currentUser = auth.currentUser;
     if (!currentUser) {

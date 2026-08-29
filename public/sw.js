@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lap-docs-cache-v2';
+const CACHE_NAME = 'lap-docs-cache-v3';
 const ASSETS = [
   '/icons/favicon-32x32.png',
   '/icons/favicon-16x16.png',

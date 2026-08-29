@@ -114,6 +114,46 @@ export default function RootLayout({
   return (
     <html lang="en" className={`scroll-smooth ${generalSans.variable}`}>
       <head>
+        <Script
+          id="hydration-recovery"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                var recoveryKey = 'lap_hydration_recovery_v1';
+                window.setTimeout(async function () {
+                  if (document.documentElement.dataset.lapHydrated === 'true') {
+                    try { window.sessionStorage.removeItem(recoveryKey); } catch (_) {}
+                    return;
+                  }
+
+                  try {
+                    if (window.sessionStorage.getItem(recoveryKey)) return;
+                    window.sessionStorage.setItem(recoveryKey, '1');
+
+                    if ('serviceWorker' in navigator) {
+                      var registrations = await navigator.serviceWorker.getRegistrations();
+                      await Promise.all(registrations.map(function (registration) {
+                        return registration.unregister();
+                      }));
+                    }
+
+                    if ('caches' in window) {
+                      var cacheNames = await window.caches.keys();
+                      await Promise.all(cacheNames.map(function (cacheName) {
+                        return window.caches.delete(cacheName);
+                      }));
+                    }
+
+                    window.location.reload();
+                  } catch (_) {
+                    // Leave the rendered page in place if browser storage is unavailable.
+                  }
+                }, 8000);
+              })();
+            `,
+          }}
+        />
         {/* Google Analytics */}
         {GA_TRACKING_ID && (
           <>
@@ -148,8 +188,9 @@ export default function RootLayout({
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                  navigator.serviceWorker.register('/sw.js?v=3', { updateViaCache: 'none' }).then(function(reg) {
                     console.log('SW registered:', reg.scope);
+                    reg.update().catch(function() {});
                   }).catch(function(err) {
                     console.warn('SW registration failed:', err);
                   });
