@@ -6,13 +6,11 @@ import { useRouter } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
   deleteUser,
-  getRedirectResult,
   getAdditionalUserInfo,
   GoogleAuthProvider,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
-  signInWithRedirect,
   signOut,
   updateProfile,
 } from "firebase/auth";
@@ -50,15 +48,6 @@ const fieldClassName =
 const primaryButtonClassName =
   "group inline-flex min-h-16 w-full items-center justify-between bg-white px-5 font-semibold uppercase text-black transition-colors duration-300 hover:bg-[#8a2ae3] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a2ae3] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40";
 const CMS_PROFILE_URL = "https://cms.lap.onl/admin/profile";
-const GOOGLE_REDIRECT_MODE_KEY = "lap_google_redirect_mode";
-
-function shouldUseGoogleRedirect() {
-  if (typeof navigator === "undefined") return false;
-  return (
-    /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-  );
-}
 
 async function checkCurrentDevice() {
   const payload = await getDeviceRiskPayload();
@@ -190,83 +179,6 @@ export default function AccountPage() {
   useEffect(() => {
     setHandle(profile?.handle || "");
   }, [profile?.handle]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const completeGoogleRedirect = async () => {
-      const pendingMode = window.sessionStorage.getItem(GOOGLE_REDIRECT_MODE_KEY);
-
-      try {
-        const credential = await getRedirectResult(auth);
-        if (!credential || cancelled) return;
-
-        window.sessionStorage.removeItem(GOOGLE_REDIRECT_MODE_KEY);
-        setBusy(true);
-        setError("");
-        setMessage("");
-
-        const redirectMode = pendingMode === "register" ? "register" : "signin";
-        const isNewFirebaseUser = getAdditionalUserInfo(credential)?.isNewUser === true;
-
-        if (redirectMode === "signin" && isNewFirebaseUser) {
-          await deleteUser(credential.user);
-          if (!cancelled) {
-            setMode("register");
-            setError("No account was found. Create an account with Google below.");
-          }
-          return;
-        }
-
-        const syncedRisk = await syncCurrentDevice();
-        if (syncedRisk.blocked) {
-          if (isNewFirebaseUser) {
-            await deleteUser(credential.user).catch(() => undefined);
-          }
-          await signOut(auth).catch(() => undefined);
-          if (!cancelled) {
-            setError(
-              syncedRisk.reason ||
-                "This browser installation has been blocked due to Community Guidelines violations.",
-            );
-          }
-          return;
-        }
-
-        const existingProfile = await getExistingPublicProfile(credential.user);
-        if (existingProfile) {
-          await syncPublicUser(credential.user);
-          await refreshProfile();
-        }
-
-        if (!cancelled) {
-          if (redirectMode === "register") {
-            setMessage(
-              existingProfile?.handle
-                ? `Your account already exists as @${existingProfile.handle}.`
-                : "Account created. Add your photo and handle to finish.",
-            );
-          } else {
-            setMessage(
-              existingProfile
-                ? "Signed in."
-                : "Welcome back. Finish your photo and handle to continue.",
-            );
-          }
-        }
-      } catch (nextError) {
-        window.sessionStorage.removeItem(GOOGLE_REDIRECT_MODE_KEY);
-        if (!cancelled) setError(friendlyAuthError(nextError));
-      } finally {
-        if (!cancelled) setBusy(false);
-      }
-    };
-
-    void completeGoogleRedirect();
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshProfile]);
 
   useEffect(() => {
     if (!isStaff || profile?.handle) return;
@@ -402,24 +314,18 @@ export default function AccountPage() {
       setError("Please agree to the Terms of Service and Privacy Policy before creating an account with Google.");
       return;
     }
+    if (mode === "register" && isDeviceBlocked) {
+      setError(deviceBlockReason || "This browser installation has been blocked due to Community Guidelines violations.");
+      return;
+    }
     googleSignInStartedRef.current = true;
     setBusy(true);
     setError("");
     setMessage("");
     try {
-      const deviceRisk = await checkCurrentDevice();
-      if (mode === "register" && (deviceRisk.blocked || isDeviceBlocked)) {
-        setError(deviceRisk.reason || deviceBlockReason || "This browser installation has been blocked due to Community Guidelines violations.");
-        return;
-      }
-
       const provider = new GoogleAuthProvider();
-      if (shouldUseGoogleRedirect()) {
-        window.sessionStorage.setItem(GOOGLE_REDIRECT_MODE_KEY, mode);
-        await signInWithRedirect(auth, provider);
-        return;
-      }
-
+      // Keep this as the first asynchronous operation after the user gesture.
+      // Safari can block a popup if a network request runs before it opens.
       const credential = await signInWithPopup(auth, provider);
       const isNewFirebaseUser = getAdditionalUserInfo(credential)?.isNewUser === true;
 
