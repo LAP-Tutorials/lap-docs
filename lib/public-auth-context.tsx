@@ -59,7 +59,7 @@ const PublicAuthContext = createContext<PublicAuthContextValue | undefined>(
 
 const HANDLE_PATTERN = /^[a-z0-9_-]{3,20}$/;
 const PROTECTED_BRAND_PATTERN = /^(official|real|the|team|weare|my)?(lap|arclapain)/;
-export const TERMS_VERSION = "2026-08-25";
+export const TERMS_VERSION = "2026-09-01";
 export const GUIDELINES_VERSION = "2026-08-25";
 
 export type PublicHandleAvailability =

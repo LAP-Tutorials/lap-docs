@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CookieBanner from "@/components/CookieBanner";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 import JsonLd from "@/components/JsonLd";
 import Script from "next/script";
 import localFont from "next/font/local";
@@ -154,31 +155,8 @@ export default function RootLayout({
             `,
           }}
         />
-        {/* Google Analytics */}
         {GA_TRACKING_ID && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`}
-              strategy="lazyOnload"
-            />
-            <Script
-              id="google-analytics"
-              strategy="lazyOnload"
-              dangerouslySetInnerHTML={{
-                __html: `
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('consent', 'default', {
-                    'analytics_storage': 'denied'
-                  });
-                  gtag('js', new Date());
-                  gtag('config', '${GA_TRACKING_ID}', {
-                    page_path: window.location.pathname,
-                  });
-                `,
-              }}
-            />
-          </>
+          <GoogleAnalytics measurementId={GA_TRACKING_ID} />
         )}
         {/* Service Worker Registration */}
         <Script
