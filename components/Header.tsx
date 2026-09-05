@@ -139,8 +139,8 @@ export default function Header() {
                   {m.label}
                 </Link>
               ))}
-              <div className="flex items-center gap-4">
-                <NotificationBell />
+              <div className="flex flex-wrap items-center gap-4">
+                <NotificationBell inline onNavigate={() => setIsMobileMenuOpen(false)} />
                 <Link
                   href="/account"
                   aria-label={accountLabel}

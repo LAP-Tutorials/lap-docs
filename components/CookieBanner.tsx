@@ -19,6 +19,9 @@ export default function CookieBanner() {
     if (!consent) {
       setShowBanner(true);
     }
+    const openSettings = () => setShowBanner(true);
+    window.addEventListener("lap-open-privacy-settings", openSettings);
+    return () => window.removeEventListener("lap-open-privacy-settings", openSettings);
   }, []);
 
   const saveConsent = (consent: AnalyticsConsent) => {
@@ -50,19 +53,7 @@ export default function CookieBanner() {
     }
   };
 
-  if (!mounted) return null;
-
-  if (!showBanner) {
-    return (
-      <button
-        type="button"
-        onClick={() => setShowBanner(true)}
-        className="fixed bottom-3 left-3 z-40 rounded-md border border-[#333333] bg-[#111111]/95 px-3 py-2 text-xs font-medium text-gray-300 shadow-lg transition-colors hover:border-[#555555] hover:text-white"
-      >
-        Privacy settings
-      </button>
-    );
-  }
+  if (!mounted || !showBanner) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6 pb-6 md:pb-6 pointer-events-none animate-in slide-in-from-bottom-24 fade-in duration-500">

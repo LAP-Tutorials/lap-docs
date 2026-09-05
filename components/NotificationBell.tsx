@@ -92,8 +92,12 @@ function formatTimeAgo(timestamp?: Timestamp): string {
 
 export default function NotificationBell({
   className = "",
+  inline = false,
+  onNavigate,
 }: {
   className?: string;
+  inline?: boolean;
+  onNavigate?: () => void;
 }) {
   const { user } = usePublicAuth();
   const router = useRouter();
@@ -274,6 +278,7 @@ export default function NotificationBell({
     }
 
     if (item.link) {
+      onNavigate?.();
       router.push(item.link);
     }
   };
@@ -345,7 +350,7 @@ export default function NotificationBell({
   };
 
   return (
-    <div className={`relative ${className}`} ref={popoverRef}>
+    <div className={`${inline ? "contents" : "relative"} ${className}`} ref={popoverRef}>
       {/* Bell Button */}
       <button
         type="button"
@@ -363,7 +368,7 @@ export default function NotificationBell({
       </button>
 
       {/* Transparent Click-Outside Backdrop */}
-      {isOpen && (
+      {isOpen && !inline && (
         <div
           className="fixed inset-0 z-40 bg-black/20"
           onClick={() => setIsOpen(false)}
@@ -374,13 +379,13 @@ export default function NotificationBell({
       {/* Dropdown / Popover */}
       {isOpen && (
         <div
-          className="absolute right-0 top-full mt-2 z-50 w-[350px] sm:w-[460px] md:w-[480px] max-w-[calc(100vw-1.5rem)] border border-white/20 bg-[#121212] shadow-[0_20px_50px_rgba(0,0,0,0.85)] animate-in fade-in zoom-in-95 duration-150"
+          className={`${inline ? "relative order-last w-full min-w-0 basis-full" : "absolute right-0 top-full mt-2 z-50 w-[350px] sm:w-[460px] md:w-[480px] max-w-[calc(100vw-1.5rem)]"} border border-white/20 bg-[#121212] shadow-[0_20px_50px_rgba(0,0,0,0.85)] animate-in fade-in zoom-in-95 duration-150`}
           role="dialog"
           aria-label="Notifications Panel"
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 bg-white/[0.02]">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-4 py-3 bg-white/[0.02]">
+            <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-semibold uppercase tracking-wider text-sm text-white">
                 Notifications
               </h3>
@@ -471,7 +476,7 @@ export default function NotificationBell({
           </div>
 
           {/* Notifications List */}
-          <div className="max-h-[420px] overflow-y-auto divide-y divide-white/[0.07]">
+          <div className="max-h-[min(420px,50dvh)] overflow-y-auto overscroll-contain divide-y divide-white/[0.07]">
             {loading ? (
               <div className="py-10 text-center text-sm text-white/40">
                 Loading notifications…

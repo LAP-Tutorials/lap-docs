@@ -69,6 +69,14 @@ export default function Footer() {
                   <Link href="/privacy-policy">Privacy Policy</Link>
                 </li>
                 <li>
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new Event("lap-open-privacy-settings"))}
+                  >
+                    Privacy settings
+                  </button>
+                </li>
+                <li>
                   <Link href="/terms-of-service">Terms of Service</Link>
                 </li>
                 <li>
